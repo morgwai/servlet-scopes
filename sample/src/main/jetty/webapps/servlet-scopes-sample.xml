@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright (c) 2020 Piotr Morgwai Kotarbinski
+-->
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "http://www.eclipse.org/jetty/configure_9_0.dtd">
+<Configure class="org.eclipse.jetty.webapp.WebAppContext" id="wac">
+	<Set name="contextPath">/</Set>
+	<Set name="war"><SystemProperty name="jetty.base" default="."/>/servlet-scopes-sample.war</Set>
+</Configure>
