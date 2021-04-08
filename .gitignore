@@ -1,6 +1,14 @@
-target
 local
 h2-1.4.200.jar
+
+# build
+target
+
+# eclipse
 .project
 .classpath
 .settings
+
+# tomcat
+sample/src/main/tomcat/work/
+sample/src/main/tomcat/temp/
