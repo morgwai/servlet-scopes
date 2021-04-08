@@ -18,6 +18,7 @@ import pl.morgwai.base.guice.scopes.ContextScope;
 import pl.morgwai.base.guice.scopes.ContextTracker;
 import pl.morgwai.base.guice.scopes.ContextTrackingExecutor;
 import pl.morgwai.base.guice.scopes.ServerSideContext;
+import pl.morgwai.base.guice.scopes.ThreadLocalContextTracker;
 
 
 
@@ -29,7 +30,7 @@ public class ServletModule implements Module {
 
 
 	public final ContextTracker<RequestContext> requestContextTracker =
-			new InternalContextTracker<>();
+			new ThreadLocalContextTracker<>();
 	public final Scope requestScope = new ContextScope<>("REQUEST_sCOPE", requestContextTracker);
 
 
@@ -60,7 +61,7 @@ public class ServletModule implements Module {
 
 
 	public final ContextTracker<WebsocketConnectionContext> websocketConnectionContextTracker =
-			new InternalContextTracker<>();
+			new ThreadLocalContextTracker<>();
 	public final Scope websocketConnectionScope =
 			new ContextScope<>("WEBSOCKET_CONNECTION_SCOPE", websocketConnectionContextTracker);
 

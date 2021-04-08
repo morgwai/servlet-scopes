@@ -4,14 +4,12 @@
 package pl.morgwai.base.servlet.scopes;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpSession;
 import javax.websocket.HandshakeResponse;
-import javax.websocket.OnClose;
-import javax.websocket.OnError;
-import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.HandshakeRequest;
@@ -20,7 +18,6 @@ import javax.websocket.server.ServerEndpointConfig;
 
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
-import net.bytebuddy.implementation.SuperMethodCall;
 import net.bytebuddy.matcher.ElementMatchers;
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
@@ -48,48 +45,36 @@ public class GuicifiedServerEndpointConfigurator extends ServerEndpointConfig.Co
 		if (httpSession != null) {
 			config.getUserProperties().put(HTTP_SESSION_PROPERTY_NAME, httpSession);
 		}
-		// TODO: ensure userProperties aren't shared for all connections in case of programmatic
-		// endpoints
-		System.out.println("config: " + config.hashCode()
-				+ ", properties: " + config.getUserProperties().hashCode());
 	}
 
 
 
 	@Override
 	public <T> T getEndpointInstance(Class<T> endpointClass) throws InstantiationException {
-		var decorators = new EndpointDecorators();
+		T instance = super.getEndpointInstance(endpointClass);
+		GuiceServletContextListener.INJECTOR.injectMembers(instance);
 		var subclassBuilder = new ByteBuddy()
 			.subclass(endpointClass)
 			.annotateType(endpointClass.getAnnotation(ServerEndpoint.class))
-			.method(
-				ElementMatchers.isPublic()
-				.and(
-					ElementMatchers.isAnnotatedWith(OnOpen.class)
-					.or(ElementMatchers.isAnnotatedWith(OnMessage.class))
-					.or(ElementMatchers.isAnnotatedWith(OnError.class))
-					.or(ElementMatchers.isAnnotatedWith(OnClose.class))
-				)
-			).intercept(
-				InvocationHandlerAdapter.of(
-						decorators.getBeginningDecorator(), "beginningDecorator")
-				.andThen(SuperMethodCall.INSTANCE)  // TODO excp
-				.andThen(InvocationHandlerAdapter.of(
-						decorators.getEndDecorator(), "endDecorator"))
-			);
-
+			.method(ElementMatchers.any())
+			.intercept(InvocationHandlerAdapter.of(new EndpointDecorator(instance)));
 		Class<? extends T> dynamicSubclass =
 				subclassBuilder.make().load(endpointClass.getClassLoader()).getLoaded();
-		T instance = super.getEndpointInstance(dynamicSubclass);
-		GuiceServletContextListener.INJECTOR.injectMembers(instance);
-		return instance;
+		try {
+			return dynamicSubclass.getConstructor().newInstance();
+		} catch (IllegalAccessException | IllegalArgumentException
+				| InvocationTargetException | NoSuchMethodException | SecurityException e) {
+			throw new InstantiationException(e.toString());
+		}
 	}
 
 
 
-	static class EndpointDecorators {
+	static class EndpointDecorator implements InvocationHandler {
 
 
+
+		Object endpoint;
 
 		@Inject
 		ContextTracker<RequestContext> eventCtxTracker;
@@ -100,42 +85,24 @@ public class GuicifiedServerEndpointConfigurator extends ServerEndpointConfig.Co
 
 
 
-		public InvocationHandler getBeginningDecorator() {
-			return (proxy, method, args) -> invokeAtBeginning(proxy, method, args);
-		}
-
-		public Object invokeAtBeginning(Object proxy, Method method, Object[] args)
+		public Object invoke(Object proxy, Method method, Object[] args)
 				throws Throwable {
 			if (method.getAnnotation(OnOpen.class) != null) {
 				connectionCtx = new WebsocketConnectionContext(
 						(Session) args[0], connectionCtxTracker);
 			}
-			((InternalContextTracker<WebsocketConnectionContext>) connectionCtxTracker)
-					.setCurrentContext(connectionCtx);
 			var eventCtx = new WebsocketEventContext(
 					(HttpSession) connectionCtx.getConnection().getUserProperties().get(
 							HTTP_SESSION_PROPERTY_NAME),
 					eventCtxTracker);
-			((InternalContextTracker<RequestContext>) eventCtxTracker).setCurrentContext(eventCtx);
-			return null;
+			return connectionCtx.callWithinSelf(
+					() -> eventCtx.callWithinSelf(() -> method.invoke(endpoint, args)));
 		}
 
 
 
-		public InvocationHandler getEndDecorator() {
-			return (proxy, method, args) -> invokeAtEnd(proxy, method, args);
-		}
-
-		public Object invokeAtEnd(Object proxy, Method method, Object[] args) throws Throwable {
-			((InternalContextTracker<RequestContext>) eventCtxTracker).clearCurrentContext();
-			((InternalContextTracker<WebsocketConnectionContext>) connectionCtxTracker)
-					.clearCurrentContext();
-			return null;
-		}
-
-
-
-		public EndpointDecorators() {
+		public EndpointDecorator(Object endpoint) {
+			this.endpoint = endpoint;
 			GuiceServletContextListener.INJECTOR.injectMembers(this);
 		}
 	}
