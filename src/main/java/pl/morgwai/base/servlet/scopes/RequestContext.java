@@ -3,7 +3,6 @@
  */
 package pl.morgwai.base.servlet.scopes;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
@@ -13,22 +12,21 @@ import pl.morgwai.base.guice.scopes.TrackableContext;
 
 
 /**
- * Context of a given <code>HttpServletRequest</code>.
+ * Context of a <code>HttpServletRequest</code> or a websocket event.
  */
-public class RequestContext extends TrackableContext<RequestContext> {
+public abstract class RequestContext extends TrackableContext<RequestContext> {
 
 
 
-	HttpServletRequest request;
-	public HttpServletRequest getRequest() { return request; }
+	public abstract HttpSession getHttpSession();
 
 
 
 	/**
-	 * @return context of the session this request belongs to
+	 * @return context of the <code>HttpSession</code> this request belongs to
 	 */
-	public ServerSideContext getSessionContext() {
-		HttpSession session = getRequest().getSession();
+	public ServerSideContext getHttpSessionContext() {
+		HttpSession session = getHttpSession();
 		ServerSideContext sessionContext =
 				(ServerSideContext) session.getAttribute(SESSION_CONTEXT_ATTRIBUTE_NAME);
 		if (sessionContext == null) {
@@ -42,8 +40,7 @@ public class RequestContext extends TrackableContext<RequestContext> {
 
 
 
-	public RequestContext(HttpServletRequest request, ContextTracker<RequestContext> tracker) {
+	protected RequestContext(ContextTracker<RequestContext> tracker) {
 		super(tracker);
-		this.request = request;
 	}
 }

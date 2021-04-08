@@ -18,7 +18,6 @@ import pl.morgwai.base.guice.scopes.ContextScope;
 import pl.morgwai.base.guice.scopes.ContextTracker;
 import pl.morgwai.base.guice.scopes.ContextTrackingExecutor;
 import pl.morgwai.base.guice.scopes.ServerSideContext;
-import pl.morgwai.base.guice.scopes.ThreadLocalContextTracker;
 
 
 
@@ -30,21 +29,18 @@ public class ServletModule implements Module {
 
 
 	public final ContextTracker<RequestContext> requestContextTracker =
-			new ThreadLocalContextTracker<>();
-
-
-
+			new InternalContextTracker<>();
 	public final Scope requestScope = new ContextScope<>("REQUEST_sCOPE", requestContextTracker);
 
 
 
-	public final Scope sessionScope = new Scope() {
+	public final Scope httpSessionScope = new Scope() {
 
 		@Override
 		public <T> Provider<T> scope(Key<T> key, Provider<T> unscoped) {
 			return () -> {
 				ServerSideContext sessionContext =
-						requestContextTracker.getCurrentContext().getSessionContext();
+						requestContextTracker.getCurrentContext().getHttpSessionContext();
 				@SuppressWarnings("unchecked")
 				T instance = (T) sessionContext.getAttribute(key);
 				if (instance == null) {
@@ -57,9 +53,16 @@ public class ServletModule implements Module {
 
 		@Override
 		public String toString() {
-			return "SESSION_SCOPE";
+			return "HTTP_SESSION_SCOPE";
 		}
 	};
+
+
+
+	public final ContextTracker<WebsocketConnectionContext> websocketConnectionContextTracker =
+			new InternalContextTracker<>();
+	public final Scope websocketConnectionScope =
+			new ContextScope<>("WEBSOCKET_CONNECTION_SCOPE", websocketConnectionContextTracker);
 
 
 
@@ -70,6 +73,13 @@ public class ServletModule implements Module {
 		binder.bind(requestContextTrackerType).toInstance(requestContextTracker);
 		binder.bind(RequestContext.class).toProvider(
 				() -> requestContextTracker.getCurrentContext());
+
+		TypeLiteral<ContextTracker<WebsocketConnectionContext>>
+				websocketConnectionContextTrackerType = new TypeLiteral<>() {};
+		binder.bind(websocketConnectionContextTrackerType)
+				.toInstance(websocketConnectionContextTracker);
+		binder.bind(WebsocketConnectionContext.class).toProvider(
+				() -> websocketConnectionContextTracker.getCurrentContext());
 	}
 
 
@@ -80,7 +90,7 @@ public class ServletModule implements Module {
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(String name, int poolSize) {
 		return new ContextTrackingExecutor(
-				name, poolSize, requestContextTracker);
+				name, poolSize, requestContextTracker, websocketConnectionContextTracker);
 	}
 
 	/**
@@ -94,6 +104,7 @@ public class ServletModule implements Module {
 			ThreadFactory threadFactory,
 			RejectedExecutionHandler handler) {
 		return new ContextTrackingExecutor(
-				name, poolSize, workQueue, threadFactory, handler, requestContextTracker);
+				name, poolSize, workQueue, threadFactory, handler,
+				requestContextTracker, websocketConnectionContextTracker);
 	}
 }

@@ -57,6 +57,17 @@ Copyright (c) 2020 Piotr Morgwai Kotarbinski
 			<version>4.0.1</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>javax.websocket</groupId>
+			<artifactId>javax.websocket-api</artifactId>
+			<version>1.1</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>net.bytebuddy</groupId>
+			<artifactId>byte-buddy</artifactId>
+			<version>1.10.23-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 	<build>

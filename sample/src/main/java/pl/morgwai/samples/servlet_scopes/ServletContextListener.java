@@ -3,11 +3,18 @@
  */
 package pl.morgwai.samples.servlet_scopes;
 
+import java.util.EnumSet;
 import java.util.LinkedList;
+
+import javax.servlet.DispatcherType;
+import javax.servlet.Filter;
+import javax.servlet.FilterRegistration;
+import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebListener;
 
 import com.google.inject.Module;
+import com.google.inject.name.Names;
 
 import pl.morgwai.base.servlet.scopes.GuiceServletContextListener;
 
@@ -18,11 +25,22 @@ public class ServletContextListener extends GuiceServletContextListener {
 
 
 
+	public static final String REQUEST = "request";
+	public static final String WS_CONNECTION = "wsconn";
+	public static final String HTTP_SESSION = "session";
+
+
+
 	@Override
 	protected LinkedList<Module> configureInjections() {
 		LinkedList<Module> modules = new LinkedList<Module>();
 		modules.add((binder) -> {
-			binder.bind(Service.class).in(servletModule.sessionScope);
+			binder.bind(Service.class).annotatedWith(Names.named(REQUEST))
+					.to(Service.class).in(servletModule.requestScope);
+			binder.bind(Service.class).annotatedWith(Names.named(WS_CONNECTION))
+					.to(Service.class).in(servletModule.websocketConnectionScope);
+			binder.bind(Service.class).annotatedWith(Names.named(HTTP_SESSION))
+					.to(Service.class).in(servletModule.httpSessionScope);
 		});
 		return modules;
 	}
@@ -31,6 +49,22 @@ public class ServletContextListener extends GuiceServletContextListener {
 
 	@Override
 	protected void configureServletsAndFilters() throws ServletException {
-		addServlet("testServlet", TestServlet.class, "/test");
+		Filter ensureSessionFilter = ctx.createFilter(EnsureSessionFilter.class);
+		INJECTOR.injectMembers(ensureSessionFilter);
+		FilterRegistration.Dynamic reg =
+				ctx.addFilter(EnsureSessionFilter.class.getSimpleName(), ensureSessionFilter);
+		// filter mappings with isMatchAfter==true don't match websocket requests
+		reg.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, ChatEndpoint.PATH);
+		reg.setAsyncSupported(true);
+
+		addServlet(TestServlet.class.getSimpleName(), TestServlet.class, "/test");
+	}
+
+
+
+	@Override
+	public void contextDestroyed(ServletContextEvent event) {
+		super.contextDestroyed(event);
+		ChatEndpoint.shutdown();
 	}
 }

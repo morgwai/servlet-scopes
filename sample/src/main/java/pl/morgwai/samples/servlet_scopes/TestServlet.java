@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -23,7 +24,10 @@ public class TestServlet extends HttpServlet {
 
 
 	@Inject Provider<RequestContext> requestContextTracker;
-	@Inject Provider<Service> serviceProvider;
+
+	@Inject
+	@Named(ServletContextListener.REQUEST)
+	Provider<Service> serviceProvider;
 
 
 
@@ -31,13 +35,6 @@ public class TestServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		PrintWriter writer = response.getWriter();
-		if (requestContextTracker.get().getRequest() == request) {
-			response.setStatus(HttpServletResponse.SC_OK);
-			writer.println("OK");
-		} else {
-			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			writer.println("DUPA");
-		}
 		writer.println("service hash: " + serviceProvider.get().hashCode());
 		writer.close();
 	}
