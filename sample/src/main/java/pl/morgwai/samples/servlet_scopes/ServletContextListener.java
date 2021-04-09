@@ -12,11 +12,15 @@ import javax.servlet.FilterRegistration;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebListener;
+import javax.websocket.DeploymentException;
+import javax.websocket.server.ServerContainer;
+import javax.websocket.server.ServerEndpointConfig;
 
 import com.google.inject.Module;
 import com.google.inject.name.Names;
 
 import pl.morgwai.base.servlet.scopes.GuiceServletContextListener;
+import pl.morgwai.base.servlet.scopes.GuicifiedServerEndpointConfigurator;
 
 
 
@@ -49,13 +53,27 @@ public class ServletContextListener extends GuiceServletContextListener {
 
 	@Override
 	protected void configureServletsAndFilters() throws ServletException {
+		String websocketPath = "/websocket/chat";
 		Filter ensureSessionFilter = ctx.createFilter(EnsureSessionFilter.class);
 		INJECTOR.injectMembers(ensureSessionFilter);
 		FilterRegistration.Dynamic reg =
 				ctx.addFilter(EnsureSessionFilter.class.getSimpleName(), ensureSessionFilter);
 		// filter mappings with isMatchAfter==true don't match websocket requests
-		reg.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, ChatEndpoint.PATH);
+		reg.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, websocketPath);
 		reg.setAsyncSupported(true);
+
+		var container = ((ServerContainer) ctx.getAttribute(
+				"javax.websocket.server.ServerContainer"));
+		try {
+			container.addEndpoint(
+				ServerEndpointConfig.Builder
+				.create(ChatEndpoint.class, websocketPath)
+				.configurator(new GuicifiedServerEndpointConfigurator()
+			).build());
+		} catch (DeploymentException e) {
+			e.printStackTrace();
+			throw new ServletException(e);
+		}
 
 		addServlet(TestServlet.class.getSimpleName(), TestServlet.class, "/test");
 	}

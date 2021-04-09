@@ -3,41 +3,22 @@
  */
 package pl.morgwai.samples.servlet_scopes;
 
-import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Logger;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.websocket.CloseReason;
-import javax.websocket.OnClose;
-import javax.websocket.OnError;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
+import javax.websocket.Endpoint;
+import javax.websocket.EndpointConfig;
 import javax.websocket.Session;
-import javax.websocket.server.ServerEndpoint;
-
-import pl.morgwai.base.servlet.scopes.GuicifiedServerEndpointConfigurator;
-
-import javax.websocket.CloseReason.CloseCodes;
 
 
 
-@ServerEndpoint(
-		value = ChatEndpoint.PATH,
-		configurator = GuicifiedServerEndpointConfigurator.class
-)
-public class ChatEndpoint {
+public class ChatEndpoint extends Endpoint {
 
 
 
-	public static final String PATH = "/websocket/chat";
-
-
-
-	static final Set<ChatEndpoint> endpoints = new CopyOnWriteArraySet<>();
 	static boolean isShutdown = false;
 
 
@@ -45,78 +26,79 @@ public class ChatEndpoint {
 	String nickname;
 	Session connection;
 
-	@Inject
-	@Named(ServletContextListener.REQUEST)
+
+
+	@Inject @Named(ServletContextListener.REQUEST)
 	Provider<Service> wsEventScopedProvider;
 
-	@Inject
-	@Named(ServletContextListener.WS_CONNECTION)
+	@Inject @Named(ServletContextListener.WS_CONNECTION)
 	Provider<Service> connectionScopedProvider;
 
-	@Inject
-	@Named(ServletContextListener.HTTP_SESSION)
+	@Inject @Named(ServletContextListener.HTTP_SESSION)
 	Provider<Service> httpSessionScopedProvider;
 
 
 
-	@OnOpen
-	public void onOpen(Session connection) {
+	@Override
+	public void onOpen(Session connection, EndpointConfig config) {
 		this.connection = connection;
 		connection.setMaxIdleTimeout(5l * 60l * 1000l);
 		nickname = "user-" + connection.getId();
+		connection.addMessageHandler(String.class, (message) -> this.onMessage(message));
 		var asyncRemote = connection.getAsyncRemote();
-		asyncRemote.sendText(String.format("### assigned nickname: %s", nickname));
-		asyncRemote.sendText(String.format(
-				"### event service hash: %d", wsEventScopedProvider.get().hashCode()));
-		asyncRemote.sendText(String.format(
-				"### connection service hash: %d", connectionScopedProvider.get().hashCode()));
-		asyncRemote.sendText(String.format(
-				"### HTTP session service hash: %d", httpSessionScopedProvider.get().hashCode()));
-		endpoints.add(this);
+		synchronized (connection) {
+			asyncRemote.sendText(String.format("### assigned nickname: %s", nickname));
+			asyncRemote.sendText(String.format(
+					"### service hashcodes: event=%d, connection=%d, httpSession=%d",
+					wsEventScopedProvider.get().hashCode(),
+					connectionScopedProvider.get().hashCode(),
+					httpSessionScopedProvider.get().hashCode()));
+		}
 		broadcast(String.format("### %s has joined", nickname));
 	}
 
 
 
-	@OnMessage
 	public void onMessage(String message) {
+		var asyncRemote = connection.getAsyncRemote();
+		synchronized (connection) {
+			asyncRemote.sendText(String.format(
+					"### service hashcodes: event=%d, connection=%d, httpSession=%d",
+					wsEventScopedProvider.get().hashCode(),
+					connectionScopedProvider.get().hashCode(),
+					httpSessionScopedProvider.get().hashCode()));
+		}
 		StringBuilder formattedMessageBuilder =
-			new StringBuilder(nickname.length() + message.length() + 10);
+				new StringBuilder(nickname.length() + message.length() + 10);
 		formattedMessageBuilder.append(nickname).append(": ");
 		appendFiltered(message, formattedMessageBuilder);
-		var asyncRemote = connection.getAsyncRemote();
-		asyncRemote.sendText(String.format(
-				"### event service hash: %d", wsEventScopedProvider.get().hashCode()));
-		asyncRemote.sendText(String.format(
-				"### connection service hash: %d", connectionScopedProvider.get().hashCode()));
-		asyncRemote.sendText(String.format(
-				"### HTTP session service hash: %d", httpSessionScopedProvider.get().hashCode()));
 		broadcast(formattedMessageBuilder.toString());
 	}
 
 
 
-	@OnClose
-	public void onClose(CloseReason reason) {
-		endpoints.remove(this);
+	@Override
+	public void onClose(Session connection, CloseReason reason) {
 		broadcast(String.format("### %s has disconnected", nickname));
 	}
 
 
 
-	@OnError
-	public void onError(Throwable error) {
+	@Override
+	public void onError(Session connection, Throwable error) {
 		log.warning("error on connection " + connection.getId() + ": " + error);
 		error.printStackTrace();
 	}
 
 
 
-	static void broadcast(String msg) {
+	void broadcast(String msg) {
 		if (isShutdown) return;
-		for (ChatEndpoint connection : endpoints) {
-			if (connection.connection.isOpen()) {
-				connection.connection.getAsyncRemote().sendText(msg);
+		for (Session peerConnection: connection.getOpenSessions()) {
+			if (peerConnection.isOpen()) {
+				synchronized (peerConnection) {
+					peerConnection.getAsyncRemote().sendText(msg);
+				}
 			}
 		}
 	}
@@ -125,12 +107,6 @@ public class ChatEndpoint {
 
 	static void shutdown() {
 		isShutdown = true;
-		for (ChatEndpoint endpoint : endpoints) {
-			try {
-				endpoint.connection.close(new CloseReason(CloseCodes.GOING_AWAY, "bye!"));
-			} catch (IOException e) {}  // not worth logging as the server is shutting down
-		}
-		System.out.println("ChatEndpoint shutdown completed");
 	}
 
 

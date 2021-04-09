@@ -17,14 +17,17 @@ public class WebsocketConnectionContext extends TrackableContext<WebsocketConnec
 
 
 
-	Session connection;
+	WebsocketConnectionProxy connection;
 	public Session getConnection() { return connection; }
 
 
 
 	protected WebsocketConnectionContext(
-			Session connection, ContextTracker<WebsocketConnectionContext> tracker) {
+		WebsocketConnectionProxy connection,
+		ContextTracker<WebsocketConnectionContext> tracker
+	) {
 		super(tracker);
 		this.connection = connection;
+		connection.setConnectionCtx(this);
 	}
 }

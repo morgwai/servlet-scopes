@@ -25,9 +25,11 @@ public class TestServlet extends HttpServlet {
 
 	@Inject Provider<RequestContext> requestContextTracker;
 
-	@Inject
-	@Named(ServletContextListener.REQUEST)
-	Provider<Service> serviceProvider;
+	@Inject @Named(ServletContextListener.REQUEST)
+	Provider<Service> requestScopedProvider;
+
+	@Inject @Named(ServletContextListener.HTTP_SESSION)
+	Provider<Service> sessionScopedProvider;
 
 
 
@@ -35,7 +37,10 @@ public class TestServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		PrintWriter writer = response.getWriter();
-		writer.println("service hash: " + serviceProvider.get().hashCode());
+		writer.println(String.format(
+				"service hashCodes: request=%d, session=%d",
+				requestScopedProvider.get().hashCode(),
+				sessionScopedProvider.get().hashCode()));
 		writer.close();
 	}
 }

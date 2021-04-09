@@ -6,9 +6,13 @@ package pl.morgwai.base.servlet.scopes;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpSession;
+import javax.websocket.Endpoint;
+import javax.websocket.EndpointConfig;
 import javax.websocket.HandshakeResponse;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
@@ -17,8 +21,10 @@ import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig;
 
 import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.matcher.ElementMatchers;
+
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
@@ -36,6 +42,9 @@ public class GuicifiedServerEndpointConfigurator extends ServerEndpointConfig.Co
 	public static final String HTTP_SESSION_PROPERTY_NAME =
 			GuicifiedServerEndpointConfigurator.class.getName() + ".httpSession";
 
+	public static final String CONNECTION_CTXS_PROPERTY_NAME =
+			GuicifiedServerEndpointConfigurator.class.getName() + ".connectionCtx";
+
 
 
 	@Override
@@ -43,7 +52,10 @@ public class GuicifiedServerEndpointConfigurator extends ServerEndpointConfig.Co
 			ServerEndpointConfig config, HandshakeRequest request, HandshakeResponse response) {
 		var httpSession = request.getHttpSession();
 		if (httpSession != null) {
-			config.getUserProperties().put(HTTP_SESSION_PROPERTY_NAME, httpSession);
+			var userProperties = config.getUserProperties();
+			synchronized (userProperties) {
+				userProperties.put(HTTP_SESSION_PROPERTY_NAME, httpSession);
+			}
 		}
 	}
 
@@ -53,11 +65,13 @@ public class GuicifiedServerEndpointConfigurator extends ServerEndpointConfig.Co
 	public <T> T getEndpointInstance(Class<T> endpointClass) throws InstantiationException {
 		T instance = super.getEndpointInstance(endpointClass);
 		GuiceServletContextListener.INJECTOR.injectMembers(instance);
-		var subclassBuilder = new ByteBuddy()
+		DynamicType.Builder<T> subclassBuilder = new ByteBuddy()
 			.subclass(endpointClass)
-			.annotateType(endpointClass.getAnnotation(ServerEndpoint.class))
 			.method(ElementMatchers.any())
 			.intercept(InvocationHandlerAdapter.of(new EndpointDecorator(instance)));
+		ServerEndpoint annotation = endpointClass.getAnnotation(ServerEndpoint.class);
+		if (annotation != null) subclassBuilder.annotateType(annotation);
+		customizeEndpointClass(subclassBuilder);
 		Class<? extends T> dynamicSubclass =
 				subclassBuilder.make().load(endpointClass.getClassLoader()).getLoaded();
 		try {
@@ -67,6 +81,8 @@ public class GuicifiedServerEndpointConfigurator extends ServerEndpointConfig.Co
 			throw new InstantiationException(e.toString());
 		}
 	}
+
+	public <T> void customizeEndpointClass(DynamicType.Builder<T> subclassBuilder) {}
 
 
 
@@ -83,20 +99,54 @@ public class GuicifiedServerEndpointConfigurator extends ServerEndpointConfig.Co
 		ContextTracker<WebsocketConnectionContext> connectionCtxTracker;
 		WebsocketConnectionContext connectionCtx;
 
+		HttpSession httpSession;
 
 
-		public Object invoke(Object proxy, Method method, Object[] args)
-				throws Throwable {
-			if (method.getAnnotation(OnOpen.class) != null) {
-				connectionCtx = new WebsocketConnectionContext(
-						(Session) args[0], connectionCtxTracker);
+
+		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+			if (isOnOpen(method)) {
+				initialize(args);
 			}
-			var eventCtx = new WebsocketEventContext(
-					(HttpSession) connectionCtx.getConnection().getUserProperties().get(
-							HTTP_SESSION_PROPERTY_NAME),
-					eventCtxTracker);
 			return connectionCtx.callWithinSelf(
-					() -> eventCtx.callWithinSelf(() -> method.invoke(endpoint, args)));
+					() -> new WebsocketEventContext(httpSession, eventCtxTracker).callWithinSelf(
+							() -> method.invoke(endpoint, args)));
+		}
+
+		boolean isOnOpen(Method method) {
+			return method.getAnnotation(OnOpen.class) != null
+				|| (
+					Endpoint.class.isAssignableFrom(method.getDeclaringClass())
+					&& method.getName().equals("onOpen")
+					&& method.getParameterCount() == 2
+					&& method.getParameterTypes()[0] == Session.class
+					&& method.getParameterTypes()[1] == EndpointConfig.class
+				);
+		}
+
+		@SuppressWarnings("unchecked")
+		void initialize(Object[] args) {
+			Session connection = (Session) args[0];
+			WebsocketConnectionProxy wrappedConnection =
+					new WebsocketConnectionProxy(connection, eventCtxTracker);
+			connectionCtx = new WebsocketConnectionContext(
+					wrappedConnection, connectionCtxTracker);
+			args[0] = wrappedConnection;
+
+			var userProperties = connection.getUserProperties();
+			httpSession = (HttpSession) userProperties.get(HTTP_SESSION_PROPERTY_NAME);
+
+			// jetty has separate properties for each connections,
+			// but tomcat has 1 per http session, so we need a map
+			Map<Session, WebsocketConnectionContext> ctxs;
+			synchronized (userProperties) {
+				ctxs = (Map<Session, WebsocketConnectionContext>)
+						userProperties.get(CONNECTION_CTXS_PROPERTY_NAME);
+				if (ctxs == null) {
+					ctxs = new ConcurrentHashMap<>();
+					userProperties.put(CONNECTION_CTXS_PROPERTY_NAME, ctxs);
+				}
+			}
+			ctxs.put(connection, connectionCtx);
 		}
 
 
