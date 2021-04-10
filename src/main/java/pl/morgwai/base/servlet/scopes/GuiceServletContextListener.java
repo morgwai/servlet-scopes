@@ -19,10 +19,14 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRegistration;
 import javax.servlet.http.HttpServlet;
+import javax.websocket.DeploymentException;
+import javax.websocket.server.ServerContainer;
+import javax.websocket.server.ServerEndpointConfig;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+
 import pl.morgwai.base.guice.scopes.ContextTrackingExecutor;
 
 
@@ -51,13 +55,16 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Programmatically adds servlets and filters. If all app's servlets and filters are configured
-	 * via annotations or <code>web.xml</code> file, then this method can be left empty. Convenience
-	 * helper methods {@link #addServlet(String, Class, String...)} and
-	 * {@link #addFilter(String, Class, String...)} are provided for the most common cases.
+	 * Programmatically adds servlets, filters and endpoints. If all of these components are
+	 * configured via annotations or <code>web.xml</code> file, then this method can be left empty.
+	 * Convenience helper methods {@link #addServlet(String, Class, String...)},
+	 * {@link #addFilter(String, Class, String...)} and {@link #addEndpoint(Class, String)} are
+	 * provided for the most common cases.
 	 */
-	protected abstract void configureServletsAndFilters() throws ServletException;
+	protected abstract void configureServletsFiltersEndpoints()
+			throws ServletException, DeploymentException;
 	protected ServletContext ctx;
+	protected ServerContainer websocketContainer;
 
 
 
@@ -65,9 +72,9 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * Adds async servlet and injects its dependencies.
 	 */
 	protected ServletRegistration.Dynamic addServlet(
-			String name, Class<? extends HttpServlet> aClass, String... urlPatterns)
+			String name, Class<? extends HttpServlet> servletClass, String... urlPatterns)
 					throws ServletException {
-		Servlet servlet = ctx.createServlet(aClass);
+		Servlet servlet = ctx.createServlet(servletClass);
 		INJECTOR.injectMembers(servlet);
 		ServletRegistration.Dynamic reg = ctx.addServlet(name, servlet);
 		reg.addMapping(urlPatterns);
@@ -79,18 +86,34 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Adds async filter for dispatcher type <code>REQUEST</code> and injects its dependencies.
+	 * Adds async filter at the end of the chain (with <code>isMatchAfter==true</code>) for
+	 * dispatcher type <code>REQUEST</code> and injects its dependencies.
 	 */
 	protected FilterRegistration.Dynamic addFilter(
-			String name, Class<? extends Filter> aClass, String... urlPatterns)
+			String name, Class<? extends Filter> filterClass, String... urlPatterns)
 					throws ServletException {
-		Filter filter = ctx.createFilter(aClass);
+		Filter filter = ctx.createFilter(filterClass);
 		INJECTOR.injectMembers(filter);
 		FilterRegistration.Dynamic reg = ctx.addFilter(name, filter);
 		reg.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, urlPatterns);
 		reg.setAsyncSupported(true);
 		log.info("registered filter " + name);
 		return reg;
+	}
+
+
+
+	/**
+	 * Adds endpoint using {@link GuicifiedServerEndpointConfigurator}. Useful mostly for endpoints
+	 * extending <code>javax.websocket.Endpoint</code>.
+	 */
+	protected void addEndpoint(Class<?> endpointClass, String path) throws DeploymentException {
+		websocketContainer.addEndpoint(
+			ServerEndpointConfig.Builder
+				.create(endpointClass, path)
+				.configurator(new GuicifiedServerEndpointConfigurator())
+				.build());
+		log.info("registered endpoint " + endpointClass.getSimpleName());
 	}
 
 
@@ -104,6 +127,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		log.info("Guice INJECTOR created successfully");
 
 		ctx = initializationEvent.getServletContext();
+		websocketContainer = ((ServerContainer) ctx.getAttribute(
+				"javax.websocket.server.ServerContainer"));
 		try {
 			Filter requestContextFilter = ctx.createFilter(RequestContextFilter.class);
 			INJECTOR.injectMembers(requestContextFilter);
@@ -112,8 +137,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			reg.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, "/*");
 			reg.setAsyncSupported(true);
 
-			configureServletsAndFilters();
-		} catch (ServletException e) {
+			configureServletsFiltersEndpoints();
+		} catch (ServletException | DeploymentException e) {
 			throw new RuntimeException(e);
 		}
 	}

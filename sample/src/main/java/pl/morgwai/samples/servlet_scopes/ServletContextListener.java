@@ -13,14 +13,10 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebListener;
 import javax.websocket.DeploymentException;
-import javax.websocket.server.ServerContainer;
-import javax.websocket.server.ServerEndpointConfig;
-
 import com.google.inject.Module;
 import com.google.inject.name.Names;
 
 import pl.morgwai.base.servlet.scopes.GuiceServletContextListener;
-import pl.morgwai.base.servlet.scopes.GuicifiedServerEndpointConfigurator;
 
 
 
@@ -52,7 +48,8 @@ public class ServletContextListener extends GuiceServletContextListener {
 
 
 	@Override
-	protected void configureServletsAndFilters() throws ServletException {
+	protected void configureServletsFiltersEndpoints()
+			throws ServletException, DeploymentException {
 		String websocketPath = "/websocket/chat";
 		Filter ensureSessionFilter = ctx.createFilter(EnsureSessionFilter.class);
 		INJECTOR.injectMembers(ensureSessionFilter);
@@ -62,19 +59,7 @@ public class ServletContextListener extends GuiceServletContextListener {
 		reg.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, websocketPath);
 		reg.setAsyncSupported(true);
 
-		var container = ((ServerContainer) ctx.getAttribute(
-				"javax.websocket.server.ServerContainer"));
-		try {
-			container.addEndpoint(
-				ServerEndpointConfig.Builder
-				.create(ChatEndpoint.class, websocketPath)
-				.configurator(new GuicifiedServerEndpointConfigurator()
-			).build());
-		} catch (DeploymentException e) {
-			e.printStackTrace();
-			throw new ServletException(e);
-		}
-
+		addEndpoint(ChatEndpoint.class, websocketPath);
 		addServlet(TestServlet.class.getSimpleName(), TestServlet.class, "/test");
 	}
 
