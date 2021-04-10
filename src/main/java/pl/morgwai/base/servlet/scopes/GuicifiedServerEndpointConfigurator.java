@@ -63,7 +63,13 @@ public class GuicifiedServerEndpointConfigurator extends ServerEndpointConfig.Co
 
 	@Override
 	public <T> T getEndpointInstance(Class<T> endpointClass) throws InstantiationException {
-		T instance = super.getEndpointInstance(endpointClass);
+		T instance;
+		try {
+			instance = endpointClass.getConstructor().newInstance();
+		} catch (IllegalAccessException | IllegalArgumentException
+				| InvocationTargetException | NoSuchMethodException | SecurityException e) {
+			throw new InstantiationException(e.toString());
+		}
 		GuiceServletContextListener.INJECTOR.injectMembers(instance);
 		DynamicType.Builder<T> subclassBuilder = new ByteBuddy()
 			.subclass(endpointClass)
@@ -74,12 +80,7 @@ public class GuicifiedServerEndpointConfigurator extends ServerEndpointConfig.Co
 		customizeEndpointClass(subclassBuilder);
 		Class<? extends T> dynamicSubclass =
 				subclassBuilder.make().load(endpointClass.getClassLoader()).getLoaded();
-		try {
-			return dynamicSubclass.getConstructor().newInstance();
-		} catch (IllegalAccessException | IllegalArgumentException
-				| InvocationTargetException | NoSuchMethodException | SecurityException e) {
-			throw new InstantiationException(e.toString());
-		}
+		return super.getEndpointInstance(dynamicSubclass);
 	}
 
 	public <T> void customizeEndpointClass(DynamicType.Builder<T> subclassBuilder) {}
