@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Piotr Morgwai Kotarbinski
+ * Copyright (c) Piotr Morgwai Kotarbinski
  */
 package pl.morgwai.samples.servlet_scopes;
 

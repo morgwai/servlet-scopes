@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Piotr Morgwai Kotarbinski
+ * Copyright (c) Piotr Morgwai Kotarbinski
  */
 package pl.morgwai.samples.servlet_scopes;
 
@@ -15,7 +15,9 @@ import javax.servlet.http.HttpServletRequest;
 
 
 /**
- * blah
+ * Makes sure that each passing request has an <code>HttpSession</code> created. This is necessary
+ * if {@link pl.morgwai.base.servlet.scopes.ServletModule#httpSessionScope} is used in a websocket
+ * endpoint, as there's no way to create a session from the endpoint layer later on.
  */
 public class EnsureSessionFilter implements Filter {
 

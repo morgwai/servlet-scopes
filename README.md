@@ -1,6 +1,24 @@
-# Guice Servlet Scopes
+# Servlet and Websocket Guice Scopes
 
-Servlet Request+Session and Websocket Message+Session Guice Scopes
+
+## SUMMARY
+
+### requestScope
+
+Scopes bindings to either an `HttpServletRequest` or a websocket event (connection opened/closed, message received, error occured).<br/>
+Spans over a single invocations of a method (`Servlet.doXXX` or one of websocket endpoint's methods associated with a given event).<br/>
+Having a common scope for servlet requests and websocket events allows instances from a single request scoped binding to be obtained both in servlets and endpoints without a need for 2 separate bindings with different `@Named` annotation value.
+
+
+### websocketConnectionScope
+
+Scopes bindings to a websocket connection (`javax.websocket.Session`).<br/>
+Spans over a lifetime of a given endpoint instance. Specifically, all calls to given endpoint's annotated methods (from `@OnOpen`, across all calls to `@OnMessage` and `@OnError` until and including `@OnClose`) or methods overriding those of `javax.websocket.Endpoint` together with methods of registered `MessageHandler`s are executed within a single `websocketConnectionScope`.
+
+
+### httpSessionScope
+
+Scopes bindings to a given `HttpSession`. Available both to servlets and websocket endpoints.
 
 
 
@@ -8,7 +26,7 @@ Servlet Request+Session and Websocket Message+Session Guice Scopes
 
 ### [ServletModule](src/main/java/pl/morgwai/base/servlet/scopes/ServletModule.java)
 
-Guice Servlet `Scope`s, `ContextTracker`s and some helper methods.
+Contains the above `Scope`s, `ContextTracker`s and some helper methods.
 
 
 ### [GuiceServletContextListener](src/main/java/pl/morgwai/base/servlet/scopes/GuiceServletContextListener.java)
@@ -16,10 +34,15 @@ Guice Servlet `Scope`s, `ContextTracker`s and some helper methods.
 Base class for app's `ServletContextListener`. Creates and configures apps Guice `Injector` and the above `ServletModule`. Provides also some helper methods.
 
 
+### [GuicifiedServerEndpointConfigurator](src/main/java/pl/morgwai/base/servlet/scopes/GuicifiedServerEndpointConfigurator.java)
+
+A websocket endpoint `Configurator` that automatically injects dependencies of newly created endpoint instances and decorates their methods to automatically create context for websocket connections and events.
+
+
 ### [ContextTrackingExecutor](https://github.com/morgwai/guice-context-scopes/blob/master/src/main/java/pl/morgwai/base/guice/scopes/ContextTrackingExecutor.java)
 
-A `ThreadPoolExecutor` that upon dispatching automatically updates which thread handles which `Context` (Request, Message, Session). Instances should usually be obtained using helper methods from the above `ServletModule`.<br/>
-(this class actually comes from [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes) on top of which this one is built)
+A `ThreadPoolExecutor` that upon dispatching automatically updates which thread runs within which `Context` (Request, Message, Session). Instances should usually be obtained using helper methods from the above `ServletModule`.<br/>
+(this class actually comes from [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes) on top of which this one is built).
 
 
 
@@ -34,21 +57,35 @@ public class ServletContextListener extends GuiceServletContextListener {
 		LinkedList<Module> modules = new LinkedList<Module>();
 		modules.add((binder) -> {
 			binder.bind(MyService.class).in(servletModule.requestScope);
+				// @Inject Provider<MyService> myServiceProvider;
+				// will now work both in servlets and endpoints
 			// more bindings here...
 		});
 		return modules;
 	}
 
 	@Override
-	protected void configureServletsAndFilters() throws ServletException {
-		addServlet("myServlet", MyServlet.class, "/myServlet");
-		// more servlets here...
+	protected void configureServletsFiltersEndpoints() throws ServletException {
+		addServlet("myServlet", MyServlet.class, "/myServlet");  // will have its fields injected
+		// more servlets/filters here...
 	}
 }
+```
+
+```java
+@ServerEndpoint(
+	value = "/websocket/mySocket",
+	configurator = GuicifiedServerEndpointConfigurator.class)
+public class MyEndpoint {
+	// endpoint implementation here...
+}
+// MyEndpoint will have its fields injected. Methods onOpen, onClose, onError and registered
+// MessageHandlers will run within requestScope, websocketConnectionScope and httpSessionScope
 ```
 
 
 
 ## EXAMPLES
 
-See [sample app](sample)
+[a trivial sample app](sample)<br/>
+[a more complex sample app](https://github.com/morgwai/servlet-jpa/tree/master/sample) from derived [servlet-jpa lib](https://github.com/morgwai/servlet-jpa) (see especially [SaveQueryServlet class](https://github.com/morgwai/servlet-jpa/blob/master/sample/src/main/java/pl/morgwai/samples/servlet_jpa/servlets/SaveQueryServlet.java))

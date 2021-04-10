@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Piotr Morgwai Kotarbinski
+ * Copyright (c) Piotr Morgwai Kotarbinski
  */
 package pl.morgwai.samples.servlet_scopes;
 
@@ -16,6 +16,17 @@ import javax.websocket.Session;
 
 
 
+/**
+ * A simple chat-over-websocket endpoint that demonstrates use of scopes. It gets injected 3
+ * instances of {@link Service}, each in different scope and returns their hashcode to every
+ * message received. The 1 {@link pl.morgwai.base.servlet.scopes.ServletModule#requestScope}d will
+ * change every time, the 1
+ * {@link pl.morgwai.base.servlet.scopes.ServletModule#websocketConnectionScope}d will remain the
+ * same within each browser tab/window (but will be different for each tab/window), the 1
+ * {@link pl.morgwai.base.servlet.scopes.ServletModule#httpSessionScope}d will remain the same
+ * across all windows/tabs of a given browser session, but will be different if the app is opened
+ * in 2 different browsers.
+ */
 public class ChatEndpoint extends Endpoint {
 
 

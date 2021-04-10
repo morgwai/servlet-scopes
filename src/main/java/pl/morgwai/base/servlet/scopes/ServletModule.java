@@ -31,10 +31,25 @@ public class ServletModule implements Module {
 
 	public final ContextTracker<RequestContext> requestContextTracker =
 			new ThreadLocalContextTracker<>();
+
+	/**
+	 * Scopes bindings to either a {@link ServletRequestContext} or a {@link WebsocketEventContext}
+	 * (Objects bound to this scope can be obtained both in servlets and endpoints).
+	 * @see RequestContext
+	 */
 	public final Scope requestScope = new ContextScope<>("REQUEST_sCOPE", requestContextTracker);
 
 
 
+	/**
+	 * Scopes bindings to a given <code>HttpSession</code>. Available both to servlets and websocket
+	 * endpoints.<br/>
+	 * <br/>
+	 * <b>Note:</b> there's no way to create an <code>HttpSession</code> from the websocket endpoint
+	 * layer if it does not exist before. To safely use this scope in websocket endpoints, other
+	 * layers must ensure that a session exists (for example a <code>Filter</code> targeting URL
+	 * patterns of websockets can be used).
+	 */
 	public final Scope httpSessionScope = new Scope() {
 
 		@Override
@@ -62,6 +77,10 @@ public class ServletModule implements Module {
 
 	public final ContextTracker<WebsocketConnectionContext> websocketConnectionContextTracker =
 			new ThreadLocalContextTracker<>();
+
+	/**
+	 * Scopes bindings to a given {@link WebsocketConnectionContext}.
+	 */
 	public final Scope websocketConnectionScope =
 			new ContextScope<>("WEBSOCKET_CONNECTION_SCOPE", websocketConnectionContextTracker);
 

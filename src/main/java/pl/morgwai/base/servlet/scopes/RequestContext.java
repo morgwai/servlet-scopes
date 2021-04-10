@@ -13,6 +13,14 @@ import pl.morgwai.base.guice.scopes.TrackableContext;
 
 /**
  * Context of a <code>HttpServletRequest</code> or a websocket event.
+ * Each instance is coupled with a single invocations of some method, which makes it suitable
+ * for storing short-living objects, such as <code>EntityManager</code>s or DB transactions.
+ * Having a common super class for {@link ServletRequestContext} and {@link WebsocketEventContext}
+ * allows instances from a single request scoped binding to be obtained both in servlets and
+ * endpoints without a need for 2 separate bindings with different <code>@Named</code> annotation
+ * value.
+ *
+ * @see ServletModule#requestScope corresponding <code>Scope</code>
  */
 public abstract class RequestContext extends TrackableContext<RequestContext> {
 

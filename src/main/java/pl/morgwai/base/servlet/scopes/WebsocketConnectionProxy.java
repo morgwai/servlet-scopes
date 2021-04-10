@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Piotr Morgwai Kotarbinski
+ * Copyright (c) Piotr Morgwai Kotarbinski
  */
 package pl.morgwai.base.servlet.scopes;
 
@@ -25,7 +25,9 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 /**
- * blah
+ * Wrapper around <code>javax.websocket.Session</code> which decorates passed
+ * <code>MessageHandler</code>s with {@link WebsocketEventContext} tracking.
+ * This is an internal class and users of the library don't need to deal with it directly.
  */
 class WebsocketConnectionProxy implements Session {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Piotr Morgwai Kotarbinski
+ * Copyright (c) Piotr Morgwai Kotarbinski
  */
 package pl.morgwai.base.servlet.scopes;
 
@@ -30,18 +30,45 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 /**
- * blah
+ * Automatically injects dependencies of newly created endpoint instances and decorates their
+ * methods to automatically create context for websocket connections and events.<br/>
+ * <br/>
+ * For endpoints annotated with <code>@ServerEndpoint</code> add this class as a
+ * <code>configurator</code> param of the annotation:
+ * <pre>
+ *@ServerEndpoint(
+ *	value = "/websocket/mySocket",
+ *	configurator = GuicifiedServerEndpointConfigurator.class)
+ *public class MyEndpoint {...}
+ * </pre>
+ * For endpoints added programmatically build a
+ * <code>ServerEndpointConfig</code> similar to the below:
+ * <pre>
+ *websocketContainer.addEndpoint(
+ *	ServerEndpointConfig.Builder
+ *		.create(MyEndpoint.class, "/websocket/mySocket")
+ *		.configurator(new GuicifiedServerEndpointConfigurator())
+ *		.build());
+ * </pre>
  */
 public class GuicifiedServerEndpointConfigurator extends ServerEndpointConfig.Configurator {
 
 
 
 	/**
-	 * blah
+	 * Name of the property in user properties under which user's <code>HttpSession</code> is stored
+	 * during the handshake.
 	 */
 	public static final String HTTP_SESSION_PROPERTY_NAME =
 			GuicifiedServerEndpointConfigurator.class.getName() + ".httpSession";
 
+	/**
+	 * Name of the property in user properties under which
+	 * Map&lt;Session, WebsocketConnectionContext&gt; is stored. Jetty has a separate properties
+	 * instance for each websocket connection, so it will contain just 1 entry. Tomcat has 1
+	 * instance per HTTP session, so it will contain entries for all websocket connections of a
+	 * given user.
+	 */
 	public static final String CONNECTION_CTXS_PROPERTY_NAME =
 			GuicifiedServerEndpointConfigurator.class.getName() + ".connectionCtx";
 
@@ -83,7 +110,11 @@ public class GuicifiedServerEndpointConfigurator extends ServerEndpointConfig.Co
 		return super.getEndpointInstance(dynamicSubclass);
 	}
 
-	public <T> void customizeEndpointClass(DynamicType.Builder<T> subclassBuilder) {}
+	/**
+	 * Allows to further customize decorated dynamic subclasses of endpoints in derived
+	 * configurators. By default it does nothing.
+	 */
+	protected <T> void customizeEndpointClass(DynamicType.Builder<T> subclassBuilder) {}
 
 
 
@@ -138,8 +169,6 @@ public class GuicifiedServerEndpointConfigurator extends ServerEndpointConfig.Co
 			var userProperties = connection.getUserProperties();
 			httpSession = (HttpSession) userProperties.get(HTTP_SESSION_PROPERTY_NAME);
 
-			// jetty has separate properties for each connections,
-			// but tomcat has 1 per http session, so we need a map
 			Map<Session, WebsocketConnectionContext> ctxs;
 			synchronized (userProperties) {
 				ctxs = (Map<Session, WebsocketConnectionContext>)

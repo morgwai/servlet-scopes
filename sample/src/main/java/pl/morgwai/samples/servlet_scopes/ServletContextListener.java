@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Piotr Morgwai Kotarbinski
+ * Copyright (c) Piotr Morgwai Kotarbinski
  */
 package pl.morgwai.samples.servlet_scopes;
 
@@ -51,11 +51,13 @@ public class ServletContextListener extends GuiceServletContextListener {
 	protected void configureServletsFiltersEndpoints()
 			throws ServletException, DeploymentException {
 		String websocketPath = "/websocket/chat";
+
+		// mappings with isMatchAfter==true don't match websocket requests, so we can't just do
+		// addFilter("ensureSessionFilter", EnsureSessionFilter.class, websocketPath);
 		Filter ensureSessionFilter = ctx.createFilter(EnsureSessionFilter.class);
 		INJECTOR.injectMembers(ensureSessionFilter);
 		FilterRegistration.Dynamic reg =
 				ctx.addFilter(EnsureSessionFilter.class.getSimpleName(), ensureSessionFilter);
-		// filter mappings with isMatchAfter==true don't match websocket requests
 		reg.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, websocketPath);
 		reg.setAsyncSupported(true);
 

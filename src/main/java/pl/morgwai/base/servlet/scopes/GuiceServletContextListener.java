@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Piotr Morgwai Kotarbinski
+ * Copyright (c) Piotr Morgwai Kotarbinski
  */
 package pl.morgwai.base.servlet.scopes;
 
@@ -48,9 +48,14 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * {@link #servletModule}.
 	 */
 	protected abstract LinkedList<Module> configureInjections();
-	public static Injector INJECTOR;  // public static for non-programmatic servlets/filters that
-			// cannot extend GuicifiedServlet/GuicifiedFilter
 	protected ServletModule servletModule;
+
+	/**
+	 * App wide Guice <code>Injector</code>. It's made public static so that non-programmatic
+	 * servlets/filters that cannot extend GuicifiedServlet/GuicifiedFilter may use it directly
+	 * to inject their dependencies (usually in the <code>init(config)</code> method).
+	 */
+	public static Injector INJECTOR;
 
 
 
@@ -104,8 +109,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Adds endpoint using {@link GuicifiedServerEndpointConfigurator}. Useful mostly for endpoints
-	 * extending <code>javax.websocket.Endpoint</code>.
+	 * Adds endpoint using {@link GuicifiedServerEndpointConfigurator}. Useful mostly for
+	 * unannotated endpoints extending <code>javax.websocket.Endpoint</code>.
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path) throws DeploymentException {
 		websocketContainer.addEndpoint(
