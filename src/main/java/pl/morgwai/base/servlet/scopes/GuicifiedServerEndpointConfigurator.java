@@ -114,8 +114,10 @@ public class GuicifiedServerEndpointConfigurator extends ServerEndpointConfig.Co
 		}
 
 		boolean isOnOpen(Method method) {
-			return method.getAnnotation(OnOpen.class) != null
-				|| (
+			return (
+					method.getAnnotation(OnOpen.class) != null
+					&& ! Endpoint.class.isAssignableFrom(method.getDeclaringClass())
+				) || (
 					Endpoint.class.isAssignableFrom(method.getDeclaringClass())
 					&& method.getName().equals("onOpen")
 					&& method.getParameterCount() == 2
