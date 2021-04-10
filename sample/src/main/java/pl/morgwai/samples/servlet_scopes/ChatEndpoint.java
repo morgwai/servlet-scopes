@@ -3,6 +3,7 @@
  */
 package pl.morgwai.samples.servlet_scopes;
 
+import java.io.IOException;
 import java.util.logging.Logger;
 
 import javax.inject.Inject;
@@ -45,41 +46,53 @@ public class ChatEndpoint extends Endpoint {
 		connection.setMaxIdleTimeout(5l * 60l * 1000l);
 		nickname = "user-" + connection.getId();
 		connection.addMessageHandler(String.class, (message) -> this.onMessage(message));
-		var asyncRemote = connection.getAsyncRemote();
-		synchronized (connection) {
-			asyncRemote.sendText(String.format("### assigned nickname: %s", nickname));
-			asyncRemote.sendText(String.format(
-					"### service hashcodes: event=%d, connection=%d, httpSession=%d",
+		var basicRemote = connection.getBasicRemote();
+		try {
+			synchronized (connection) {
+			basicRemote.sendText(String.format("### assigned nickname: %s", nickname));
+			basicRemote.sendText(String.format(
+					"### service hashCodes: event=%d, connection=%d, httpSession=%d",
 					wsEventScopedProvider.get().hashCode(),
 					connectionScopedProvider.get().hashCode(),
 					httpSessionScopedProvider.get().hashCode()));
+			}
+			broadcast(String.format("### %s has joined", nickname));
+		} catch (IOException e) {
+			log.warning("error while sending message: " + e);
 		}
-		broadcast(String.format("### %s has joined", nickname));
 	}
 
 
 
 	public void onMessage(String message) {
-		var asyncRemote = connection.getAsyncRemote();
-		synchronized (connection) {
-			asyncRemote.sendText(String.format(
-					"### service hashcodes: event=%d, connection=%d, httpSession=%d",
-					wsEventScopedProvider.get().hashCode(),
-					connectionScopedProvider.get().hashCode(),
-					httpSessionScopedProvider.get().hashCode()));
-		}
 		StringBuilder formattedMessageBuilder =
 				new StringBuilder(nickname.length() + message.length() + 10);
 		formattedMessageBuilder.append(nickname).append(": ");
 		appendFiltered(message, formattedMessageBuilder);
-		broadcast(formattedMessageBuilder.toString());
+		var basicRemote = connection.getBasicRemote();
+		try {
+			synchronized (connection) {
+			basicRemote.sendText(String.format(
+					"### service hashCodes: event=%d, connection=%d, httpSession=%d",
+					wsEventScopedProvider.get().hashCode(),
+					connectionScopedProvider.get().hashCode(),
+					httpSessionScopedProvider.get().hashCode()));
+			}
+			broadcast(formattedMessageBuilder.toString());
+		} catch (IOException e) {
+			log.warning("error while sending message: " + e);
+		}
 	}
 
 
 
 	@Override
 	public void onClose(Session connection, CloseReason reason) {
-		broadcast(String.format("### %s has disconnected", nickname));
+		try {
+			broadcast(String.format("### %s has disconnected", nickname));
+		} catch (IOException e) {
+			log.warning("error while sending message: " + e);
+		}
 	}
 
 
@@ -92,12 +105,12 @@ public class ChatEndpoint extends Endpoint {
 
 
 
-	void broadcast(String msg) {
+	void broadcast(String msg) throws IOException {
 		if (isShutdown) return;
 		for (Session peerConnection: connection.getOpenSessions()) {
 			if (peerConnection.isOpen()) {
 				synchronized (peerConnection) {
-					peerConnection.getAsyncRemote().sendText(msg);
+					peerConnection.getBasicRemote().sendText(msg);
 				}
 			}
 		}
