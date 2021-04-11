@@ -38,7 +38,7 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * <pre>
  *@ServerEndpoint(
  *	value = "/websocket/mySocket",
- *	configurator = GuicifiedServerEndpointConfigurator.class)
+ *	configurator = GuiceServerEndpointConfigurator.class)
  *public class MyEndpoint {...}
  * </pre>
  * For endpoints added programmatically build a
@@ -47,11 +47,11 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  *websocketContainer.addEndpoint(
  *	ServerEndpointConfig.Builder
  *		.create(MyEndpoint.class, "/websocket/mySocket")
- *		.configurator(new GuicifiedServerEndpointConfigurator())
+ *		.configurator(new GuiceServerEndpointConfigurator())
  *		.build());
  * </pre>
  */
-public class GuicifiedServerEndpointConfigurator extends ServerEndpointConfig.Configurator {
+public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Configurator {
 
 
 
@@ -60,7 +60,7 @@ public class GuicifiedServerEndpointConfigurator extends ServerEndpointConfig.Co
 	 * during the handshake.
 	 */
 	public static final String HTTP_SESSION_PROPERTY_NAME =
-			GuicifiedServerEndpointConfigurator.class.getName() + ".httpSession";
+			GuiceServerEndpointConfigurator.class.getName() + ".httpSession";
 
 	/**
 	 * Name of the property in user properties under which
@@ -70,7 +70,7 @@ public class GuicifiedServerEndpointConfigurator extends ServerEndpointConfig.Co
 	 * given user.
 	 */
 	public static final String CONNECTION_CTXS_PROPERTY_NAME =
-			GuicifiedServerEndpointConfigurator.class.getName() + ".connectionCtx";
+			GuiceServerEndpointConfigurator.class.getName() + ".connectionCtx";
 
 
 

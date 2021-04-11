@@ -82,7 +82,7 @@ class WebsocketConnectionProxy implements Session {
 				// wrapped connection from connectionCtx from ctxs from userProperties
 				((Map<Session, WebsocketConnectionContext>)
 					connection.getUserProperties().get(
-							GuicifiedServerEndpointConfigurator.CONNECTION_CTXS_PROPERTY_NAME)
+							GuiceServerEndpointConfigurator.CONNECTION_CTXS_PROPERTY_NAME)
 				).get(connection).connection);
 		}
 		return result;
@@ -95,7 +95,7 @@ class WebsocketConnectionProxy implements Session {
 		this.wrapped = connection;
 		this.eventCtxTracker = eventCtxTracker;
 		this.httpSession = (HttpSession) wrapped.getUserProperties().get(
-				GuicifiedServerEndpointConfigurator.HTTP_SESSION_PROPERTY_NAME);
+				GuiceServerEndpointConfigurator.HTTP_SESSION_PROPERTY_NAME);
 	}
 
 

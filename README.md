@@ -34,7 +34,7 @@ Contains the above `Scope`s, `ContextTracker`s and some helper methods.
 Base class for app's `ServletContextListener`. Creates and configures apps Guice `Injector` and the above `ServletModule`. Provides also some helper methods.
 
 
-### [GuicifiedServerEndpointConfigurator](src/main/java/pl/morgwai/base/servlet/scopes/GuicifiedServerEndpointConfigurator.java)
+### [GuiceServerEndpointConfigurator](src/main/java/pl/morgwai/base/servlet/scopes/GuiceServerEndpointConfigurator.java)
 
 A websocket endpoint `Configurator` that automatically injects dependencies of newly created endpoint instances and decorates their methods to automatically create context for websocket connections and events.
 
@@ -75,7 +75,7 @@ public class ServletContextListener extends GuiceServletContextListener {
 ```java
 @ServerEndpoint(
 	value = "/websocket/mySocket",
-	configurator = GuicifiedServerEndpointConfigurator.class)
+	configurator = GuiceServerEndpointConfigurator.class)
 public class MyEndpoint {
 	// endpoint implementation here...
 }

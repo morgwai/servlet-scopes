@@ -109,14 +109,14 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Adds endpoint using {@link GuicifiedServerEndpointConfigurator}. Useful mostly for
-	 * unannotated endpoints extending <code>javax.websocket.Endpoint</code>.
+	 * Adds endpoint using {@link GuiceServerEndpointConfigurator}. Useful mostly for unannotated
+	 * endpoints extending <code>javax.websocket.Endpoint</code>.
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path) throws DeploymentException {
 		websocketContainer.addEndpoint(
 			ServerEndpointConfig.Builder
 				.create(endpointClass, path)
-				.configurator(new GuicifiedServerEndpointConfigurator())
+				.configurator(new GuiceServerEndpointConfigurator())
 				.build());
 		log.info("registered endpoint " + endpointClass.getSimpleName());
 	}
