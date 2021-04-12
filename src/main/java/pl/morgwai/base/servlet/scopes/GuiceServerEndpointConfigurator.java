@@ -101,20 +101,22 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		DynamicType.Builder<T> subclassBuilder = new ByteBuddy()
 			.subclass(endpointClass)
 			.method(ElementMatchers.any())
-			.intercept(InvocationHandlerAdapter.of(new EndpointDecorator(instance)));
+			.intercept(InvocationHandlerAdapter.of(
+					new EndpointDecorator(getEndpointInvocationHandler(instance))));
 		ServerEndpoint annotation = endpointClass.getAnnotation(ServerEndpoint.class);
 		if (annotation != null) subclassBuilder.annotateType(annotation);
-		customizeEndpointClass(subclassBuilder);
 		Class<? extends T> dynamicSubclass =
 				subclassBuilder.make().load(endpointClass.getClassLoader()).getLoaded();
 		return super.getEndpointInstance(dynamicSubclass);
 	}
 
 	/**
-	 * Allows to further customize decorated dynamic subclasses of endpoints in derived
-	 * configurators. By default it does nothing.
+	 * Subclasses may override this method to further customize endpoints. By default it returns
+	 * handler that simply invokes a given method on <code>endpoint</code>.
 	 */
-	protected <T> void customizeEndpointClass(DynamicType.Builder<T> subclassBuilder) {}
+	protected <T> InvocationHandler getEndpointInvocationHandler(T endpoint) {
+		return (proxy, method, args) -> method.invoke(endpoint, args);
+	}
 
 
 
@@ -122,7 +124,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-		Object endpoint;
+		InvocationHandler endpointInvocationHandler;
 
 		@Inject
 		ContextTracker<RequestContext> eventCtxTracker;
@@ -140,8 +142,13 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				initialize(args);
 			}
 			return connectionCtx.callWithinSelf(
-					() -> new WebsocketEventContext(httpSession, eventCtxTracker).callWithinSelf(
-							() -> method.invoke(endpoint, args)));
+				() -> new WebsocketEventContext(httpSession, eventCtxTracker).callWithinSelf(
+					() -> {
+						try {
+							return endpointInvocationHandler.invoke(proxy, method, args);
+						} catch (Throwable e) {
+							throw new InvocationTargetException(e);
+						}}));
 		}
 
 		boolean isOnOpen(Method method) {
@@ -183,8 +190,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-		public EndpointDecorator(Object endpoint) {
-			this.endpoint = endpoint;
+		public EndpointDecorator(InvocationHandler endpointInvocationHandler) {
+			this.endpointInvocationHandler = endpointInvocationHandler;
 			GuiceServletContextListener.INJECTOR.injectMembers(this);
 		}
 	}
