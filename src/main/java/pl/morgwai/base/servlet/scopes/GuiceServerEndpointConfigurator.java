@@ -30,6 +30,8 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 /**
  * Automatically injects dependencies of newly created endpoint instances and decorates their
  * methods to automatically create context for websocket connections and events.<br/>
+ * <b>NOTE:</b> methods annotated with <code>@OnOpen</code> of endpoints using this configurator
+ * <b>must</b> have <code>javax.websocket.Session</code> param.<br/>
  * <br/>
  * For endpoints annotated with <code>@ServerEndpoint</code> add this class as a
  * <code>configurator</code> param of the annotation:
@@ -129,8 +131,9 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+			var wrappedConnection = wrapConnection(args);
 			if (isOnOpen(method)) {
-				initialize(args);
+				initialize(wrappedConnection);
 			}
 			return connectionCtx.callWithinSelf(
 				() -> new WebsocketEventContext(httpSession, eventCtxTracker).callWithinSelf(
@@ -140,6 +143,18 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 						} catch (Throwable e) {
 							throw new InvocationTargetException(e);
 						}}));
+		}
+
+		WebsocketConnectionProxy wrapConnection(Object[] args) {
+			for (int i = 0; i < args.length; i++) {
+				if (args[i] instanceof Session) {
+					var wrappedConnection =
+							new WebsocketConnectionProxy((Session) args[i], eventCtxTracker);
+					args[i] = wrappedConnection;
+					return wrappedConnection;
+				}
+			}
+			return null;
 		}
 
 		boolean isOnOpen(Method method) {
@@ -155,13 +170,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				);
 		}
 
-		void initialize(Object[] args) {
-			Session connection = (Session) args[0];
-			WebsocketConnectionProxy wrappedConnection =
-					new WebsocketConnectionProxy(connection, eventCtxTracker);
-			args[0] = wrappedConnection;
-
-			var userProperties = connection.getUserProperties();
+		void initialize(WebsocketConnectionProxy wrappedConnection) {
+			if (wrappedConnection == null) throw new RuntimeException(
+					"method annotated with @OnOpen must have a javax.websocket.Session param");
+			var userProperties = wrappedConnection.getUserProperties();
 			httpSession = (HttpSession) userProperties.get(HTTP_SESSION_PROPERTY_NAME);
 			connectionCtx = new WebsocketConnectionContext(
 					wrappedConnection, connectionCtxTracker);

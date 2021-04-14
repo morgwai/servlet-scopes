@@ -39,7 +39,7 @@ class WebsocketConnectionProxy implements Session {
 
 	HttpSession httpSession;
 
-	WebsocketConnectionContext connectionCtx;
+	WebsocketConnectionContext connectionCtx;  // set by WebsocketConnectionContext constructor
 	void setConnectionCtx(WebsocketConnectionContext ctx) { this.connectionCtx = ctx; }
 
 
@@ -83,6 +83,17 @@ class WebsocketConnectionProxy implements Session {
 		}
 		return result;
 	}
+
+
+
+	@Override
+	public boolean equals(Object other) {
+		if (other == null) return false;
+		if (WebsocketConnectionProxy.class != other.getClass()) return false;
+		return wrapped == ((WebsocketConnectionProxy) other).wrapped;
+	}
+
+	@Override public int hashCode() { return wrapped.hashCode(); }
 
 
 
