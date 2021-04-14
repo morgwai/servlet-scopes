@@ -5,8 +5,6 @@ package pl.morgwai.base.servlet.scopes;
 
 import java.util.EnumSet;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import javax.servlet.DispatcherType;
@@ -26,8 +24,6 @@ import javax.websocket.server.ServerEndpointConfig;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-
-import pl.morgwai.base.guice.scopes.ContextTrackingExecutor;
 
 
 
@@ -145,25 +141,6 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			configureServletsFiltersEndpoints();
 		} catch (ServletException | DeploymentException e) {
 			throw new RuntimeException(e);
-		}
-	}
-
-
-
-	/**
-	 * Helper method for use in {@link #contextDestroyed(ServletContextEvent)}.
-	 */
-	public static void gracefullyShutdownExecutor(
-			ContextTrackingExecutor executor, long timeoutSeconds) {
-		executor.shutdown();
-		try {
-			executor.awaitTermination(timeoutSeconds, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {}
-		if (!executor.isTerminated()) {
-			List<Runnable> remianingTasks = executor.shutdownNow();
-			log.warning(remianingTasks.size() + " tasks still remaining in " + executor.getName());
-		} else {
-			log.info(executor.getName() + " shutdown completed");
 		}
 	}
 
