@@ -6,8 +6,6 @@ package pl.morgwai.base.servlet.scopes;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpSession;
@@ -63,13 +61,9 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			GuiceServerEndpointConfigurator.class.getName() + ".httpSession";
 
 	/**
-	 * Name of the property in user properties under which
-	 * Map&lt;Session, WebsocketConnectionContext&gt; is stored. Jetty has a separate properties
-	 * instance for each websocket connection, so it will contain just 1 entry. Tomcat has 1
-	 * instance per HTTP session, so it will contain entries for all websocket connections of a
-	 * given user.
+	 * Name of the property in user properties under which connection context is stored.
 	 */
-	public static final String CONNECTION_CTXS_PROPERTY_NAME =
+	public static final String CONNECTION_CTX_PROPERTY_NAME =
 			GuiceServerEndpointConfigurator.class.getName() + ".connectionCtx";
 
 
@@ -79,10 +73,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			ServerEndpointConfig config, HandshakeRequest request, HandshakeResponse response) {
 		var httpSession = request.getHttpSession();
 		if (httpSession != null) {
-			var userProperties = config.getUserProperties();
-			synchronized (userProperties) {
-				userProperties.put(HTTP_SESSION_PROPERTY_NAME, httpSession);
-			}
+			config.getUserProperties().put(HTTP_SESSION_PROPERTY_NAME, httpSession);
 		}
 	}
 
@@ -164,28 +155,17 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				);
 		}
 
-		@SuppressWarnings("unchecked")
 		void initialize(Object[] args) {
 			Session connection = (Session) args[0];
 			WebsocketConnectionProxy wrappedConnection =
 					new WebsocketConnectionProxy(connection, eventCtxTracker);
-			connectionCtx = new WebsocketConnectionContext(
-					wrappedConnection, connectionCtxTracker);
 			args[0] = wrappedConnection;
 
 			var userProperties = connection.getUserProperties();
 			httpSession = (HttpSession) userProperties.get(HTTP_SESSION_PROPERTY_NAME);
-
-			Map<Session, WebsocketConnectionContext> ctxs;
-			synchronized (userProperties) {
-				ctxs = (Map<Session, WebsocketConnectionContext>)
-						userProperties.get(CONNECTION_CTXS_PROPERTY_NAME);
-				if (ctxs == null) {
-					ctxs = new ConcurrentHashMap<>();
-					userProperties.put(CONNECTION_CTXS_PROPERTY_NAME, ctxs);
-				}
-			}
-			ctxs.put(connection, connectionCtx);
+			connectionCtx = new WebsocketConnectionContext(
+					wrappedConnection, connectionCtxTracker);
+			userProperties.put(CONNECTION_CTX_PROPERTY_NAME, connectionCtx);
 		}
 
 

@@ -73,17 +73,13 @@ class WebsocketConnectionProxy implements Session {
 
 
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Set<Session> getOpenSessions() {
 		Set<Session> result = new HashSet<>();
 		for (Session connection: wrapped.getOpenSessions()) {
-			result.add(
-				// wrapped connection from connectionCtx from ctxs from userProperties
-				((Map<Session, WebsocketConnectionContext>)
-					connection.getUserProperties().get(
-							GuiceServerEndpointConfigurator.CONNECTION_CTXS_PROPERTY_NAME)
-				).get(connection).connection);
+			var connectionCtx = (WebsocketConnectionContext) connection.getUserProperties().get(
+					GuiceServerEndpointConfigurator.CONNECTION_CTX_PROPERTY_NAME);
+			result.add(connectionCtx.getConnection());
 		}
 		return result;
 	}
