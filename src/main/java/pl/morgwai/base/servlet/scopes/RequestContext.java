@@ -37,14 +37,16 @@ public abstract class RequestContext extends ServerSideContext<RequestContext> {
 	 */
 	public Map<Object, Object> getHttpSessionContextAttributes() {
 		HttpSession session = getHttpSession();
-		@SuppressWarnings("unchecked")
-		var sessionContext =
-				(Map<Object, Object>) session.getAttribute(SESSION_CONTEXT_ATTRIBUTE_NAME);
-		if (sessionContext == null) {
-			sessionContext = new HashMap<>();
-			session.setAttribute(SESSION_CONTEXT_ATTRIBUTE_NAME, sessionContext);
+		synchronized (session) {
+			@SuppressWarnings("unchecked")
+			var sessionContext =
+					(Map<Object, Object>) session.getAttribute(SESSION_CONTEXT_ATTRIBUTE_NAME);
+			if (sessionContext == null) {
+				sessionContext = new HashMap<>();
+				session.setAttribute(SESSION_CONTEXT_ATTRIBUTE_NAME, sessionContext);
+			}
+			return sessionContext;
 		}
-		return sessionContext;
 	}
 
 	private static final String SESSION_CONTEXT_ATTRIBUTE_NAME = "contextAttributes";

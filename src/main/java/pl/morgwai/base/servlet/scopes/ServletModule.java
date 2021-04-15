@@ -57,13 +57,15 @@ public class ServletModule implements Module {
 			return () -> {
 				Map<Object, Object> sessionContextAttributes =
 						requestContextTracker.getCurrentContext().getHttpSessionContextAttributes();
-				@SuppressWarnings("unchecked")
-				T instance = (T) sessionContextAttributes.get(key);
-				if (instance == null) {
-					instance = unscoped.get();
-					sessionContextAttributes.put(key, instance);
+				synchronized (sessionContextAttributes) {
+					@SuppressWarnings("unchecked")
+					T instance = (T) sessionContextAttributes.get(key);
+					if (instance == null) {
+						instance = unscoped.get();
+						sessionContextAttributes.put(key, instance);
+					}
+					return instance;
 				}
-				return instance;
 			};
 		}
 
