@@ -3,6 +3,7 @@
  */
 package pl.morgwai.base.servlet.scopes;
 
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
@@ -17,7 +18,6 @@ import com.google.inject.TypeLiteral;
 import pl.morgwai.base.guice.scopes.ContextScope;
 import pl.morgwai.base.guice.scopes.ContextTracker;
 import pl.morgwai.base.guice.scopes.ContextTrackingExecutor;
-import pl.morgwai.base.guice.scopes.ServerSideContext;
 import pl.morgwai.base.guice.scopes.ThreadLocalContextTracker;
 
 
@@ -55,13 +55,13 @@ public class ServletModule implements Module {
 		@Override
 		public <T> Provider<T> scope(Key<T> key, Provider<T> unscoped) {
 			return () -> {
-				ServerSideContext sessionContext =
-						requestContextTracker.getCurrentContext().getHttpSessionContext();
+				Map<Object, Object> sessionContextAttributes =
+						requestContextTracker.getCurrentContext().getHttpSessionContextAttributes();
 				@SuppressWarnings("unchecked")
-				T instance = (T) sessionContext.getAttribute(key);
+				T instance = (T) sessionContextAttributes.get(key);
 				if (instance == null) {
 					instance = unscoped.get();
-					sessionContext.setAttribute(key, instance);
+					sessionContextAttributes.put(key, instance);
 				}
 				return instance;
 			};

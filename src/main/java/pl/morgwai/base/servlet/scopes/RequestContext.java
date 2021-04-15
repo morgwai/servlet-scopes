@@ -3,10 +3,12 @@
  */
 package pl.morgwai.base.servlet.scopes;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.servlet.http.HttpSession;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
-import pl.morgwai.base.guice.scopes.ServerSideContext;
 import pl.morgwai.base.guice.scopes.TrackableContext;
 
 
@@ -33,12 +35,13 @@ public abstract class RequestContext extends TrackableContext<RequestContext> {
 	/**
 	 * @return context of the <code>HttpSession</code> this request belongs to
 	 */
-	public ServerSideContext getHttpSessionContext() {
+	public Map<Object, Object> getHttpSessionContextAttributes() {
 		HttpSession session = getHttpSession();
-		ServerSideContext sessionContext =
-				(ServerSideContext) session.getAttribute(SESSION_CONTEXT_ATTRIBUTE_NAME);
+		@SuppressWarnings("unchecked")
+		var sessionContext =
+				(Map<Object, Object>) session.getAttribute(SESSION_CONTEXT_ATTRIBUTE_NAME);
 		if (sessionContext == null) {
-			sessionContext = new ServerSideContext();
+			sessionContext = new HashMap<>();
 			session.setAttribute(SESSION_CONTEXT_ATTRIBUTE_NAME, sessionContext);
 		}
 		return sessionContext;
