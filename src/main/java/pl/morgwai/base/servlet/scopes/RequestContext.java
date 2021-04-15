@@ -9,7 +9,7 @@ import java.util.Map;
 import javax.servlet.http.HttpSession;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
-import pl.morgwai.base.guice.scopes.TrackableContext;
+import pl.morgwai.base.guice.scopes.ServerSideContext;
 
 
 
@@ -24,7 +24,7 @@ import pl.morgwai.base.guice.scopes.TrackableContext;
  *
  * @see ServletModule#requestScope corresponding <code>Scope</code>
  */
-public abstract class RequestContext extends TrackableContext<RequestContext> {
+public abstract class RequestContext extends ServerSideContext<RequestContext> {
 
 
 
