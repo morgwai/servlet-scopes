@@ -1,7 +1,10 @@
-# Servlet and Websocket Guice Scopes
+# Servlet and Websocket Guice Context Scopes
 
+Servlet and websocket Guice scopes, that are automatically transferred when dispatching work to other threads.
 
-## SUMMARY
+## OVERVIEW
+
+Provides the below Guice scopes built using [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes) which automatically transfers them to a new thread when dispatching using [ContextTrackingExecutor](https://github.com/morgwai/guice-context-scopes/blob/master/src/main/java/pl/morgwai/base/guice/scopes/ContextTrackingExecutor.java).
 
 ### requestScope
 
@@ -42,7 +45,7 @@ A websocket endpoint `Configurator` that automatically injects dependencies of n
 ### [ContextTrackingExecutor](https://github.com/morgwai/guice-context-scopes/blob/master/src/main/java/pl/morgwai/base/guice/scopes/ContextTrackingExecutor.java)
 
 A `ThreadPoolExecutor` that upon dispatching automatically updates which thread runs within which `Context` (Request, Message, Session). Instances should usually be obtained using helper methods from the above `ServletModule`.<br/>
-(this class actually comes from [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes) on top of which this one is built).
+(this class actually comes from [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes)).
 
 
 
@@ -89,3 +92,12 @@ public class MyEndpoint {
 
 [a trivial sample app](sample)<br/>
 [a more complex sample app](https://github.com/morgwai/servlet-jpa/tree/master/sample) from derived [servlet-jpa lib](https://github.com/morgwai/servlet-jpa) (see especially [SaveQueryServlet class](https://github.com/morgwai/servlet-jpa/blob/master/sample/src/main/java/pl/morgwai/samples/servlet_jpa/servlets/SaveQueryServlet.java))
+
+
+
+## FAQ
+
+
+**Why isn't this built on top of [official servlet scopes lib](https://github.com/google/guice/wiki/Servlets)?**
+* this implementation is thread-safe: a single request can be handled by multiple threads (as long as accessed scoped objects are thread-safe)
+* [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes) was first developed for [gRPC scopes](https://github.com/morgwai/grpc-scopes). After that, it felt more natural to use it also for websocket scopes, rather than pretend that everything is an `HttpServletRequest`. I may be biased here however ;-)

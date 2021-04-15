@@ -45,7 +45,7 @@ public class ServletModule implements Module {
 	 * Scopes bindings to a given <code>HttpSession</code>. Available both to servlets and websocket
 	 * endpoints.<br/>
 	 * <br/>
-	 * <b>Note:</b> there's no way to create an <code>HttpSession</code> from the websocket endpoint
+	 * <b>NOTE:</b> there's no way to create an <code>HttpSession</code> from the websocket endpoint
 	 * layer if it does not exist before. To safely use this scope in websocket endpoints, other
 	 * layers must ensure that a session exists (for example a <code>Filter</code> targeting URL
 	 * patterns of websockets can be used).
@@ -88,6 +88,10 @@ public class ServletModule implements Module {
 
 
 
+	/**
+	 * Binds {@link #requestContextTracker} and {@link #websocketConnectionContextTracker} and
+	 * corresponding contexts for injection.
+	 */
 	@Override
 	public void configure(Binder binder) {
 		TypeLiteral<ContextTracker<RequestContext>> requestContextTrackerType =
