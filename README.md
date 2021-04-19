@@ -1,6 +1,9 @@
 # Servlet and Websocket Guice Context Scopes
 
-Servlet and websocket Guice scopes, that are automatically transferred when dispatching work to other threads.
+Servlet and websocket Guice scopes, that are automatically transferred when dispatching work to other threads.<br/>
+<br/>
+**latest release: [1.0-alpha1](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/1.0-alpha1/jar)**
+
 
 ## OVERVIEW
 
