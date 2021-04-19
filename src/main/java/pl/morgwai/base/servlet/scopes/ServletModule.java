@@ -18,7 +18,6 @@ import com.google.inject.TypeLiteral;
 import pl.morgwai.base.guice.scopes.ContextScope;
 import pl.morgwai.base.guice.scopes.ContextTracker;
 import pl.morgwai.base.guice.scopes.ContextTrackingExecutor;
-import pl.morgwai.base.guice.scopes.ThreadLocalContextTracker;
 
 
 
@@ -29,8 +28,7 @@ public class ServletModule implements Module {
 
 
 
-	public final ContextTracker<RequestContext> requestContextTracker =
-			new ThreadLocalContextTracker<>();
+	public final ContextTracker<RequestContext> requestContextTracker = new ContextTracker<>();
 
 	/**
 	 * Scopes bindings to either a {@link ServletRequestContext} or a {@link WebsocketEventContext}
@@ -78,7 +76,7 @@ public class ServletModule implements Module {
 
 
 	public final ContextTracker<WebsocketConnectionContext> websocketConnectionContextTracker =
-			new ThreadLocalContextTracker<>();
+			new ContextTracker<>();
 
 	/**
 	 * Scopes bindings to a given {@link WebsocketConnectionContext}.
