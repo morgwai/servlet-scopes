@@ -14,7 +14,8 @@ Copyright (c) Piotr Morgwai Kotarbinski
 	<artifactId>servlet-scopes</artifactId>
 	<version>1.0-SNAPSHOT</version>
 
-	<name>Servlet and Websocket Guice Scopes</name>
+	<name>Servlet and Websocket Guice Context Scopes</name>
+	<description>Servlet and websocket Guice scopes, that are automatically transferred when dispatching work to other threads</description>
 	<url>https://github.com/morgwai/servlet-scopes</url>
 
 	<licenses>
