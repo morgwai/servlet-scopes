@@ -12,7 +12,6 @@ import javax.servlet.FilterRegistration;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebListener;
-import javax.websocket.DeploymentException;
 import com.google.inject.Module;
 import com.google.inject.name.Names;
 
@@ -48,8 +47,7 @@ public class ServletContextListener extends GuiceServletContextListener {
 
 
 	@Override
-	protected void configureServletsFiltersEndpoints()
-			throws ServletException, DeploymentException {
+	protected void configureServletsFiltersEndpoints() throws ServletException {
 		String websocketPath = "/websocket/chat";
 
 		// mappings with isMatchAfter==true don't match websocket requests, so we can't just do

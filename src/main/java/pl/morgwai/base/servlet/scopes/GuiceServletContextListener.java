@@ -43,7 +43,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * <code>Scope</code>s and <Code>Tracker</code>s and helper methods from
 	 * {@link #servletModule}.
 	 */
-	protected abstract LinkedList<Module> configureInjections();
+	protected abstract LinkedList<Module> configureInjections() throws ServletException;
 	protected ServletModule servletModule;
 
 	/**
@@ -62,8 +62,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * {@link #addFilter(String, Class, String...)} and {@link #addEndpoint(Class, String)} are
 	 * provided for the most common cases.
 	 */
-	protected abstract void configureServletsFiltersEndpoints()
-			throws ServletException, DeploymentException;
+	protected abstract void configureServletsFiltersEndpoints() throws ServletException;
 	protected ServletContext ctx;
 	protected ServerContainer websocketContainer;
 
@@ -74,7 +73,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	protected ServletRegistration.Dynamic addServlet(
 			String name, Class<? extends HttpServlet> servletClass, String... urlPatterns)
-					throws ServletException {
+			throws ServletException {
 		Servlet servlet = ctx.createServlet(servletClass);
 		INJECTOR.injectMembers(servlet);
 		ServletRegistration.Dynamic reg = ctx.addServlet(name, servlet);
@@ -92,7 +91,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	protected FilterRegistration.Dynamic addFilter(
 			String name, Class<? extends Filter> filterClass, String... urlPatterns)
-					throws ServletException {
+			throws ServletException {
 		Filter filter = ctx.createFilter(filterClass);
 		INJECTOR.injectMembers(filter);
 		FilterRegistration.Dynamic reg = ctx.addFilter(name, filter);
@@ -108,29 +107,34 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * Adds endpoint using {@link GuiceServerEndpointConfigurator}. Useful mostly for unannotated
 	 * endpoints extending <code>javax.websocket.Endpoint</code>.
 	 */
-	protected void addEndpoint(Class<?> endpointClass, String path) throws DeploymentException {
-		websocketContainer.addEndpoint(
-			ServerEndpointConfig.Builder
-				.create(endpointClass, path)
-				.configurator(new GuiceServerEndpointConfigurator())
-				.build());
-		log.info("registered endpoint " + endpointClass.getSimpleName());
+	protected void addEndpoint(Class<?> endpointClass, String path) throws ServletException {
+		try {
+			websocketContainer.addEndpoint(
+				ServerEndpointConfig.Builder
+					.create(endpointClass, path)
+					.configurator(new GuiceServerEndpointConfigurator())
+					.build());
+			log.info("registered endpoint " + endpointClass.getSimpleName());
+		} catch (DeploymentException e) {
+			throw new ServletException(e);
+		}
 	}
 
 
 
 	@Override
 	public void contextInitialized(ServletContextEvent initializationEvent) {
-		servletModule = new ServletModule();
-		LinkedList<Module> modules = configureInjections();
-		modules.add(servletModule);
-		INJECTOR = Guice.createInjector(modules);
-		log.info("Guice INJECTOR created successfully");
-
-		ctx = initializationEvent.getServletContext();
-		websocketContainer = ((ServerContainer) ctx.getAttribute(
-				"javax.websocket.server.ServerContainer"));
 		try {
+			servletModule = new ServletModule();
+			LinkedList<Module> modules = configureInjections();
+			modules.add(servletModule);
+			INJECTOR = Guice.createInjector(modules);
+			log.info("Guice INJECTOR created successfully");
+
+			ctx = initializationEvent.getServletContext();
+			websocketContainer = ((ServerContainer) ctx.getAttribute(
+					"javax.websocket.server.ServerContainer"));
+
 			Filter requestContextFilter = ctx.createFilter(RequestContextFilter.class);
 			INJECTOR.injectMembers(requestContextFilter);
 			FilterRegistration.Dynamic reg =
@@ -139,12 +143,15 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			reg.setAsyncSupported(true);
 
 			configureServletsFiltersEndpoints();
-		} catch (ServletException | DeploymentException e) {
-			throw new RuntimeException(e);
+		} catch (ServletException e) {
+			log.severe(e.toString());
+			e.printStackTrace();
+			System.exit(1);
 		}
 	}
 
 
 
-	static final Logger log = Logger.getLogger(GuiceServletContextListener.class.getName());
+	protected static final Logger log =
+			Logger.getLogger(GuiceServletContextListener.class.getName());
 }
