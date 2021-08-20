@@ -31,11 +31,11 @@ class WebsocketConnectionProxy implements Session {
 
 
 
-	Session wrapped;
+	final Session wrapped;
 
-	ContextTracker<RequestContext> eventCtxTracker;
+	final ContextTracker<RequestContext> eventCtxTracker;
 
-	HttpSession httpSession;
+	final HttpSession httpSession;
 
 	WebsocketConnectionContext connectionCtx;  // set by WebsocketConnectionContext constructor
 	void setConnectionCtx(WebsocketConnectionContext ctx) { this.connectionCtx = ctx; }

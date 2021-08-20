@@ -5,7 +5,6 @@ import java.util.EnumSet;
 import java.util.LinkedList;
 
 import javax.servlet.DispatcherType;
-import javax.servlet.Filter;
 import javax.servlet.FilterRegistration;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
@@ -30,7 +29,7 @@ public class ServletContextListener extends GuiceServletContextListener {
 
 	@Override
 	protected LinkedList<Module> configureInjections() {
-		LinkedList<Module> modules = new LinkedList<Module>();
+		final var modules = new LinkedList<Module>();
 		modules.add((binder) -> {
 			binder.bind(Service.class).annotatedWith(Names.named(REQUEST))
 					.to(Service.class).in(servletModule.requestScope);
@@ -46,13 +45,13 @@ public class ServletContextListener extends GuiceServletContextListener {
 
 	@Override
 	protected void configureServletsFiltersEndpoints() throws ServletException {
-		String websocketPath = "/websocket/chat";
+		final var websocketPath = "/websocket/chat";
 
 		// mappings with isMatchAfter==true don't match websocket requests, so we can't just do
 		// addFilter("ensureSessionFilter", EnsureSessionFilter.class, websocketPath);
-		Filter ensureSessionFilter = ctx.createFilter(EnsureSessionFilter.class);
+		final var ensureSessionFilter = ctx.createFilter(EnsureSessionFilter.class);
 		INJECTOR.injectMembers(ensureSessionFilter);
-		FilterRegistration.Dynamic reg =
+		final FilterRegistration.Dynamic reg =
 				ctx.addFilter(EnsureSessionFilter.class.getSimpleName(), ensureSessionFilter);
 		reg.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, websocketPath);
 		reg.setAsyncSupported(true);

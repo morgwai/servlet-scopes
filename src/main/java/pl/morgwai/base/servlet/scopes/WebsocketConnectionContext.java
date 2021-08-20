@@ -23,7 +23,7 @@ public class WebsocketConnectionContext extends ServerSideContext<WebsocketConne
 
 
 
-	WebsocketConnectionProxy connection;
+	final WebsocketConnectionProxy connection;
 	public Session getConnection() { return connection; }
 
 

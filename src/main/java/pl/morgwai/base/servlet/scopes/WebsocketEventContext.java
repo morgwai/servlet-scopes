@@ -21,7 +21,7 @@ public class WebsocketEventContext extends RequestContext {
 
 
 
-	HttpSession httpSession;
+	final HttpSession httpSession;
 	@Override public HttpSession getHttpSession() { return httpSession; }
 
 

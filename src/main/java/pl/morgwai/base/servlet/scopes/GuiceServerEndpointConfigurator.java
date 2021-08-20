@@ -115,7 +115,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-		InvocationHandler endpointInvocationHandler;
+		final InvocationHandler endpointInvocationHandler;
 
 		@Inject
 		ContextTracker<RequestContext> eventCtxTracker;

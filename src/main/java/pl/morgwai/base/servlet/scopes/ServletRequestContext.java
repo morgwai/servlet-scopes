@@ -15,7 +15,7 @@ public class ServletRequestContext extends RequestContext {
 
 
 
-	HttpServletRequest request;
+	final HttpServletRequest request;
 	public HttpServletRequest getRequest() { return request; }
 
 

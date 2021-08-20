@@ -31,7 +31,7 @@ public class RequestContextFilter implements Filter {
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
-		RequestContext ctx = new ServletRequestContext((HttpServletRequest) request, tracker);
+		final var ctx = new ServletRequestContext((HttpServletRequest) request, tracker);
 		try {
 			ctx.runWithinSelf(() -> {
 				try {
