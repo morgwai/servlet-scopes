@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import com.google.inject.Binder;
 import com.google.inject.Key;
@@ -115,18 +116,44 @@ public class ServletModule implements Module {
 				name, poolSize, requestContextTracker, websocketConnectionContextTracker);
 	}
 
+
+
 	/**
-	 * Convenience "constructor" for <code>ContextTrackingExecutor</code>. (I really miss method
-	 * extensions in Java)
+	 * Convenience "constructor" for <code>ContextTrackingExecutor</code>.
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(
 			String name,
 			int poolSize,
+			BlockingQueue<Runnable> workQueue) {
+		return new ContextTrackingExecutor(
+				name, poolSize, workQueue,
+				requestContextTracker, websocketConnectionContextTracker);
+	}
+
+
+
+	/**
+	 * Convenience "constructor" for <code>ContextTrackingExecutor</code>.
+	 */
+	public ContextTrackingExecutor newContextTrackingExecutor(
+			String name,
+			int corePoolSize,
+			int maximumPoolSize,
+			long keepAliveTime,
+			TimeUnit unit,
 			BlockingQueue<Runnable> workQueue,
 			ThreadFactory threadFactory,
-			RejectedExecutionHandler handler) {
+			RejectedExecutionHandler handler,
+			ContextTracker<?>... trackers) {
 		return new ContextTrackingExecutor(
-				name, poolSize, workQueue, threadFactory, handler,
+				name,
+				corePoolSize,
+				maximumPoolSize,
+				keepAliveTime,
+				unit,
+				workQueue,
+				threadFactory,
+				handler,
 				requestContextTracker, websocketConnectionContextTracker);
 	}
 }
