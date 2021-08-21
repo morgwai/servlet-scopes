@@ -10,7 +10,7 @@
 
 	<groupId>pl.morgwai.base</groupId>
 	<artifactId>servlet-scopes</artifactId>
-	<version>1.0-SNAPSHOT</version>
+	<version>1.0-alpha3</version>
 
 	<name>Servlet and Websocket Guice Context Scopes</name>
 	<description>Servlet and websocket Guice scopes, that are automatically transferred when dispatching work to other threads</description>
