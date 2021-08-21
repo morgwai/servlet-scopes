@@ -7,7 +7,6 @@ import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import javax.inject.Inject;
 import javax.servlet.http.HttpSession;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
@@ -18,7 +17,9 @@ import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig;
 
+import com.google.inject.Inject;
 import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.matcher.ElementMatchers;
@@ -88,13 +89,19 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	@Override
 	public <T> T getEndpointInstance(Class<T> endpointClass) throws InstantiationException {
-		final T endPoint = INJECTOR.getInstance(endpointClass);
-		final T endpointProxy = super.getEndpointInstance(getProxyClass(endpointClass));
-		endpointContexts.put(
-				System.identityHashCode(endpointProxy),
-				new EndpointContext(newEndpointInvocationHandler(endPoint)));
-		return endpointProxy;
+		try {
+			final T endPoint = INJECTOR.getInstance(endpointClass);
+			final var endpointProxyClass = getProxyClass(endpointClass);
+			final T endpointProxy = super.getEndpointInstance(getProxyClass(endpointClass));
+			endpointProxyClass.getField(PROXY_DECORATOR_FIELD_NAME).set(
+					endpointProxy, new EndpointDecorator(endPoint));
+			return endpointProxy;
+		} catch (Exception e) {
+			throw new InstantiationException(e.toString());
+		}
 	}
+
+	static final String PROXY_DECORATOR_FIELD_NAME = "decorator";
 
 
 
@@ -105,9 +112,12 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			(theSameEndpointClass) -> {
 				final DynamicType.Builder<T> subclassBuilder = new ByteBuddy()
 						.subclass(endpointClass)
+						.defineField(
+								PROXY_DECORATOR_FIELD_NAME,
+								InvocationHandler.class,
+								Visibility.PUBLIC)
 						.method(ElementMatchers.any())
-						.intercept(InvocationHandlerAdapter.of(
-								INJECTOR.getInstance(EndpointDecorator.class)));
+						.intercept(InvocationHandlerAdapter.toField(PROXY_DECORATOR_FIELD_NAME));
 				final ServerEndpoint annotation = endpointClass.getAnnotation(ServerEndpoint.class);
 				if (annotation != null) subclassBuilder.annotateType(annotation);
 				return subclassBuilder.make().load(endpointClass.getClassLoader()).getLoaded();
@@ -120,34 +130,20 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-	/**
-	 * Subclasses may override this method to further customize endpoints. By default it returns
-	 * handler that simply invokes a given method on <code>endpoint</code>.
-	 */
-	protected InvocationHandler newEndpointInvocationHandler(Object endpoint) {
-		return (proxy, method, args) -> method.invoke(endpoint, args);
+	@Inject ContextTracker<RequestContext> eventCtxTracker;
+	@Inject ContextTracker<WebsocketConnectionContext> connectionCtxTracker;
+
+	public GuiceServerEndpointConfigurator() {
+		INJECTOR.injectMembers(this);
 	}
 
 
 
-	static final ConcurrentMap<Object, EndpointContext> endpointContexts =
-			new ConcurrentHashMap<>();
+	class EndpointDecorator implements InvocationHandler {
 
-	static class EndpointContext {
-
-		final InvocationHandler handler;
+		final InvocationHandler additionalDecorator;
 		WebsocketConnectionContext connectionCtx;
 		HttpSession httpSession;
-
-		EndpointContext(InvocationHandler handler) { this.handler = handler; }
-	}
-
-
-
-	static class EndpointDecorator implements InvocationHandler {
-
-		final ContextTracker<RequestContext> eventCtxTracker;
-		final ContextTracker<WebsocketConnectionContext> connectionCtxTracker;
 
 
 
@@ -158,42 +154,43 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		@Override
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 			final var wrappedConnection = wrapConnection(args);
-			final var endpointCtx = endpointContexts.get(System.identityHashCode(proxy));
-
 
 			if (isOnOpen(method)) {
 				// retrieve HttpSession from userProps, create connCtx,
 				// store both in endpointCtx, store connCtx in userProps
-				if (wrappedConnection == null) throw new RuntimeException(
-						"method annotated with @OnOpen must have a javax.websocket.Session param");
+				if (wrappedConnection == null) {
+					throw new RuntimeException("method annotated with @OnOpen must have a "
+							+ "javax.websocket.Session param");
+				}
 				final var userProperties = wrappedConnection.getUserProperties();
-				endpointCtx.httpSession = (HttpSession)
+				httpSession = (HttpSession)
 						userProperties.get(HTTP_SESSION_PROPERTY_NAME);
-				endpointCtx.connectionCtx = new WebsocketConnectionContext(
+				connectionCtx = new WebsocketConnectionContext(
 						wrappedConnection, connectionCtxTracker);
-				userProperties.put(CONNECTION_CTX_PROPERTY_NAME, endpointCtx.connectionCtx);
+				userProperties.put(CONNECTION_CTX_PROPERTY_NAME, connectionCtx);
 			}
 
 			// run user code inside contexts
-			return endpointCtx.connectionCtx.callWithinSelf(() -> {
-				final var eventCtx = new WebsocketEventContext(
-						endpointCtx.httpSession, eventCtxTracker);
-				return eventCtx.callWithinSelf(() -> {
-					try {
-						return endpointCtx.handler.invoke(proxy, method, args);
-					} catch (Error | Exception e) {
-						throw e;
-					} catch (Throwable e) {
-						throw new InvocationTargetException(e);  // dead code
+			return connectionCtx.callWithinSelf(
+				() -> new WebsocketEventContext(httpSession, eventCtxTracker).callWithinSelf(
+					() -> {
+						try {
+							return additionalDecorator.invoke(proxy, method, args);
+						} catch (Error | Exception e) {
+							throw e;
+						} catch (Throwable e) {
+							throw new InvocationTargetException(e);  // dead code
+						}
 					}
-				});
-			});
+				)
+			);
 		}
 
 
 
 		/**
-		 * Digs through arguments of some method for wsConnection and replaces it with a wrapper
+		 * Digs through arguments of some method for wsConnection and replaces it with a wrapper.
+		 * @return wrapped connection or {@code null} if there was no {@link Session} param.
 		 */
 		WebsocketConnectionProxy wrapConnection(Object[] args) {
 			for (int i = 0; i < args.length; i++) {
@@ -227,12 +224,18 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-		@Inject
-		EndpointDecorator(
-				ContextTracker<RequestContext> eventCtxTracker,
-				ContextTracker<WebsocketConnectionContext> connectionCtxTracker) {
-			this.eventCtxTracker = eventCtxTracker;
-			this.connectionCtxTracker = connectionCtxTracker;
+		EndpointDecorator(Object endpoint) {
+			this.additionalDecorator = getAdditionalDecorator(endpoint);
 		}
+	}
+
+
+
+	/**
+	 * Subclasses may override this method to further customize endpoints. By default it returns
+	 * handler that simply invokes a given method on <code>endpoint</code>.
+	 */
+	protected InvocationHandler getAdditionalDecorator(Object endpoint) {
+		return (proxy, method, args) -> method.invoke(endpoint, args);
 	}
 }
