@@ -23,22 +23,24 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 /**
- * Wrapper around <code>javax.websocket.Session</code> which decorates passed
- * <code>MessageHandler</code>s with {@link WebsocketEventContext} tracking.
+ * Decorates {@link MessageHandler}s passed to {@link #addMessageHandler(MessageHandler)} family
+ * method with {@link WebsocketEventContext} tracking.
  * This is an internal class and users of the library don't need to deal with it directly.
  */
-class WebsocketConnectionProxy implements Session {
+class WebsocketConnectionWrapper implements Session {
 
 
 
 	final Session wrapped;
-
 	final ContextTracker<RequestContext> eventCtxTracker;
-
 	final HttpSession httpSession;
 
-	WebsocketConnectionContext connectionCtx;  // set by WebsocketConnectionContext constructor
+	/**
+	 * Set by {@link WebsocketConnectionContext#WebsocketConnectionContext(
+	 * WebsocketConnectionWrapper, ContextTracker) WebsocketConnectionContext's constructor}.
+	 */
 	void setConnectionCtx(WebsocketConnectionContext ctx) { this.connectionCtx = ctx; }
+	WebsocketConnectionContext connectionCtx;  // set by WebsocketConnectionContext constructor
 
 
 
@@ -58,7 +60,7 @@ class WebsocketConnectionProxy implements Session {
 	@Override
 	public <T> void addMessageHandler(Class<T> clazz, MessageHandler.Whole<T> handler) {
 		wrapped.addMessageHandler(
-				clazz, new WebsocketConnectionProxy.WholeMessageHandlerWrapper<>(handler));
+				clazz, new WebsocketConnectionWrapper.WholeMessageHandlerWrapper<>(handler));
 	}
 
 
@@ -66,7 +68,7 @@ class WebsocketConnectionProxy implements Session {
 	@Override
 	public <T> void addMessageHandler(Class<T> clazz, MessageHandler.Partial<T> handler) {
 		wrapped.addMessageHandler(
-				clazz, new WebsocketConnectionProxy.PartialMessageHandlerWrapper<>(handler));
+				clazz, new WebsocketConnectionWrapper.PartialMessageHandlerWrapper<>(handler));
 	}
 
 
@@ -87,15 +89,15 @@ class WebsocketConnectionProxy implements Session {
 	@Override
 	public boolean equals(Object other) {
 		if (other == null) return false;
-		if (WebsocketConnectionProxy.class != other.getClass()) return false;
-		return wrapped == ((WebsocketConnectionProxy) other).wrapped;
+		if (WebsocketConnectionWrapper.class != other.getClass()) return false;
+		return wrapped == ((WebsocketConnectionWrapper) other).wrapped;
 	}
 
 	@Override public int hashCode() { return wrapped.hashCode(); }
 
 
 
-	public WebsocketConnectionProxy(
+	public WebsocketConnectionWrapper(
 			Session connection, ContextTracker<RequestContext> eventCtxTracker) {
 		this.wrapped = connection;
 		this.eventCtxTracker = eventCtxTracker;
@@ -109,14 +111,16 @@ class WebsocketConnectionProxy implements Session {
 
 		MessageHandler wrapped;
 
-		public boolean equals(Object o) {
-			if (o instanceof WebsocketConnectionProxy.MessageHandlerWrapper) {
-				return wrapped.equals(((WebsocketConnectionProxy.MessageHandlerWrapper)o).wrapped);
+		@Override
+		public boolean equals(Object other) {
+			if (other instanceof WebsocketConnectionWrapper.MessageHandlerWrapper) {
+				return wrapped.equals(
+						((WebsocketConnectionWrapper.MessageHandlerWrapper) other).wrapped);
 			}
-			return wrapped.equals(o);
+			return wrapped.equals(other);
 		}
 
-		public int hashCode() { return wrapped.hashCode(); }
+		@Override public int hashCode() { return wrapped.hashCode(); }
 
 		public MessageHandlerWrapper(MessageHandler handler) { this.wrapped = handler; }
 	}

@@ -192,11 +192,11 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		 * Digs through arguments of some method for wsConnection and replaces it with a wrapper.
 		 * @return wrapped connection or {@code null} if there was no {@link Session} param.
 		 */
-		WebsocketConnectionProxy wrapConnection(Object[] args) {
+		WebsocketConnectionWrapper wrapConnection(Object[] args) {
 			for (int i = 0; i < args.length; i++) {
 				if (args[i] instanceof Session) {
 					final var wrappedConnection =
-							new WebsocketConnectionProxy((Session) args[i], eventCtxTracker);
+							new WebsocketConnectionWrapper((Session) args[i], eventCtxTracker);
 					args[i] = wrappedConnection;
 					return wrappedConnection;
 				}

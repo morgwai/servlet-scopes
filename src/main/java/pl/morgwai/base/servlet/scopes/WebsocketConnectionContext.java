@@ -23,13 +23,13 @@ public class WebsocketConnectionContext extends ServerSideContext<WebsocketConne
 
 
 
-	final WebsocketConnectionProxy connection;
+	final WebsocketConnectionWrapper connection;
 	public Session getConnection() { return connection; }
 
 
 
 	protected WebsocketConnectionContext(
-		WebsocketConnectionProxy connection,
+		WebsocketConnectionWrapper connection,
 		ContextTracker<WebsocketConnectionContext> tracker
 	) {
 		super(tracker);
