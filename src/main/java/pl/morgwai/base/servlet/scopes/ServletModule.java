@@ -1,7 +1,6 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.scopes;
 
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
@@ -21,7 +20,9 @@ import pl.morgwai.base.guice.scopes.ContextTrackingExecutor;
 
 
 /**
- * Servlet Guice <code>Scope</code>s, <code>ContextTracker</code>s and some helper methods.
+ * Servlet Guice {@link Scope}s, {@link ContextTracker}s and some helper methods.
+ * A single app-wide instance is created at app startup:
+ * {@link GuiceServletContextListener#servletModule}
  */
 public class ServletModule implements Module {
 
@@ -50,20 +51,12 @@ public class ServletModule implements Module {
 	public final Scope httpSessionScope = new Scope() {
 
 		@Override
+		@SuppressWarnings("unchecked")
 		public <T> Provider<T> scope(Key<T> key, Provider<T> unscoped) {
-			return () -> {
-				Map<Object, Object> sessionContextAttributes =
-						requestContextTracker.getCurrentContext().getHttpSessionContextAttributes();
-				synchronized (sessionContextAttributes) {
-					@SuppressWarnings("unchecked")
-					T instance = (T) sessionContextAttributes.get(key);
-					if (instance == null) {
-						instance = unscoped.get();
-						sessionContextAttributes.put(key, instance);
-					}
-					return instance;
-				}
-			};
+			return () -> (T) requestContextTracker
+					.getCurrentContext()
+					.getHttpSessionContextAttributes()
+					.computeIfAbsent(key, (sameKey) -> unscoped.get());
 		}
 
 		@Override
