@@ -19,6 +19,7 @@ import com.google.inject.Inject;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.matcher.ElementMatchers;
 
@@ -115,19 +116,23 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * Creates dynamic proxy class that delegates calls to the associated {@link EndpointDecorator}.
 	 */
 	<EndpointT> Class<? extends EndpointT> createProxyClass(Class<EndpointT> endpointClass) {
-		final DynamicType.Builder<EndpointT> subclassBuilder = new ByteBuddy()
+		final DynamicType.Builder<EndpointT> proxyClassBuilder = new ByteBuddy()
 				.subclass(endpointClass)
-				.name(getClass().getPackageName() + ".ProxyFor_"
+				.name(GuiceServerEndpointConfigurator.class.getPackageName() + ".ProxyFor_"
 						+ endpointClass.getName().replace('.', '_'))
 				.defineField(
 						PROXY_DECORATOR_FIELD_NAME,
-						InvocationHandler.class,
-						Visibility.PUBLIC)
+						EndpointDecorator.class,
+						Visibility.PACKAGE_PRIVATE)
 				.method(ElementMatchers.any())
 				.intercept(InvocationHandlerAdapter.toField(PROXY_DECORATOR_FIELD_NAME));
 		final ServerEndpoint annotation = endpointClass.getAnnotation(ServerEndpoint.class);
-		if (annotation != null) subclassBuilder.annotateType(annotation);
-		return subclassBuilder.make().load(endpointClass.getClassLoader()).getLoaded();
+		if (annotation != null) proxyClassBuilder.annotateType(annotation);
+		return proxyClassBuilder
+				.make()
+				.load(GuiceServerEndpointConfigurator.class.getClassLoader(),
+						ClassLoadingStrategy.Default.INJECTION)
+				.getLoaded();
 	}
 
 
