@@ -17,7 +17,7 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 /**
- * Starts tracking context of newly incoming <code>HttpServletRequest</code>s.
+ * Starts tracking context of newly incoming {@link HttpServletRequest}s.
  */
 public class RequestContextFilter implements Filter {
 
@@ -44,7 +44,7 @@ public class RequestContextFilter implements Filter {
 			// if a ServletException or an IOException was thrown from doFilter(...) then unwrap it.
 			// otherwise just re-throw.
 			if (e.getCause() == null) throw e;
-			Throwable cause = e.getCause();
+			final var cause = e.getCause();
 			if (cause instanceof IOException) throw (IOException) cause;
 			if (cause instanceof ServletException) throw (ServletException) cause;
 			throw e;

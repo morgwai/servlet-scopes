@@ -8,12 +8,15 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 /**
- * Context of a single websocket event such session being opened/closed, message being received or
+ * Context of a single websocket event such as connection creation/closure, message arrival or
  * error occurrence.
- * Each instance is coupled with a single invocation of some endpoint or <code>MessageHandler</code>
- * method, either annotated with one of the websocket annotations (<code>@OnOpen</code>,
- * <code>@OnMessage</code>, <code>@OnError</code>, <code>@OnClose</code>), or overriding
- * those of <code>javax.websocket.Endpoint</code> or <code>MessageHandler</code>.
+ * <p>
+ * Each instance is coupled with a single invocation of some endpoint life-cycle or
+ * {@link javax.websocket.MessageHandler} method (either annotated with one of the websocket
+ * annotations ({@link javax.websocket.OnOpen @OnOpen},
+ * {@link javax.websocket.OnMessage @OnMessage}, {@link javax.websocket.OnError @OnError} and
+ * {@link javax.websocket.OnClose @OnClose}), or overriding those of
+ * {@link javax.websocket.Endpoint} or {@link javax.websocket.MessageHandler}.</p>
  *
  * @see RequestContext super class for more info
  */
