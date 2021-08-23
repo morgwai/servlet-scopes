@@ -2,7 +2,7 @@
 
 Servlet and websocket Guice scopes, that are automatically transferred when dispatching work to other threads.<br/>
 <br/>
-**latest release: [1.0-alpha3](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/1.0-alpha3/jar)**
+**latest release: [1.0-alpha4](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/1.0-alpha4/jar)**
 
 
 ## OVERVIEW
