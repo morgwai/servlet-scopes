@@ -3,8 +3,6 @@ package pl.morgwai.base.servlet.scopes;
 
 import java.util.EnumSet;
 import java.util.LinkedList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
@@ -24,6 +22,8 @@ import javax.websocket.server.ServerEndpointConfig.Configurator;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 
@@ -153,7 +153,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 			configureServletsFiltersEndpoints();
 		} catch (ServletException e) {
-			log.log(Level.SEVERE, "could not start the server", e);
+			log.error("could not start the server", e);
 			System.exit(1);
 		}
 	}
@@ -161,5 +161,5 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	protected static final Logger log =
-			Logger.getLogger(GuiceServletContextListener.class.getName());
+			LoggerFactory.getLogger(GuiceServletContextListener.class.getName());
 }

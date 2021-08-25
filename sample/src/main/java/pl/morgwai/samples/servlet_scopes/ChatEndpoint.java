@@ -2,7 +2,6 @@
 package pl.morgwai.samples.servlet_scopes;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -11,6 +10,9 @@ import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
 import javax.websocket.Session;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 
@@ -67,7 +69,7 @@ public class ChatEndpoint extends Endpoint {
 			}
 			broadcast(String.format("### %s has joined", nickname));
 		} catch (IOException e) {
-			log.warning("error while sending message: " + e);
+			log.warn("", e);
 		}
 	}
 
@@ -89,7 +91,7 @@ public class ChatEndpoint extends Endpoint {
 			}
 			broadcast(formattedMessageBuilder.toString());
 		} catch (IOException e) {
-			log.warning("error while sending message: " + e);
+			log.warn("", e);
 		}
 	}
 
@@ -100,7 +102,7 @@ public class ChatEndpoint extends Endpoint {
 		try {
 			broadcast(String.format("### %s has disconnected", nickname));
 		} catch (IOException e) {
-			log.warning("error while sending message: " + e);
+			log.warn("", e);
 		}
 	}
 
@@ -108,8 +110,7 @@ public class ChatEndpoint extends Endpoint {
 
 	@Override
 	public void onError(Session connection, Throwable error) {
-		log.warning("error on connection " + connection.getId() + ": " + error);
-		error.printStackTrace();
+		log.warn("error on connection " + connection.getId(), error);
 	}
 
 
@@ -129,6 +130,7 @@ public class ChatEndpoint extends Endpoint {
 
 	static void shutdown() {
 		isShutdown = true;
+		log.info("ChatEndpoint shutdown");
 	}
 
 
@@ -164,5 +166,5 @@ public class ChatEndpoint extends Endpoint {
 
 
 
-	static final Logger log = Logger.getLogger(ChatEndpoint.class.getName());
+	static final Logger log = LoggerFactory.getLogger(ChatEndpoint.class.getName());
 }
