@@ -94,7 +94,7 @@ public class MyEndpoint {
 ## EXAMPLES
 
 [a trivial sample app](sample)<br/>
-[a more complex sample app](https://github.com/morgwai/servlet-jpa/tree/master/sample) from derived [servlet-jpa lib](https://github.com/morgwai/servlet-jpa) (see especially [SaveQueryServlet class](https://github.com/morgwai/servlet-jpa/blob/master/sample/src/main/java/pl/morgwai/samples/servlet_jpa/servlets/SaveQueryServlet.java))
+[a more complex sample app](https://github.com/morgwai/guiced-servlet-jpa/tree/master/sample) from derived [guiced-servlet-jpa lib](https://github.com/morgwai/guiced-servlet-jpa).
 
 
 
@@ -102,5 +102,7 @@ public class MyEndpoint {
 
 
 **Why isn't this built on top of [official servlet scopes lib](https://github.com/google/guice/wiki/Servlets)?**
-* this implementation is thread-safe: a single request can be handled by multiple threads (as long as accessed scoped objects are thread-safe)
-* [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes) was first developed for [gRPC scopes](https://github.com/morgwai/grpc-scopes). After that, it felt more natural to use it also for websocket scopes, rather than pretend that everything is an `HttpServletRequest`. I may be biased here however ;-)
+
+* [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes) was first developed for [gRPC scopes](https://github.com/morgwai/grpc-scopes). After that, it was easier to reuse it, rather than pretend that everything is an `HttpServletRequest` (ie: in order to extend the official Guice-servlet lib to support websockets, websocket events and websocket connections would need to be wrapped in some fake `HttpSevletRequest` wrappers) and re-developing `ContextTrackingExecutor`.
+
+* this implementation is thread-safe: a single request can be handled by multiple threads (as long as accessed scoped objects are thread-safe or properly synchronized)
