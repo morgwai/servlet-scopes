@@ -97,7 +97,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			final EndpointT endPoint = INJECTOR.getInstance(endpointClass);
 			@SuppressWarnings("unchecked")
 			final var proxyClass = (Class<? extends EndpointT>) proxyClasses.computeIfAbsent(
-					endpointClass, (sameEndpointClass) -> createProxyClass(sameEndpointClass));
+					endpointClass, this::createProxyClass);
 			final EndpointT endpointProxy = super.getEndpointInstance(proxyClass);
 			proxyClass.getDeclaredField(PROXY_DECORATOR_FIELD_NAME).set(
 					endpointProxy, new EndpointDecorator(endPoint));

@@ -26,7 +26,7 @@ public abstract class SimplePingingEndpointServletContextListener
 
 
 
-	WebsocketPinger pinger = new WebsocketPinger();
+	final WebsocketPinger pinger = new WebsocketPinger();
 
 
 
