@@ -1,4 +1,4 @@
-# Servlet and Websocket Guice Context Scopes
+# Servlet and Websocket Guice Scopes
 
 Servlet and websocket Guice scopes, that are automatically transferred when dispatching work to other threads.<br/>
 <br/>
