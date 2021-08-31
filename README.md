@@ -12,14 +12,14 @@ Provides the below Guice scopes built using [guice-context-scopes lib](https://g
 ### requestScope
 
 Scopes bindings to either an `HttpServletRequest` or a websocket event (connection opened/closed, message received, error occured).<br/>
-Spans over a single invocations of a method (`Servlet.doXXX` or one of websocket endpoint's methods associated with a given event).<br/>
-Having a common scope for servlet requests and websocket events allows instances from a single request scoped binding to be obtained both in servlets and endpoints without a need for 2 separate bindings with different `@Named` annotation value.
+Spans over a single container initiated invocation of servlet or websocket endpoint method (`Servlet.doXXX` methods, endpoint methods annotated with `@OnOpen`, `@OnMessage`, `@OnError`, `@OnClose`, methods overriding those of `javax.websocket.Endpoint` and methods of registered `MessageHandler`s).<br/>
+Having a common scope for servlet requests and websocket events allows the same binding to be available both in servlets and endpoints.
 
 
 ### websocketConnectionScope
 
 Scopes bindings to a websocket connection (`javax.websocket.Session`).<br/>
-Spans over a lifetime of a given endpoint instance. Specifically, all calls to given endpoint's annotated methods (from `@OnOpen`, across all calls to `@OnMessage` and `@OnError` until and including `@OnClose`) or methods overriding those of `javax.websocket.Endpoint` together with methods of registered `MessageHandler`s are executed within a single `websocketConnectionScope`.
+Spans over a lifetime of a given endpoint instance: all calls to life-cycle methods of a given endpoint instance (annotated with `@OnOpen`, `@OnMessage`, `@OnError`, `@OnClose`, or overriding those of `javax.websocket.Endpoint` together with methods of registered `MessageHandler`s) are executed within the same associated `websocketConnectionScope`.
 
 
 ### httpSessionScope
