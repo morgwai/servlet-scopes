@@ -33,7 +33,7 @@ public class RequestContextFilter implements Filter {
 			throws IOException, ServletException {
 		final var ctx = new ServletRequestContext((HttpServletRequest) request, tracker);
 		try {
-			ctx.runWithinSelf(() -> {
+			ctx.executeWithinSelf(() -> {
 				try {
 					chain.doFilter(request, response);
 				} catch (IOException | ServletException e) {

@@ -186,8 +186,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			}
 
 			// run original endpoint method within both contexts
-			return connectionCtx.callWithinSelf(
-				() -> new WebsocketEventContext(httpSession, eventCtxTracker).callWithinSelf(
+			return connectionCtx.executeWithinSelf(
+				() -> new WebsocketEventContext(httpSession, eventCtxTracker).executeWithinSelf(
 					() -> {
 						try {
 							return additionalDecorator.invoke(proxy, method, args);

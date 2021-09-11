@@ -134,8 +134,8 @@ class WebsocketConnectionWrapper implements Session {
 
 		@Override
 		public void onMessage(T message) {
-			connectionCtx.runWithinSelf(
-					() -> new WebsocketEventContext(httpSession, eventCtxTracker).runWithinSelf(
+			connectionCtx.executeWithinSelf(
+					() -> new WebsocketEventContext(httpSession, eventCtxTracker).executeWithinSelf(
 							() -> wrapped.onMessage(message)));
 		}
 
@@ -154,8 +154,8 @@ class WebsocketConnectionWrapper implements Session {
 
 		@Override
 		public void onMessage(T message, boolean last) {
-			connectionCtx.runWithinSelf(
-					() -> new WebsocketEventContext(httpSession, eventCtxTracker).runWithinSelf(
+			connectionCtx.executeWithinSelf(
+					() -> new WebsocketEventContext(httpSession, eventCtxTracker).executeWithinSelf(
 							() -> wrapped.onMessage(message, last)));
 		}
 
