@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Creates and configures app wide Guice {@link #INJECTOR} and {@link ServletModule}.
  * A single subclass of this class must be created and either annotated with
- * &commat;{@link javax.servlet.annotation.WebListener WebListener} or enlisted in
+ * {@link javax.servlet.annotation.WebListener @WebListener} or enlisted in
  * <code>web.xml</code> file in <code>listener</code> element.
  */
 public abstract class GuiceServletContextListener implements ServletContextListener {
@@ -58,10 +58,14 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * Programmatically adds servlets, filters and endpoints.
 	 * <p>
 	 * If all of these components are configured via annotations or <code>web.xml</code> file,
-	 * then this method may be empty.<br/>
+	 * then this method may be empty.</p>
+	 * <p>
 	 * Convenience helper methods {@link #addServlet(String, Class, String...)},
 	 * {@link #addFilter(String, Class, String...)}, {@link #addEndpoint(Class, String)} and
 	 * {@link #addEndpoint(Class, String, Configurator)} are provided for the most common cases.</p>
+	 * <p>
+	 * This method is called <b>after</b> {@link #configureInjections()} is called and
+	 * {@link #INJECTOR} is created.</p>
 	 */
 	protected abstract void configureServletsFiltersEndpoints() throws ServletException;
 	protected ServletContext ctx;
@@ -70,7 +74,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Adds async servlet and injects its dependencies.
+	 * Adds an async servlet and injects its dependencies.
+	 * For use in {@link #configureServletsFiltersEndpoints()}.
 	 */
 	protected ServletRegistration.Dynamic addServlet(
 			String name, Class<? extends HttpServlet> servletClass, String... urlPatterns)
@@ -87,8 +92,9 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Adds async filter at the end of the chain (with <code>isMatchAfter==true</code> and
+	 * Adds an async filter at the end of the chain (with <code>isMatchAfter==true</code> and
 	 * {@link DispatcherType#REQUEST}) and injects its dependencies.
+	 * For use in {@link #configureServletsFiltersEndpoints()}.
 	 */
 	protected FilterRegistration.Dynamic addFilter(
 			String name, Class<? extends Filter> filterClass, String... urlPatterns)
@@ -105,8 +111,9 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Adds endpoint.
+	 * Adds an endpoint.
 	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.
+	 * For use in {@link #configureServletsFiltersEndpoints()}.
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path, Configurator configurator)
 			throws ServletException {
@@ -123,7 +130,9 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	}
 
 	/**
-	 * Adds endpoint using {@link GuiceServerEndpointConfigurator} that injects the dependencies.
+	 * Adds an endpoint using {@link GuiceServerEndpointConfigurator} that injects the dependencies
+	 * and sets up contexts.
+	 * For use in {@link #configureServletsFiltersEndpoints()}.
 	 * @see #addEndpoint(Class, String, Configurator)
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path) throws ServletException {

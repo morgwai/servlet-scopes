@@ -39,11 +39,9 @@ import static pl.morgwai.base.servlet.scopes.GuiceServletContextListener.INJECTO
  *@ServerEndpoint(
  *    value = "/websocket/mySocket",
  *    configurator = GuiceServerEndpointConfigurator.class)
- *public class MyEndpoint {...}
- * </pre>
+ *public class MyEndpoint {...}</pre>
  * <p>
- * <b>NOTE:</b> methods annotated with @{@link OnOpen} <b>must</b> have {@link Session} param.
- * </p>
+ * <b>NOTE:</b> methods annotated with @{@link OnOpen} <b>must</b> have a {@link Session} param.</p>
  * <p>
  * For endpoints added programmatically, build a {@link ServerEndpointConfig} similar to the below:
  * </p><pre>
@@ -58,7 +56,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	/**
-	 * Name of the user property containing {@link HttpSession}
+	 * Name of the user property containing {@link HttpSession}.
 	 */
 	public static final String HTTP_SESSION_PROPERTY_NAME =
 			EndpointDecorator.class.getName() + ".httpSession";
@@ -72,7 +70,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	/**
-	 * Store {@link HttpSession} in user properties.
+	 * Stores {@link HttpSession} in user properties.
 	 */
 	@Override
 	public void modifyHandshake(
@@ -88,7 +86,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	/**
 	 * Creates an {@code endpointClass} instance and a proxy for it.
 	 * @return proxy that sets up {@link RequestContext} and {@link WebsocketConnectionContext} for
-	 * a new instance of {@code endpointClass}.
+	 * a new underlying instance of {@code endpointClass}.
 	 */
 	@Override
 	public <EndpointT> EndpointT getEndpointInstance(Class<EndpointT> endpointClass)
@@ -147,8 +145,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	/**
-	 * Decorates each call to supplied endpoint instance with setting up {@link RequestContext} and
-	 * {@link WebsocketConnectionContext}.
+	 * Decorates each call to the supplied endpoint instance with setting up {@link RequestContext}
+	 * and {@link WebsocketConnectionContext}.
 	 */
 	class EndpointDecorator implements InvocationHandler {
 
@@ -211,7 +209,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	/**
-	 * Subclasses may override this method to further customize endpoints. By default it returns
+	 * Subclasses may override this method to further customize endpoints. By default it returns a
 	 * handler that simply invokes a given method on <code>endpoint</code>.
 	 */
 	protected InvocationHandler getAdditionalDecorator(Object endpoint) {
@@ -221,5 +219,5 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	static final String NO_SESSION_PARAM_MESSAGE =
-			"method with @OnOpen must have a javax.websocket.Session param";
+			"method annotated with @OnOpen must have a javax.websocket.Session param";
 }
