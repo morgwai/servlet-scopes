@@ -37,6 +37,11 @@ public abstract class RequestContext extends ServerSideContext<RequestContext> {
 	 */
 	public ConcurrentMap<Key<?>, Object> getHttpSessionContextAttributes() {
 		HttpSession session = getHttpSession();
+		if (session == null) {
+			throw new RuntimeException("no session in request context,  consider using a filter"
+					+ " that creates a session for every incoming request");
+		}
+		// TODO: consider maintaining ConcurrentMap<Session, Attributes> to avoid synchronization
 		synchronized (session) {
 			@SuppressWarnings("unchecked")
 			var sessionContextAttributes = (ConcurrentMap<Key<?>, Object>)

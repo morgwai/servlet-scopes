@@ -53,10 +53,15 @@ public class ServletModule implements Module {
 		@Override
 		@SuppressWarnings("unchecked")
 		public <T> Provider<T> scope(Key<T> key, Provider<T> unscoped) {
-			return () -> (T) requestContextTracker
-					.getCurrentContext()
-					.getHttpSessionContextAttributes()
-					.computeIfAbsent(key, (sameKey) -> unscoped.get());
+			return () -> {
+				final var ctx = requestContextTracker.getCurrentContext();
+				if (ctx == null) {
+					throw new RuntimeException("no request context for thread "
+							+ Thread.currentThread().getName());
+				}
+				return (T) ctx.getHttpSessionContextAttributes().computeIfAbsent(
+						key, (ignored) -> unscoped.get());
+			};
 		}
 
 		@Override
