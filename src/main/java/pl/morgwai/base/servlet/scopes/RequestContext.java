@@ -54,7 +54,7 @@ public abstract class RequestContext extends ServerSideContext<RequestContext> {
 		}
 	}
 
-	private static final String SESSION_CONTEXT_ATTRIBUTE_NAME =
+	static final String SESSION_CONTEXT_ATTRIBUTE_NAME =
 			RequestContext.class.getPackageName() + ".contextAttributes";
 
 
