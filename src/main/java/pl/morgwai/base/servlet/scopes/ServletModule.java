@@ -6,6 +6,8 @@ import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import javax.servlet.http.HttpSession;
+
 import com.google.inject.Binder;
 import com.google.inject.Key;
 import com.google.inject.Module;
@@ -28,6 +30,9 @@ public class ServletModule implements Module {
 
 
 
+	/**
+	 * Allows tracking of {@link ServletRequestContext}s and {@link WebsocketEventContext}s.
+	 */
 	public final ContextTracker<RequestContext> requestContextTracker = new ContextTracker<>();
 
 	/**
@@ -40,13 +45,13 @@ public class ServletModule implements Module {
 
 
 	/**
-	 * Scopes bindings to a given <code>HttpSession</code>. Available both to servlets and websocket
-	 * endpoints.<br/>
-	 * <br/>
-	 * <b>NOTE:</b> there's no way to create an <code>HttpSession</code> from the websocket endpoint
-	 * layer if it does not exist before. To safely use this scope in websocket endpoints, other
+	 * Scopes bindings to a given {@link HttpSession}. Available both to servlets and websocket
+	 * endpoints.
+	 * <p>
+	 * <b>NOTE:</b> there's no way to create an {@code HttpSession<} from the websocket endpoint
+	 * layer if it does not exist yet. To safely use this scope in websocket endpoints, other
 	 * layers must ensure that a session exists (for example a <code>Filter</code> targeting URL
-	 * patterns of websockets can be used).
+	 * patterns of websockets can be used).</p>
 	 */
 	public final Scope httpSessionScope = new Scope() {
 
@@ -54,13 +59,16 @@ public class ServletModule implements Module {
 		@SuppressWarnings("unchecked")
 		public <T> Provider<T> scope(Key<T> key, Provider<T> unscoped) {
 			return () -> {
-				final var ctx = requestContextTracker.getCurrentContext();
-				if (ctx == null) {
+				try {
+					return (T) requestContextTracker
+							.getCurrentContext()
+							.getHttpSessionContextAttributes()
+							.computeIfAbsent(key, (ignored) -> unscoped.get());
+				} catch (NullPointerException e) {
 					throw new RuntimeException("no request context for thread "
-							+ Thread.currentThread().getName());
+							+ Thread.currentThread().getName()
+							+ ". See javadoc for ContextScope.scope(...)");
 				}
-				return (T) ctx.getHttpSessionContextAttributes().computeIfAbsent(
-						key, (ignored) -> unscoped.get());
 			};
 		}
 
@@ -72,6 +80,10 @@ public class ServletModule implements Module {
 
 
 
+	/**
+	 * Allows tracking of the {@link WebsocketConnectionContext context of a given websocket
+	 * connection (<code>Session</code>)}.
+	 */
 	public final ContextTracker<WebsocketConnectionContext> websocketConnectionContextTracker =
 			new ContextTracker<>();
 
@@ -85,7 +97,9 @@ public class ServletModule implements Module {
 
 	/**
 	 * Binds {@link #requestContextTracker} and {@link #websocketConnectionContextTracker} and
-	 * corresponding contexts for injection.
+	 * corresponding contexts for injection. Binds {@code ContextTracker<?>[]} to instance
+	 * containing all trackers for use with
+	 * {@link ContextTrackingExecutor#getActiveContexts(ContextTracker...)}.
 	 */
 	@Override
 	public void configure(Binder binder) {
@@ -101,7 +115,13 @@ public class ServletModule implements Module {
 				.toInstance(websocketConnectionContextTracker);
 		binder.bind(WebsocketConnectionContext.class).toProvider(
 				() -> websocketConnectionContextTracker.getCurrentContext());
+
+		TypeLiteral<ContextTracker<?>[]> trackerArrayType = new TypeLiteral<>() {};
+		binder.bind(trackerArrayType).toInstance(trackers);
 	}
+
+	public final ContextTracker<?>[] trackers =
+		{websocketConnectionContextTracker, requestContextTracker};
 
 
 
