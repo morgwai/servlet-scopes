@@ -31,7 +31,7 @@ public class WebsocketConnectionContext extends ServerSideContext<WebsocketConne
 
 
 
-	protected WebsocketConnectionContext(
+	WebsocketConnectionContext(
 		WebsocketConnectionWrapper connection,
 		ContextTracker<WebsocketConnectionContext> tracker
 	) {

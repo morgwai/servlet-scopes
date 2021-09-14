@@ -27,7 +27,7 @@ public class ServletRequestContext extends RequestContext {
 
 
 
-	public ServletRequestContext(
+	ServletRequestContext(
 			HttpServletRequest request, ContextTracker<RequestContext> tracker) {
 		super(tracker);
 		this.request = request;

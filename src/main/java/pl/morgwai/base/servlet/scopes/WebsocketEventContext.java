@@ -29,7 +29,7 @@ public class WebsocketEventContext extends RequestContext {
 
 
 
-	protected WebsocketEventContext(
+	WebsocketEventContext(
 			HttpSession httpSession, ContextTracker<RequestContext> tracker) {
 		super(tracker);
 		this.httpSession = httpSession;
