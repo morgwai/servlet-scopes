@@ -31,7 +31,7 @@ class WebsocketConnectionWrapper implements Session {
 
 
 
-	final Session wrapped;
+	final Session wrappedConnection;
 	final ContextTracker<RequestContext> eventCtxTracker;
 	final HttpSession httpSession;
 
@@ -40,26 +40,25 @@ class WebsocketConnectionWrapper implements Session {
 	 * WebsocketConnectionWrapper, ContextTracker) WebsocketConnectionContext's constructor}.
 	 */
 	void setConnectionCtx(WebsocketConnectionContext ctx) { this.connectionCtx = ctx; }
-	WebsocketConnectionContext connectionCtx;  // set by WebsocketConnectionContext constructor
+	WebsocketConnectionContext connectionCtx;
 
 
 
 	@Override
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void addMessageHandler(MessageHandler handler) throws IllegalStateException {
 		if (handler instanceof MessageHandler.Whole) {
-			handler = new WholeMessageHandlerWrapper((MessageHandler.Whole) handler);
+			handler = new WholeMessageHandlerWrapper<>((MessageHandler.Whole<?>) handler);
 		} else {
-			handler = new PartialMessageHandlerWrapper((MessageHandler.Partial) handler);
+			handler = new PartialMessageHandlerWrapper<>((MessageHandler.Partial<?>) handler);
 		}
-		wrapped.addMessageHandler(handler);
+		wrappedConnection.addMessageHandler(handler);
 	}
 
 
 
 	@Override
 	public <T> void addMessageHandler(Class<T> clazz, MessageHandler.Whole<T> handler) {
-		wrapped.addMessageHandler(
+		wrappedConnection.addMessageHandler(
 				clazz, new WebsocketConnectionWrapper.WholeMessageHandlerWrapper<>(handler));
 	}
 
@@ -67,7 +66,7 @@ class WebsocketConnectionWrapper implements Session {
 
 	@Override
 	public <T> void addMessageHandler(Class<T> clazz, MessageHandler.Partial<T> handler) {
-		wrapped.addMessageHandler(
+		wrappedConnection.addMessageHandler(
 				clazz, new WebsocketConnectionWrapper.PartialMessageHandlerWrapper<>(handler));
 	}
 
@@ -76,7 +75,7 @@ class WebsocketConnectionWrapper implements Session {
 	@Override
 	public Set<Session> getOpenSessions() {
 		Set<Session> result = new HashSet<>();
-		for (Session connection: wrapped.getOpenSessions()) {
+		for (Session connection: wrappedConnection.getOpenSessions()) {
 			var connectionCtx = (WebsocketConnectionContext) connection.getUserProperties().get(
 					GuiceServerEndpointConfigurator.CONNECTION_CTX_PROPERTY_NAME);
 			result.add(connectionCtx.getConnection());
@@ -90,18 +89,18 @@ class WebsocketConnectionWrapper implements Session {
 	public boolean equals(Object other) {
 		if (other == null) return false;
 		if (WebsocketConnectionWrapper.class != other.getClass()) return false;
-		return wrapped == ((WebsocketConnectionWrapper) other).wrapped;
+		return wrappedConnection == ((WebsocketConnectionWrapper) other).wrappedConnection;
 	}
 
-	@Override public int hashCode() { return wrapped.hashCode(); }
+	@Override public int hashCode() { return wrappedConnection.hashCode(); }
 
 
 
-	public WebsocketConnectionWrapper(
+	WebsocketConnectionWrapper(
 			Session connection, ContextTracker<RequestContext> eventCtxTracker) {
-		this.wrapped = connection;
+		this.wrappedConnection = connection;
 		this.eventCtxTracker = eventCtxTracker;
-		this.httpSession = (HttpSession) wrapped.getUserProperties().get(
+		this.httpSession = (HttpSession) wrappedConnection.getUserProperties().get(
 				GuiceServerEndpointConfigurator.HTTP_SESSION_PROPERTY_NAME);
 	}
 
@@ -167,67 +166,80 @@ class WebsocketConnectionWrapper implements Session {
 
 
 
-	// below only dumb delegations to wrapped
+	// below only dumb delegations to wrappedConnection
 
-	@Override public WebSocketContainer getContainer() { return wrapped.getContainer(); }
+	@Override public WebSocketContainer getContainer() { return wrappedConnection.getContainer(); }
 
-	@Override public Set<MessageHandler> getMessageHandlers() {return wrapped.getMessageHandlers();}
+	@Override public Set<MessageHandler> getMessageHandlers() {
+		return wrappedConnection.getMessageHandlers();
+	}
 
-	@Override
-	public void removeMessageHandler(MessageHandler handler){wrapped.removeMessageHandler(handler);}
+	@Override public void removeMessageHandler(MessageHandler handler) {
+		wrappedConnection.removeMessageHandler(handler);
+	}
 
-	@Override public String getProtocolVersion() { return wrapped.getProtocolVersion(); }
-
-	@Override public String getNegotiatedSubprotocol() { return wrapped.getNegotiatedSubprotocol();}
-
-	@Override
-	public List<Extension> getNegotiatedExtensions() { return wrapped.getNegotiatedExtensions(); }
-
-	@Override public boolean isSecure() { return wrapped.isSecure(); }
-
-	@Override public boolean isOpen() { return wrapped.isOpen(); }
-
-	@Override public long getMaxIdleTimeout() { return wrapped.getMaxIdleTimeout(); }
+	@Override public String getProtocolVersion() { return wrappedConnection.getProtocolVersion(); }
 
 	@Override
-	public void setMaxIdleTimeout(long milliseconds) { wrapped.setMaxIdleTimeout(milliseconds); }
+	public String getNegotiatedSubprotocol() { return wrappedConnection.getNegotiatedSubprotocol();}
+
+	@Override public List<Extension> getNegotiatedExtensions() {
+		return wrappedConnection.getNegotiatedExtensions();
+	}
+
+	@Override public boolean isSecure() { return wrappedConnection.isSecure(); }
+
+	@Override public boolean isOpen() { return wrappedConnection.isOpen(); }
+
+	@Override public long getMaxIdleTimeout() { return wrappedConnection.getMaxIdleTimeout(); }
+
+	@Override public void setMaxIdleTimeout(long milliseconds) {
+		wrappedConnection.setMaxIdleTimeout(milliseconds);
+	}
 
 	@Override public void setMaxBinaryMessageBufferSize(int length) {
-		wrapped.setMaxBinaryMessageBufferSize(length);
+		wrappedConnection.setMaxBinaryMessageBufferSize(length);
 	}
 
-	@Override
-	public int getMaxBinaryMessageBufferSize() { return wrapped.getMaxBinaryMessageBufferSize(); }
+	@Override public int getMaxBinaryMessageBufferSize() {
+		return wrappedConnection.getMaxBinaryMessageBufferSize();
+	}
 
 	@Override public void setMaxTextMessageBufferSize(int length) {
-		wrapped.setMaxTextMessageBufferSize(length);
+		wrappedConnection.setMaxTextMessageBufferSize(length);
 	}
 
-	@Override
-	public int getMaxTextMessageBufferSize() { return wrapped.getMaxTextMessageBufferSize(); }
+	@Override public int getMaxTextMessageBufferSize() {
+		return wrappedConnection.getMaxTextMessageBufferSize();
+	}
 
-	@Override public Async getAsyncRemote() { return wrapped.getAsyncRemote(); }
+	@Override public Async getAsyncRemote() { return wrappedConnection.getAsyncRemote(); }
 
-	@Override public Basic getBasicRemote() { return wrapped.getBasicRemote(); }
+	@Override public Basic getBasicRemote() { return wrappedConnection.getBasicRemote(); }
 
-	@Override public String getId() { return wrapped.getId(); }
+	@Override public String getId() { return wrappedConnection.getId(); }
 
-	@Override public void close() throws IOException { wrapped.close(); }
+	@Override public void close() throws IOException { wrappedConnection.close(); }
 
-	@Override
-	public void close(CloseReason closeReason) throws IOException { wrapped.close(closeReason); }
+	@Override public void close(CloseReason closeReason) throws IOException {
+		wrappedConnection.close(closeReason);
+	}
 
-	@Override public URI getRequestURI() { return wrapped.getRequestURI(); }
+	@Override public URI getRequestURI() { return wrappedConnection.getRequestURI(); }
 
 	@Override public Map<String, List<String>> getRequestParameterMap() {
-		return wrapped.getRequestParameterMap();
+		return wrappedConnection.getRequestParameterMap();
 	}
 
-	@Override public String getQueryString() { return wrapped.getQueryString(); }
+	@Override public String getQueryString() { return wrappedConnection.getQueryString(); }
 
-	@Override public Map<String, String> getPathParameters() { return wrapped.getPathParameters(); }
+	@Override public Map<String, String> getPathParameters() {
+		return wrappedConnection.getPathParameters();
+	}
 
-	@Override public Map<String, Object> getUserProperties() { return wrapped.getUserProperties(); }
+	@Override public Map<String, Object> getUserProperties() {
+		return wrappedConnection.getUserProperties();
+	}
 
-	@Override public Principal getUserPrincipal() { return wrapped.getUserPrincipal(); }
+	@Override public Principal getUserPrincipal() { return wrappedConnection.getUserPrincipal(); }
 }
