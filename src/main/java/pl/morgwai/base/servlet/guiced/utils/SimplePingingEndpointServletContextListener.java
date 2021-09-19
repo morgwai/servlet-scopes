@@ -26,7 +26,14 @@ public abstract class SimplePingingEndpointServletContextListener
 
 
 
-	final WebsocketPinger pinger = new WebsocketPinger();
+	final WebsocketPinger pinger =
+			new WebsocketPinger(getPingIntervalSeconds(), getMaxMalformedPongCount());
+
+	protected int getPingIntervalSeconds() { return WebsocketPinger.DEFAULT_PING_INTERVAL; }
+
+	protected int getMaxMalformedPongCount() {
+		return WebsocketPinger.DEFAULT_MAX_MALFORMED_PONG_COUNT;
+	}
 
 
 
