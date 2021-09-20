@@ -8,17 +8,17 @@ import javax.servlet.ServletException;
 
 import pl.morgwai.base.servlet.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.scopes.GuiceServletContextListener;
-import pl.morgwai.base.servlet.utils.WebsocketPinger;
+import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
 
 /**
- * A {@link GuiceServletContextListener} that creates 1 instance of {@link WebsocketPinger} and
- * decorates endpoint instances created with {@link #addEndpoint(Class, String)} to automatically
- * register/de-register themselves to it.
+ * A {@link GuiceServletContextListener} that creates 1 instance of {@link WebsocketPingerService}
+ * and decorates endpoint instances created with {@link #addEndpoint(Class, String)} to
+ * automatically register/de-register themselves to it.
  * <p>
- * <b>NOTE:</b> in case of a huge number of websocket connections, 1 pinger instance may not be
- * sufficient. A more complex strategy that creates more pingers should be implemented in such
+ * <b>NOTE:</b> in case of a huge number of websocket connections, 1 pingerService instance may not
+ * be sufficient. A more complex strategy that creates more pingers should be implemented in such
  * case.</p>
  */
 public abstract class SimplePingingEndpointServletContextListener
@@ -26,20 +26,20 @@ public abstract class SimplePingingEndpointServletContextListener
 
 
 
-	final WebsocketPinger pinger =
-			new WebsocketPinger(getPingIntervalSeconds(), getMaxMalformedPongCount());
+	final WebsocketPingerService pingerService =
+			new WebsocketPingerService(getPingIntervalSeconds(), getMaxMalformedPongCount());
 
-	protected int getPingIntervalSeconds() { return WebsocketPinger.DEFAULT_PING_INTERVAL; }
+	protected int getPingIntervalSeconds() { return WebsocketPingerService.DEFAULT_PING_INTERVAL; }
 
 	protected int getMaxMalformedPongCount() {
-		return WebsocketPinger.DEFAULT_MAX_MALFORMED_PONG_COUNT;
+		return WebsocketPingerService.DEFAULT_MAX_MALFORMED_PONG_COUNT;
 	}
 
 
 
 	@Override
 	public void contextDestroyed(ServletContextEvent sce) {
-		pinger.stop();
+		pingerService.stop();
 		super.contextDestroyed(sce);
 	}
 
@@ -56,7 +56,7 @@ public abstract class SimplePingingEndpointServletContextListener
 
 		@Override
 		protected InvocationHandler getAdditionalDecorator(Object endpoint) {
-			return new EndpointPingerDecorator(endpoint, pinger);
+			return new EndpointPingerDecorator(endpoint, pingerService);
 		}
 	}
 }

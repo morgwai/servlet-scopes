@@ -13,13 +13,13 @@ import javax.websocket.OnClose;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 
-import pl.morgwai.base.servlet.utils.WebsocketPinger;
+import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
 
 /**
  * Decorator for websocket {@link Endpoint}s that automatically adds and removes their connections
- * to {@link WebsocketPinger}.
+ * to {@link WebsocketPingerService}.
  * For use with {@link pl.morgwai.base.servlet.scopes.GuiceServerEndpointConfigurator
  * #getAdditionalDecorator(Object)}.
  *
@@ -29,13 +29,13 @@ public class EndpointPingerDecorator implements InvocationHandler {
 
 
 
-	public EndpointPingerDecorator(Object endpoint, WebsocketPinger pinger) {
+	public EndpointPingerDecorator(Object endpoint, WebsocketPingerService pingerService) {
 		this.endpoint = endpoint;
-		this.pinger = pinger;
+		this.pingerService = pingerService;
 	}
 
 	Object endpoint;
-	WebsocketPinger pinger;
+	WebsocketPingerService pingerService;
 
 
 
@@ -48,10 +48,10 @@ public class EndpointPingerDecorator implements InvocationHandler {
 					break;
 				}
 			}
-			pinger.addConnection(connection);
+			pingerService.addConnection(connection);
 		}
 		if (isOnClose(method)) {
-			pinger.removeConnection(connection);
+			pingerService.removeConnection(connection);
 		}
 		return method.invoke(endpoint, args);
 	}
