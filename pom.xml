@@ -41,18 +41,21 @@
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<guice.scopes.version>1.0</guice.scopes.version>
+		<servlet.utils.version>1.0</servlet.utils.version>
+		<guice.version>5.0.1</guice.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>pl.morgwai.base</groupId>
 			<artifactId>guice-context-scopes</artifactId>
-			<version>1.0</version>
+			<version>${guice.scopes.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>pl.morgwai.base</groupId>
 			<artifactId>servlet-utils</artifactId>
-			<version>1.0</version>
+			<version>${servlet.utils.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>net.bytebuddy</groupId>
@@ -68,7 +71,7 @@
 		<dependency>
 			<groupId>com.google.inject</groupId>
 			<artifactId>guice</artifactId>
-			<version>5.0.1</version>
+			<version>${guice.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -117,6 +120,13 @@
 				<version>3.2.0</version>
 				<configuration>
 					<javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
+					<links>
+						<link>https://javadoc.io/doc/pl.morgwai.base/guice-context-scopes/${guice.scopes.version}</link>
+						<link>https://javadoc.io/doc/pl.morgwai.base/servlet-utils/${servlet.utils.version}</link>
+						<link>https://google.github.io/guice/api-docs/${guice.version}/javadoc</link>
+						<link>https://javadoc.io/doc/javax.websocket/javax.websocket-api/1.1</link>
+						<link>https://javadoc.io/doc/javax.servlet/javax.servlet-api/4.0.1</link>
+					</links>
 				</configuration>
 				<executions>
 					<execution>
