@@ -18,10 +18,10 @@ import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
 /**
- * Decorator for websocket {@link Endpoint}s that automatically adds and removes their connections
- * to {@link WebsocketPingerService}.
- * For use with {@link pl.morgwai.base.servlet.scopes.GuiceServerEndpointConfigurator
- * #getAdditionalDecorator(Object)}.
+ * Decorator for websocket {@link Endpoint}s that automatically registers and deregisters them to
+ * {@link WebsocketPingerService}.
+ * For use with {@link
+ * pl.morgwai.base.servlet.scopes.GuiceServerEndpointConfigurator#getAdditionalDecorator(Object)}.
  *
  * @see SimplePingingEndpointServletContextListener
  */
@@ -29,13 +29,13 @@ public class EndpointPingerDecorator implements InvocationHandler {
 
 
 
+	Object endpoint;
+	WebsocketPingerService pingerService;
+
 	public EndpointPingerDecorator(Object endpoint, WebsocketPingerService pingerService) {
 		this.endpoint = endpoint;
 		this.pingerService = pingerService;
 	}
-
-	Object endpoint;
-	WebsocketPingerService pingerService;
 
 
 
@@ -60,6 +60,10 @@ public class EndpointPingerDecorator implements InvocationHandler {
 
 
 
+	/**
+	 * Checks if {@code method} is either {@link Endpoint#onOpen(Session, EndpointConfig)} or
+	 * annotated with {@link OnOpen}.
+	 */
 	public static boolean isOnOpen(Method method) {
 		final Class<?>[] paramTypes = {Session.class, EndpointConfig.class};
 		return isEndpointLifecycleMethod(method, OnOpen.class, "onOpen", paramTypes);
@@ -67,6 +71,10 @@ public class EndpointPingerDecorator implements InvocationHandler {
 
 
 
+	/**
+	 * Checks if {@code method} is either {@link Endpoint#onClose(Session, CloseReason)} or
+	 * annotated with {@link OnClose}.
+	 */
 	public static boolean isOnClose(Method method) {
 		final Class<?>[] paramTypes = {Session.class, CloseReason.class};
 		return isEndpointLifecycleMethod(method, OnClose.class, "onClose", paramTypes);
@@ -74,6 +82,10 @@ public class EndpointPingerDecorator implements InvocationHandler {
 
 
 
+	/**
+	 * Checks if {@code method} either overrides the {@link Endpoint} method given by
+	 * {@code name} and {@code paramTypes} or is annotated with {@code annotationClass}.
+	 */
 	public static boolean isEndpointLifecycleMethod(
 		Method method,
 		Class<? extends Annotation> annotationClass,

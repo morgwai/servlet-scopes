@@ -11,14 +11,13 @@ import pl.morgwai.base.guice.scopes.ServerSideContext;
 /**
  * Context of a websocket connection ({@link javax.websocket.Session}).
  * <p>
- * A single instance has its lifetime coupled with a given endpoint instance. Specifically, all
- * calls to given endpoint's annotated methods (from {@link javax.websocket.OnOpen @OnOpen},
- * across all calls to {@link javax.websocket.OnMessage @OnMessage} and
- * {@link javax.websocket.OnError @OnError} until and including
- * {@link javax.websocket.OnClose @OnClose} or methods overriding those of
- * {@link javax.websocket.Endpoint} together with methods of registered
- * {@link javax.websocket.MessageHandler}s are executed within a single
- * <code>WebsocketConnectionContext</code>.</p>
+ * Each instance is associated with a given endpoint instance.
+ * Specifically, all methods of the associated endpoint annotated with one of the websocket
+ * annotations ({@link javax.websocket.OnOpen @OnOpen},
+ * {@link javax.websocket.OnMessage @OnMessage}, {@link javax.websocket.OnError @OnError} and
+ * {@link javax.websocket.OnClose @OnClose}), or overriding those of
+ * {@link javax.websocket.Endpoint} or of registered {@link javax.websocket.MessageHandler}s, are
+ * executed within the same {@code>WebsocketConnectionContext} instance.</p>
  *
  * @see ServletModule#websocketConnectionScope corresponding <code>Scope</code>
  */

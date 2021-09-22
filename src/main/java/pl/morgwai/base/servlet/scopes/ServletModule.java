@@ -22,7 +22,7 @@ import pl.morgwai.base.guice.scopes.ContextTrackingExecutor;
 
 
 /**
- * Servlet Guice {@link Scope}s, {@link ContextTracker}s and some helper methods.
+ * Servlet and websocket Guice {@link Scope}s, {@link ContextTracker}s and some helper methods.
  * A single app-wide instance is created at app startup:
  * {@link GuiceServletContextListener#servletModule}
  */
@@ -45,13 +45,13 @@ public class ServletModule implements Module {
 
 
 	/**
-	 * Scopes bindings to a given {@link HttpSession}. Available both to servlets and websocket
-	 * endpoints.
+	 * Scopes bindings to the context of a given {@link HttpSession}. Available both to servlets and
+	 * websocket endpoints.
 	 * <p>
-	 * <b>NOTE:</b> there's no way to create an {@code HttpSession<} from the websocket endpoint
+	 * <b>NOTE:</b> there's no way to create an {@link HttpSession} from the websocket endpoint
 	 * layer if it does not exist yet. To safely use this scope in websocket endpoints, other
-	 * layers must ensure that a session exists (for example a <code>Filter</code> targeting URL
-	 * patterns of websockets can be used).</p>
+	 * layers must ensure that a session exists (for example a {@link javax.servlet.Filter}
+	 * targeting URL patterns of websockets can be used).</p>
 	 */
 	public final Scope httpSessionScope = new Scope() {
 
@@ -65,9 +65,12 @@ public class ServletModule implements Module {
 							.getHttpSessionContextAttributes()
 							.computeIfAbsent(key, (ignored) -> unscoped.get());
 				} catch (NullPointerException e) {
-					throw new RuntimeException("no request context for thread "
-							+ Thread.currentThread().getName()
-							+ ". See javadoc for ContextScope.scope(...)");
+					// NPE here is a result of a bug that will be usually eliminated in development
+					// phase and not happen in production, so we catch NPE instead of checking
+					// manually each time.
+					throw new RuntimeException("no seesion or no request context for thread "
+							+ Thread.currentThread().getName() + ". See javadocs for "
+							+ "ServletModule.httpSessionScope and ContextScope.scope(...)");
 				}
 			};
 		}
@@ -81,14 +84,15 @@ public class ServletModule implements Module {
 
 
 	/**
-	 * Allows tracking of the {@link WebsocketConnectionContext context of a given websocket
-	 * connection (<code>Session</code>)}.
+	 * Allows tracking of the {@link WebsocketConnectionContext context of a websocket connection
+	 * (javax.websocket.Session)}.
 	 */
 	public final ContextTracker<WebsocketConnectionContext> websocketConnectionContextTracker =
 			new ContextTracker<>();
 
 	/**
-	 * Scopes bindings to a given {@link WebsocketConnectionContext}.
+	 * Scopes bindings to the {@link WebsocketConnectionContext context of a websocket connection
+	 * (javax.websocket.Session)}.
 	 */
 	public final Scope websocketConnectionScope =
 			new ContextScope<>("WEBSOCKET_CONNECTION_SCOPE", websocketConnectionContextTracker);
@@ -126,7 +130,7 @@ public class ServletModule implements Module {
 
 
 	/**
-	 * Convenience "constructor" for <code>ContextTrackingExecutor</code>. (I really miss method
+	 * Convenience "constructor" for {@link ContextTrackingExecutor}. (I really miss method
 	 * extensions in Java)
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(String name, int poolSize) {
@@ -137,7 +141,7 @@ public class ServletModule implements Module {
 
 
 	/**
-	 * Convenience "constructor" for <code>ContextTrackingExecutor</code>.
+	 * Convenience "constructor" for {@link ContextTrackingExecutor}.
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(
 			String name,
@@ -151,7 +155,7 @@ public class ServletModule implements Module {
 
 
 	/**
-	 * Convenience "constructor" for <code>ContextTrackingExecutor</code>.
+	 * Convenience "constructor" for {@link ContextTrackingExecutor}.
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(
 			String name,

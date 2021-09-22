@@ -15,7 +15,7 @@ import pl.morgwai.base.guice.scopes.ServerSideContext;
 
 /**
  * Context of a {@link javax.servlet.http.HttpServletRequest} or a websocket event.
- * Each instance is coupled with a single invocations of some method, which makes it suitable
+ * Each instance is coupled with a single invocation of some method, which makes it suitable
  * for storing short-living objects, such as <code>EntityManager</code>s or DB transactions.
  * Having a common super class for {@link ServletRequestContext} and {@link WebsocketEventContext}
  * allows instances from a single request scoped binding to be obtained both in servlets and
@@ -28,12 +28,15 @@ public abstract class RequestContext extends ServerSideContext<RequestContext> {
 
 
 
+	/**
+	 * Returns the {@link HttpSession}  this request belongs to.
+	 */
 	public abstract HttpSession getHttpSession();
 
 
 
 	/**
-	 * @return context of the <code>HttpSession</code> this request belongs to
+	 * Returns attributes of the context of the {@link HttpSession}  this request belongs to.
 	 */
 	public ConcurrentMap<Key<?>, Object> getHttpSessionContextAttributes() {
 		HttpSession session = getHttpSession();

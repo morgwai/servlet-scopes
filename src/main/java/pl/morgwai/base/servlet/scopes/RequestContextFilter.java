@@ -17,14 +17,13 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 /**
- * Starts tracking context of newly incoming {@link HttpServletRequest}s.
+ * Starts tracking contexts of newly incoming {@link HttpServletRequest}s.
  */
 public class RequestContextFilter implements Filter {
 
 
 
-	@Inject
-	ContextTracker<RequestContext> tracker;
+	@Inject ContextTracker<RequestContext> tracker;
 
 
 

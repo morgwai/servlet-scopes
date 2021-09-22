@@ -29,22 +29,34 @@ public abstract class SimplePingingEndpointServletContextListener
 	final WebsocketPingerService pingerService =
 			new WebsocketPingerService(getPingIntervalSeconds(), getMaxMalformedPongCount());
 
+	/**
+	 * Allows subclasses to override ping interval.
+	 */
 	protected int getPingIntervalSeconds() { return WebsocketPingerService.DEFAULT_PING_INTERVAL; }
 
+	/**
+	 * Allows subclasses to override maximum allowed malformed pongs.
+	 */
 	protected int getMaxMalformedPongCount() {
 		return WebsocketPingerService.DEFAULT_MAX_MALFORMED_PONG_COUNT;
 	}
 
 
 
+	/**
+	 * Stops the associated {@link WebsocketPingerService}.
+	 */
 	@Override
-	public void contextDestroyed(ServletContextEvent sce) {
+	public void contextDestroyed(ServletContextEvent destructionEvent) {
 		pingerService.stop();
-		super.contextDestroyed(sce);
+		super.contextDestroyed(destructionEvent);
 	}
 
 
 
+	/**
+	 * Adds an endpoint using a {@link SimplePingingEndpointConfigurator}.
+	 */
 	@Override
 	protected void addEndpoint(Class<?> endpointClass, String path) throws ServletException {
 		super.addEndpoint(endpointClass, path, new SimplePingingEndpointConfigurator());
@@ -52,6 +64,10 @@ public abstract class SimplePingingEndpointServletContextListener
 
 
 
+	/**
+	 * Automatically registers and deregisters created endpoints to the
+	 * {@link WebsocketPingerService} of the {@link SimplePingingEndpointServletContextListener}.
+	 */
 	public class SimplePingingEndpointConfigurator extends GuiceServerEndpointConfigurator {
 
 		@Override

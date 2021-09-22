@@ -10,6 +10,8 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 /**
  * Context of a {@link HttpServletRequest}.
+ *
+ * @see RequestContext super class for more info
  */
 public class ServletRequestContext extends RequestContext {
 
