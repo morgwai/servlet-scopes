@@ -13,12 +13,13 @@ import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
 /**
- * A {@link GuiceServletContextListener} that creates 1 instance of {@link WebsocketPingerService}
- * and decorates endpoint instances created with {@link #addEndpoint(Class, String)} to
- * automatically register/de-register themselves to it.
+ * A {@link GuiceServletContextListener} that automatically register/deregister endpoint instances
+ * created with {@link #addEndpoint(Class, String) addEndpoint(Class, String)} to a
+ * {@link WebsocketPingerService}.
  * <p>
- * <b>NOTE:</b> in case of a huge number of websocket connections, 1 pingerService instance may not
- * be sufficient. A more complex strategy that creates more pingers should be implemented in such
+ * <b>NOTE:</b> This listener creates only 1 instance of {@link WebsocketPingerService} and
+ * registers all endpoints to it. In case of a huge number of websocket connections, it may be
+ * insufficient. A more complex strategy that creates more pingers should be implemented in such
  * case.</p>
  */
 public abstract class SimplePingingEndpointServletContextListener

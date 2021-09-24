@@ -28,15 +28,18 @@ Scopes bindings to a given `HttpSession`. Available both to servlets and websock
 ### [ServletModule](src/main/java/pl/morgwai/base/servlet/scopes/ServletModule.java)
 Contains the above `Scope`s, `ContextTracker`s and some helper methods.
 
-### [GuiceServletContextListener](src/main/java/pl/morgwai/base/servlet/scopes/GuiceServletContextListener.java)
-Base class for app's `ServletContextListener`. Creates and configures apps Guice `Injector` and the above `ServletModule`. Provides also some helper methods.
-
 ### [GuiceServerEndpointConfigurator](src/main/java/pl/morgwai/base/servlet/scopes/GuiceServerEndpointConfigurator.java)
 A websocket endpoint `Configurator` that automatically injects dependencies of newly created endpoint instances and decorates their methods to automatically create context for websocket connections and events.
 
 ### [ContextTrackingExecutor](https://github.com/morgwai/guice-context-scopes/blob/master/src/main/java/pl/morgwai/base/guice/scopes/ContextTrackingExecutor.java)
 A `ThreadPoolExecutor` that upon dispatching automatically updates which thread runs within which `Context` (Request, Message, Session). Instances should usually be obtained using helper methods from the above `ServletModule`.<br/>
 (this class actually comes from [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes)).
+
+### [GuiceServletContextListener](src/main/java/pl/morgwai/base/servlet/scopes/GuiceServletContextListener.java)
+Base class for app's `ServletContextListener`. Creates and configures apps Guice `Injector` and the above `ServletModule`. Provides also some helper methods.
+
+### [SimplePingingEndpointServletContextListener](src/main/java/pl/morgwai/base/servlet/guiced/utils/SimplePingingEndpointServletContextListener.java)
+Subclass of `GuiceServletContextListener` that additionally automatically registers/deregisters created endpoint instances to a [WebsocketPingerService](https://github.com/morgwai/servlet-utils#main-user-classes).
 
 
 ## USAGE
