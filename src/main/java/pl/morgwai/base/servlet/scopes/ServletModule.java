@@ -68,9 +68,9 @@ public class ServletModule implements Module {
 					// NPE here is a result of a bug that will be usually eliminated in development
 					// phase and not happen in production, so we catch NPE instead of checking
 					// manually each time.
-					throw new RuntimeException("no seesion or no request context for thread "
-							+ Thread.currentThread().getName() + ". See javadocs for "
-							+ "ServletModule.httpSessionScope and ContextScope.scope(...)");
+					throw new RuntimeException("no request context for thread "
+							+ Thread.currentThread().getName() + " in scope " + toString()
+							+ ". See javadoc for ContextScope.scope(...)");
 				}
 			};
 		}
