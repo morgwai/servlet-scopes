@@ -120,6 +120,7 @@
 				<version>3.2.0</version>
 				<configuration>
 					<javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
+					<overview>${basedir}/src/main/java/overview.html</overview>
 					<links>
 						<link>https://javadoc.io/doc/pl.morgwai.base/guice-context-scopes/${guice.scopes.version}</link>
 						<link>https://javadoc.io/doc/pl.morgwai.base/servlet-utils/${servlet.utils.version}</link>
