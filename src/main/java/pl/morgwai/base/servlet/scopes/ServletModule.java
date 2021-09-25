@@ -101,8 +101,8 @@ public class ServletModule implements Module {
 
 	/**
 	 * Binds {@link #requestContextTracker} and {@link #websocketConnectionContextTracker} and
-	 * corresponding contexts for injection. Binds {@code ContextTracker<?>[]} to instance
-	 * containing all trackers for use with
+	 * corresponding contexts for injection. Binds {@code ContextTracker<?>[]} to
+	 * {@link #allTrackers} that contains all trackers for use with
 	 * {@link ContextTrackingExecutor#getActiveContexts(ContextTracker...)}.
 	 */
 	@Override
@@ -121,10 +121,14 @@ public class ServletModule implements Module {
 				() -> websocketConnectionContextTracker.getCurrentContext());
 
 		TypeLiteral<ContextTracker<?>[]> trackerArrayType = new TypeLiteral<>() {};
-		binder.bind(trackerArrayType).toInstance(trackers);
+		binder.bind(trackerArrayType).toInstance(allTrackers);
 	}
 
-	public final ContextTracker<?>[] trackers =
+	/**
+	 * Contains all trackers. {@link #configure(Binder)} binds {@code ContextTracker<?>[]} to it
+	 * for use with {@link ContextTrackingExecutor#getActiveContexts(ContextTracker...)}.
+	 */
+	public final ContextTracker<?>[] allTrackers =
 		{websocketConnectionContextTracker, requestContextTracker};
 
 
