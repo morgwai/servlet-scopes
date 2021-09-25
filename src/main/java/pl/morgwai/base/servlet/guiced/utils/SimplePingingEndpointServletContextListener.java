@@ -14,8 +14,9 @@ import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 /**
  * A {@link GuiceServletContextListener} that automatically register/deregister endpoint instances
- * created with {@link #addEndpoint(Class, String) addEndpoint(Class, String)} to a
- * {@link WebsocketPingerService}.
+ * to a {@link WebsocketPingerService}. Endpoints need to be created with
+ * {@link #addEndpoint(Class, String) addEndpoint(Class, String)} or annotated to use
+ * {@link SimplePingingEndpointConfigurator}.
  * <p>
  * <b>NOTE:</b> This listener creates only 1 instance of {@link WebsocketPingerService} and
  * registers all endpoints to it. In case of a huge number of websocket connections, it may be
