@@ -8,10 +8,10 @@ Servlet and websocket Guice scopes, that are automatically transferred when disp
 
 ## OVERVIEW
 
-Provides the below Guice scopes built using [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes) which automatically transfers them to a new thread when dispatching using [ContextTrackingExecutor](https://github.com/morgwai/guice-context-scopes/blob/master/src/main/java/pl/morgwai/base/guice/scopes/ContextTrackingExecutor.java).
+Provides the below Guice scopes built using [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes) which automatically transfers them to a new thread when dispatching using `ContextTrackingExecutor` (see below).
 
 ### requestScope
-Scopes bindings to either an `HttpServletRequest` or a websocket event (connection opened/closed, message received, error occured).<br/>
+Scopes bindings to either an `HttpServletRequest` or a websocket event (connection opened/closed, message received, error occurred).<br/>
 Spans over a single container initiated invocation of servlet or websocket endpoint method (`Servlet.doXXX` methods, endpoint methods annotated with `@OnOpen`, `@OnMessage`, `@OnError`, `@OnClose`, methods overriding those of `javax.websocket.Endpoint` and methods of registered `MessageHandler`s).<br/>
 Having a common scope for servlet requests and websocket events allows the same binding to be available both in servlets and endpoints.
 
@@ -28,12 +28,12 @@ Scopes bindings to a given `HttpSession`. Available both to servlets and websock
 ### [ServletModule](src/main/java/pl/morgwai/base/servlet/scopes/ServletModule.java)
 Contains the above `Scope`s, `ContextTracker`s and some helper methods.
 
+### [ContextTrackingExecutor](src/main/java/pl/morgwai/base/servlet/scopes/ContextTrackingExecutor.java)
+An `Executor` (backed by a fixed size `ThreadPoolExecutor` by default) that upon dispatching automatically updates which thread runs within which `Context` (`HttpRequest`/`WebsocketEvent`, `WebsocketConnection`, `HttpSession`).<br/>
+Instances should usually be created using helper methods from the above `ServletModule` and configured for named instance injection in user modules.
+
 ### [GuiceServerEndpointConfigurator](src/main/java/pl/morgwai/base/servlet/scopes/GuiceServerEndpointConfigurator.java)
 A websocket endpoint `Configurator` that automatically injects dependencies of newly created endpoint instances and decorates their methods to automatically create context for websocket connections and events.
-
-### [ContextTrackingExecutor](https://github.com/morgwai/guice-context-scopes/blob/master/src/main/java/pl/morgwai/base/guice/scopes/ContextTrackingExecutor.java)
-A `ThreadPoolExecutor` that upon dispatching automatically updates which thread runs within which `Context` (Request, Message, Session). Instances should usually be obtained using helper methods from the above `ServletModule`.<br/>
-(this class actually comes from [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes)).
 
 ### [GuiceServletContextListener](src/main/java/pl/morgwai/base/servlet/scopes/GuiceServletContextListener.java)
 Base class for app's `ServletContextListener`. Creates and configures apps Guice `Injector` and the above `ServletModule`. Provides also some helper methods.
@@ -77,6 +77,25 @@ public class MyEndpoint {
 }
 // MyEndpoint will have its fields injected. Methods onOpen, onClose, onError and registered
 // MessageHandlers will run within requestScope, websocketConnectionScope and httpSessionScope
+```
+
+Hint: in cases when it's not possible to avoid thread switching without the use of `ContextTrackingExecutor` (for example when passing callbacks to some async calls), static helper methods `getActiveContexts(ContextTracker...)` and `executeWithinAll(List<ServerSideContext>, Runnable)` defined in `ContextTrackingExecutor` can be used to transfer context manually:
+
+```java
+class MyClass {
+
+    @Inject ContextTracker<?>[] allTrackers;
+
+    void myMethod(Object param) {
+        // myMethod code
+        var activeCtxList = ContextTrackingExecutor.getActiveContexts(allTrackers);
+        someAsyncMethod(param, (callbackParam) ->
+            ContextTrackingExecutor.executeWithinAll(activeCtxList, () -> {
+                // callback code
+            }
+        ));
+    }
+}
 ```
 
 

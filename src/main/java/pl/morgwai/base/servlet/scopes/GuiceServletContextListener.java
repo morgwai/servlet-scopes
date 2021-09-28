@@ -46,6 +46,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * and helper methods from {@link #servletModule}.</p>
 	 */
 	protected abstract LinkedList<Module> configureInjections() throws ServletException;
+
 	/**
 	 * For use in {@link #configureInjections()}.
 	 */
@@ -74,10 +75,12 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * {@link #INJECTOR} is created.</p>
 	 */
 	protected abstract void configureServletsFiltersEndpoints() throws ServletException;
+
 	/**
 	 * For use in {@link #configureServletsFiltersEndpoints()}.
 	 */
 	protected ServletContext servletContainer;
+
 	/**
 	 * For use in {@link #configureServletsFiltersEndpoints()}.
 	 */

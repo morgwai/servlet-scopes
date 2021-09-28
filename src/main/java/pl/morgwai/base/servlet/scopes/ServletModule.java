@@ -2,9 +2,9 @@
 package pl.morgwai.base.servlet.scopes;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpSession;
 
@@ -17,7 +17,6 @@ import com.google.inject.TypeLiteral;
 
 import pl.morgwai.base.guice.scopes.ContextScope;
 import pl.morgwai.base.guice.scopes.ContextTracker;
-import pl.morgwai.base.guice.scopes.ContextTrackingExecutor;
 
 
 
@@ -124,6 +123,8 @@ public class ServletModule implements Module {
 		binder.bind(trackerArrayType).toInstance(allTrackers);
 	}
 
+
+
 	/**
 	 * Contains all trackers. {@link #configure(Binder)} binds {@code ContextTracker<?>[]} to it
 	 * for use with {@link ContextTrackingExecutor#getActiveContexts(ContextTracker...)}.
@@ -135,51 +136,64 @@ public class ServletModule implements Module {
 
 	/**
 	 * Convenience "constructor" for {@link ContextTrackingExecutor}. (I really miss method
-	 * extensions in Java)
+	 * extensions in Java).
+	 *
+	 * @see ContextTrackingExecutor#ContextTrackingExecutor(String, int, ContextTracker...)
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(String name, int poolSize) {
-		return new ContextTrackingExecutor(
-				name, poolSize, requestContextTracker, websocketConnectionContextTracker);
+		return new ContextTrackingExecutor(name, poolSize, allTrackers);
 	}
 
 
 
 	/**
 	 * Convenience "constructor" for {@link ContextTrackingExecutor}.
+	 *
+	 * @see ContextTrackingExecutor#ContextTrackingExecutor(String, int, BlockingQueue,
+	 * ContextTracker...)
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(
 			String name,
 			int poolSize,
 			BlockingQueue<Runnable> workQueue) {
-		return new ContextTrackingExecutor(
-				name, poolSize, workQueue,
-				requestContextTracker, websocketConnectionContextTracker);
+		return new ContextTrackingExecutor(name, poolSize, workQueue, allTrackers);
 	}
 
 
 
 	/**
 	 * Convenience "constructor" for {@link ContextTrackingExecutor}.
+	 *
+	 * @see ContextTrackingExecutor#ContextTrackingExecutor(String, int, BlockingQueue,
+	 * ThreadFactory, ContextTracker...)
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(
 			String name,
-			int corePoolSize,
-			int maximumPoolSize,
-			long keepAliveTime,
-			TimeUnit unit,
+			int poolSize,
 			BlockingQueue<Runnable> workQueue,
 			ThreadFactory threadFactory,
-			RejectedExecutionHandler handler,
 			ContextTracker<?>... trackers) {
-		return new ContextTrackingExecutor(
-				name,
-				corePoolSize,
-				maximumPoolSize,
-				keepAliveTime,
-				unit,
-				workQueue,
-				threadFactory,
-				handler,
-				requestContextTracker, websocketConnectionContextTracker);
+		return new ContextTrackingExecutor(name, poolSize, workQueue, threadFactory, allTrackers);
+	}
+
+
+
+	/**
+	 * Convenience "constructor" for {@link ContextTrackingExecutor}.
+	 * <p>
+	 * <b>NOTE:</b> {@code backingExecutor.execute(task)} must throw
+	 * {@link RejectedExecutionException} in case of rejection for
+	 * {@link ContextTrackingExecutor#execute(javax.servlet.http.HttpServletResponse, Runnable)} to
+	 * work properly.</p>
+	 *
+	 * @see pl.morgwai.base.guice.scopes.ContextTrackingExecutor#ContextTrackingExecutor(String,
+	 * ExecutorService, int, ContextTracker...)
+	 */
+	public ContextTrackingExecutor newContextTrackingExecutor(
+			String name,
+			ExecutorService backingExecutor,
+			int poolSize,
+			ContextTracker<?>... trackers) {
+		return new ContextTrackingExecutor(name, backingExecutor, poolSize, allTrackers);
 	}
 }

@@ -10,7 +10,7 @@
 
 	<groupId>pl.morgwai.base</groupId>
 	<artifactId>servlet-scopes</artifactId>
-	<version>1.2-SNAPSHOT</version>
+	<version>2.0-SNAPSHOT</version>
 
 	<name>Servlet and Websocket Guice Scopes</name>
 	<description>Servlet and websocket Guice scopes, that are automatically transferred when dispatching work to other threads</description>
@@ -41,7 +41,7 @@
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<guice.scopes.version>1.0</guice.scopes.version>
+		<guice.scopes.version>2.0-alpha1</guice.scopes.version>
 		<servlet.utils.version>1.0</servlet.utils.version>
 		<guice.version>5.0.1</guice.version>
 	</properties>
