@@ -36,6 +36,7 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 		try {
 			execute(task);
 		} catch (RejectedExecutionException e) {
+			if ( ! backingExecutor.isShutdown()) log.warn("executor " + getName() + " overloaded");
 			try {
 				response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
 			} catch (IOException e1) {}  // broken connection or status already sent
@@ -52,8 +53,9 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 		try {
 			execute(task);
 		} catch (RejectedExecutionException e) {
+			if ( ! backingExecutor.isShutdown()) log.warn("executor " + getName() + " overloaded");
 			try {
-				connection.close(new CloseReason(CloseCodes.TRY_AGAIN_LATER, "overloaded"));
+				connection.close(new CloseReason(CloseCodes.TRY_AGAIN_LATER, "service overloaded"));
 			} catch (IOException e1) {}  // broken connection
 		}
 	}
