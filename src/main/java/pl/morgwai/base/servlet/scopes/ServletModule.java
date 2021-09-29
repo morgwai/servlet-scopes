@@ -186,8 +186,8 @@ public class ServletModule implements Module {
 	 * {@link ContextTrackingExecutor#execute(javax.servlet.http.HttpServletResponse, Runnable)} to
 	 * work properly.</p>
 	 *
-	 * @see pl.morgwai.base.guice.scopes.ContextTrackingExecutor#ContextTrackingExecutor(String,
-	 * ExecutorService, int, ContextTracker...)
+	 * @see ContextTrackingExecutor#ContextTrackingExecutor(String, ExecutorService, int,
+	 * ContextTracker...)
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(
 			String name,
