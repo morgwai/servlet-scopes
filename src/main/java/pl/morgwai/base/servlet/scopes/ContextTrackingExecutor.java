@@ -36,7 +36,6 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 		try {
 			execute(task);
 		} catch (RejectedExecutionException e) {
-			if ( ! backingExecutor.isShutdown()) log.warn("executor " + getName() + " overloaded");
 			try {
 				response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
 			} catch (IOException e1) {}  // broken connection or status already sent
@@ -53,7 +52,6 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 		try {
 			execute(task);
 		} catch (RejectedExecutionException e) {
-			if ( ! backingExecutor.isShutdown()) log.warn("executor " + getName() + " overloaded");
 			try {
 				connection.close(new CloseReason(CloseCodes.TRY_AGAIN_LATER, "service overloaded"));
 			} catch (IOException e1) {}  // broken connection
@@ -79,8 +77,9 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 	 * Constructs an instance backed by a new fixed size {@link ThreadPoolExecutor} that uses a
 	 * {@link NamedThreadFactory}.
 	 * <p>
-	 * Throws a {@link RejectedExecutionException} if {@code workQueue} is full. It should usually
-	 * be handled by sending status {@code 503 Service Unavailable} to the client.</p>
+	 * {@link #execute(Runnable)} throws a {@link RejectedExecutionException} if {@code workQueue}
+	 * is full. It should usually be handled by sending status {@code 503 Service Unavailable} to
+	 * the client.</p>
 	 */
 	public ContextTrackingExecutor(
 			String name,
@@ -95,8 +94,9 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 	/**
 	 * Constructs an instance backed by a new fixed size {@link ThreadPoolExecutor}.
 	 * <p>
-	 * Throws a {@link RejectedExecutionException} if {@code workQueue} is full. It should usually
-	 * be handled by sending status {@code 503 Service Unavailable} to the client.</p>
+	 * {@link #execute(Runnable)} throws a {@link RejectedExecutionException} if {@code workQueue}
+	 * is full. It should usually be handled by sending status {@code 503 Service Unavailable} to
+	 * the client.</p>
 	 */
 	public ContextTrackingExecutor(
 			String name,
