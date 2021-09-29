@@ -38,12 +38,12 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Returns Guice {@link Module} list that configure bindings for all user-defined components
-	 * that will be requested from Guice {@link #INJECTOR}.
+	 * Returns {@link Module}s that configure bindings for user-defined components.
+	 * The result will be passed when creating the app wide {@link #INJECTOR}.
 	 * <p>
-	 * Implementations may use
-	 * {@link com.google.inject.Scope}s, {@link pl.morgwai.base.guice.scopes.ContextTracker}s
-	 * and helper methods from {@link #servletModule}.</p>
+	 * Implementations may use {@link com.google.inject.Scope}s,
+	 * {@link pl.morgwai.base.guice.scopes.ContextTracker}s and helper methods from
+	 * {@link #servletModule}.</p>
 	 */
 	protected abstract LinkedList<Module> configureInjections() throws ServletException;
 
@@ -89,8 +89,10 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Adds an async servlet and injects its dependencies.<br/>
+	 * Adds a servlet and injects its dependencies.<br/>
 	 * For use in {@link #configureServletsFiltersEndpoints()}.
+	 * <p>
+	 * The servlet will support async processing.</p>
 	 */
 	protected ServletRegistration.Dynamic addServlet(
 			String name, Class<? extends HttpServlet> servletClass, String... urlPatterns)
@@ -107,9 +109,11 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Adds an async filter at the end of the chain (with <code>isMatchAfter==true</code> and
-	 * {@link DispatcherType#REQUEST}) and injects its dependencies.<br/>
+	 * Adds a filter at the end of the chain and injects its dependencies.<br/>
 	 * For use in {@link #configureServletsFiltersEndpoints()}.
+	 * <p>
+	 * The filter will support async processing and {@link DispatcherType} will be set to
+	 * {@link DispatcherType#REQUEST}.</p>
 	 */
 	protected FilterRegistration.Dynamic addFilter(
 			String name, Class<? extends Filter> filterClass, String... urlPatterns)
@@ -127,19 +131,19 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/**
 	 * Adds an endpoint using {@link GuiceServerEndpointConfigurator} that injects the dependencies
-	 * and sets up contexts.
-	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.<br/>
+	 * and sets up contexts.&nbsp;
 	 * For use in {@link #configureServletsFiltersEndpoints()}.
-	 * @see #addEndpoint(Class, String, Configurator)
+	 * <p>
+	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.</p>
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path) throws ServletException {
 		addEndpoint(endpointClass, path, new GuiceServerEndpointConfigurator());
 	}
 
 	/**
-	 * Adds an endpoint.<br/>
-	 * Helper for subclasses that need to override {@link #addEndpoint(Class, String)} to use
-	 * custom {@code configurator}.
+	 * Adds an endpoint using custom {@code configurator}.
+	 * <p>
+	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.</p>
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path, Configurator configurator)
 			throws ServletException {
@@ -159,7 +163,9 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/**
 	 * Calls {@link #configureInjections()}, creates {@link #INJECTOR} and
-	 * {@link RequestContextFilter}, finally calls {@link #configureServletsFiltersEndpoints()}.
+	 * calls {@link #configureServletsFiltersEndpoints()}.
+	 * <p>
+	 * Also adds {@link RequestContextFilter} at the beginning of the chain.</p>
 	 */
 	@Override
 	public void contextInitialized(ServletContextEvent initializationEvent) {

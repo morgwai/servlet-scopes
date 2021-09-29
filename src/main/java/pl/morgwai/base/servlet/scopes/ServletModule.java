@@ -20,7 +20,7 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 /**
  * Servlet and websocket Guice {@link Scope}s, {@link ContextTracker}s and some helper methods.
  * A single app-wide instance is created at app startup:
- * {@link GuiceServletContextListener#servletModule}
+ * {@link GuiceServletContextListener#servletModule}.
  */
 public class ServletModule implements Module {
 
@@ -32,8 +32,8 @@ public class ServletModule implements Module {
 	public final ContextTracker<RequestContext> requestContextTracker = new ContextTracker<>();
 
 	/**
-	 * Scopes bindings to either a {@link ServletRequestContext} or a {@link WebsocketEventContext}
-	 * (Objects bound to this scope can be obtained both in servlets and endpoints).
+	 * Scopes bindings to either a {@link ServletRequestContext} or a {@link WebsocketEventContext}.
+	 * Objects bound in this scope can be obtained both in servlets and endpoints.
 	 * @see RequestContext
 	 */
 	public final Scope requestScope = new ContextScope<>("REQUEST_sCOPE", requestContextTracker);
@@ -134,7 +134,7 @@ public class ServletModule implements Module {
 	/**
 	 * Constructs an executor backed by a new fixed size
 	 * {@link java.util.concurrent.ThreadPoolExecutor} that uses a
-	 * {@link ContextTrackingExecutor.NamedThreadFactory} and an unbound
+	 * {@link ContextTrackingExecutor.NamedThreadFactory NamedThreadFactory} and an unbound
 	 * {@link java.util.concurrent.LinkedBlockingQueue}.
 	 * <p>
 	 * To avoid {@link OutOfMemoryError}s, an external mechanism that limits maximum number of tasks
@@ -149,7 +149,7 @@ public class ServletModule implements Module {
 	/**
 	 * Constructs an executor backed by a new fixed size
 	 * {@link java.util.concurrent.ThreadPoolExecutor} that uses a
-	 * {@link ContextTrackingExecutor.NamedThreadFactory}.
+	 * {@link ContextTrackingExecutor.NamedThreadFactory NamedThreadFactory}.
 	 * <p>
 	 * {@link ContextTrackingExecutor#execute(Runnable)} throws a
 	 * {@link java.util.concurrent.RejectedExecutionException} if {@code workQueue} is full. It
@@ -190,8 +190,8 @@ public class ServletModule implements Module {
 	 * <p>
 	 * <b>NOTE:</b> {@code backingExecutor.execute(task)} must throw
 	 * {@link java.util.concurrent.RejectedExecutionException} in case of rejection for
-	 * {@link ContextTrackingExecutor#execute(javax.servlet.http.HttpServletResponse, Runnable)} to
-	 * work properly.</p>
+	 * {@link ContextTrackingExecutor#execute(javax.servlet.http.HttpServletResponse, Runnable)
+	 * execute(httpResponse, task)} to work properly.</p>
 	 * <p>
 	 * {@code poolSize} is informative only, to be returned by
 	 * {@link ContextTrackingExecutor#getPoolSize()}.</p>

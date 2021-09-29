@@ -18,19 +18,21 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 /**
  * A {@link pl.morgwai.base.guice.scopes.ContextTrackingExecutor} with additional
- * {@link #execute(HttpServletResponse, Runnable)} and {@link #execute(Session, Runnable)} methods
- * that send {@link HttpServletResponse#SC_SERVICE_UNAVAILABLE}, {@link CloseCodes#TRY_AGAIN_LATER}
- * respectively if this executor rejects a task.
+ * {@link #execute(HttpServletResponse, Runnable) execute(httpResponse, task)} and
+ * {@link #execute(Session, Runnable) execute(wsConnection, task)} methods
+ * that send {@link HttpServletResponse#SC_SERVICE_UNAVAILABLE 503} /
+ * {@link CloseCodes#TRY_AGAIN_LATER TRY_AGAIN_LATER} if the task is rejected.
+ * This can happen due to an overload or a shutdown.
  * <p>
- * Instances can be created using {@link ServletModule#newContextTrackingExecutor(String, int)}
- * helper methods family.</p>
+ * Instances can be created using {@link ServletModule#newContextTrackingExecutor(String, int)
+ * ServletModule.newContextTrackingExecutor(...)} helper methods family.</p>
  */
 public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.ContextTrackingExecutor {
 
 
 
 	/**
-	 * Calls {@link #execute(Runnable) execute(task)} and if it's rejected sends
+	 * Calls {@link #execute(Runnable) execute(task)} and if it's rejected, sends
 	 * {@link HttpServletResponse#SC_SERVICE_UNAVAILABLE} to {@code response}.
 	 */
 	public void execute(HttpServletResponse response, Runnable task) {
@@ -48,8 +50,8 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 
 
 	/**
-	 * Calls {@link #execute(Runnable) execute(task)} and if it's rejected closes {@code connection}
-	 * with {@link CloseCodes#TRY_AGAIN_LATER}.
+	 * Calls {@link #execute(Runnable) execute(task)} and if it's rejected, closes
+	 * {@code connection} with {@link CloseCodes#TRY_AGAIN_LATER}.
 	 */
 	public void execute(Session connection, Runnable task) {
 		try {

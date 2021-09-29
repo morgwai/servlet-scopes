@@ -8,8 +8,8 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 /**
- * Context of a single websocket event such as connection creation/closure, message arrival or
- * error occurrence.
+ * Context of a single websocket event such as a connection creation/closure, a message arrival or
+ * an error occurrence.
  * <p>
  * Each instance is associated with a single invocation of some endpoint life-cycle or
  * {@link javax.websocket.MessageHandler} method.

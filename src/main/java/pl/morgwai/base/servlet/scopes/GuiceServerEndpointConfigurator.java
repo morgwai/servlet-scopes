@@ -30,13 +30,13 @@ import static pl.morgwai.base.servlet.scopes.GuiceServletContextListener.INJECTO
 
 
 /**
- * Automatically injects dependencies of newly created endpoint instances and decorates their
- * methods with {@link WebsocketConnectionContext} and {@link RequestContext} setup.
+ * Automatically sets up {@link WebsocketConnectionContext} &amp; {@link RequestContext} and injects
+ * dependencies of endpoint instances.
  * <p>
  * For endpoints annotated with @{@link ServerEndpoint} add this class as
  * {@link ServerEndpoint#configurator() configurator} param:
  * </p><pre>
- *@ServerEndpoint(
+ *&commat;ServerEndpoint(
  *    value = "/websocket/mySocket",
  *    configurator = GuiceServerEndpointConfigurator.class)
  *public class MyEndpoint {...}</pre>
