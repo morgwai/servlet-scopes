@@ -34,22 +34,21 @@ import static pl.morgwai.base.servlet.scopes.GuiceServletContextListener.getInje
  * dependencies of endpoint instances.
  * <p>
  * For endpoints annotated with @{@link ServerEndpoint} add this class as
- * {@link ServerEndpoint#configurator() configurator} param:
- * </p><pre>
- *&commat;ServerEndpoint(
- *    value = "/websocket/mySocket",
- *    configurator = GuiceServerEndpointConfigurator.class)
- *public class MyEndpoint {...}</pre>
+ * {@link ServerEndpoint#configurator() configurator} param:</p>
+ * <pre>
+ * &commat;ServerEndpoint(
+ *     value = "/websocket/mySocket",
+ *     configurator = GuiceServerEndpointConfigurator.class)
+ * public class MyEndpoint {...}</pre>
  * <p>
  * <b>NOTE:</b> methods annotated with @{@link OnOpen} <b>must</b> have a {@link Session} param.</p>
  * <p>
  * For endpoints added programmatically, build a {@link ServerEndpointConfig} similar to the below:
  * </p><pre>
- *websocketContainer.addEndpoint(ServerEndpointConfig.Builder
- *        .create(MyEndpoint.class, "/websocket/mySocket")
- *        .configurator(new GuiceServerEndpointConfigurator())
- *        .build());
- * </pre>
+ * websocketContainer.addEndpoint(ServerEndpointConfig.Builder
+ *         .create(MyEndpoint.class, "/websocket/mySocket")
+ *         .configurator(new GuiceServerEndpointConfigurator())
+ *         .build());</pre>
  */
 public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Configurator {
 

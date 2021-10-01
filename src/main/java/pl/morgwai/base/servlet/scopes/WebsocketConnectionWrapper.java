@@ -97,8 +97,7 @@ class WebsocketConnectionWrapper implements Session {
 
 
 
-	WebsocketConnectionWrapper(
-			Session connection, ContextTracker<RequestContext> eventCtxTracker) {
+	WebsocketConnectionWrapper(Session connection, ContextTracker<RequestContext> eventCtxTracker) {
 		this.wrappedConnection = connection;
 		this.eventCtxTracker = eventCtxTracker;
 		this.httpSession = (HttpSession) wrappedConnection.getUserProperties().get(
