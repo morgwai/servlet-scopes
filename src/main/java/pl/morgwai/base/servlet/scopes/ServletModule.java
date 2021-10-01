@@ -178,8 +178,7 @@ public class ServletModule implements Module {
 			String name,
 			int poolSize,
 			BlockingQueue<Runnable> workQueue,
-			ThreadFactory threadFactory,
-			ContextTracker<?>... trackers) {
+			ThreadFactory threadFactory) {
 		return new ContextTrackingExecutor(name, poolSize, workQueue, threadFactory, allTrackers);
 	}
 
@@ -199,8 +198,7 @@ public class ServletModule implements Module {
 	public ContextTrackingExecutor newContextTrackingExecutor(
 			String name,
 			ExecutorService backingExecutor,
-			int poolSize,
-			ContextTracker<?>... trackers) {
+			int poolSize) {
 		return new ContextTrackingExecutor(name, backingExecutor, poolSize, allTrackers);
 	}
 }
