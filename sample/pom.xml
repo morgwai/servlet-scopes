@@ -39,7 +39,7 @@
 		<dependency>
 			<groupId>pl.morgwai.base</groupId>
 			<artifactId>servlet-scopes</artifactId>
-			<version>3.0</version>
+			<version>3.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.inject</groupId>
