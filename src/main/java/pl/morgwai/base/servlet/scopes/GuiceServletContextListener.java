@@ -50,7 +50,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	/**
 	 * For use in {@link #configureInjections()}.
 	 */
-	protected ServletModule servletModule = new ServletModule();
+	protected final ServletModule servletModule = new ServletModule();
 
 	/**
 	 * App wide Guice {@link Injector}. Exposed as {@code public static} for non-programmatic
@@ -168,7 +168,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * Also adds {@link RequestContextFilter} at the beginning of the chain.</p>
 	 */
 	@Override
-	public void contextInitialized(ServletContextEvent initializationEvent) {
+	public final void contextInitialized(ServletContextEvent initializationEvent) {
 		try {
 			LinkedList<Module> modules = configureInjections();
 			modules.add(servletModule);
