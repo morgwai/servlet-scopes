@@ -25,7 +25,7 @@ import net.bytebuddy.matcher.ElementMatchers;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
-import static pl.morgwai.base.servlet.scopes.GuiceServletContextListener.INJECTOR;
+import static pl.morgwai.base.servlet.scopes.GuiceServletContextListener.getInjector;
 
 
 
@@ -92,7 +92,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	public <EndpointT> EndpointT getEndpointInstance(Class<EndpointT> endpointClass)
 			throws InstantiationException {
 		try {
-			final EndpointT endPoint = INJECTOR.getInstance(endpointClass);
+			final EndpointT endPoint = getInjector().getInstance(endpointClass);
 			@SuppressWarnings("unchecked")
 			final var proxyClass = (Class<? extends EndpointT>) proxyClasses.computeIfAbsent(
 					endpointClass, this::createProxyClass);
@@ -139,7 +139,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	@Inject ContextTracker<WebsocketConnectionContext> connectionCtxTracker;
 
 	public GuiceServerEndpointConfigurator() {
-		INJECTOR.injectMembers(this);
+		getInjector().injectMembers(this);
 	}
 
 

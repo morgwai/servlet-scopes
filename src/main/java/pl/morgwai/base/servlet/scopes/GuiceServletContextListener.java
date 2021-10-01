@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * Creates and configures app wide Guice {@link #INJECTOR} and {@link ServletModule}.
+ * Creates and configures {@link #getInjector() app wide Guice injector} and {@link ServletModule}.
  * A single subclass of this class must be created and either annotated with
  * {@link javax.servlet.annotation.WebListener @WebListener} or enlisted in
  * <code>web.xml</code> file in <code>listener</code> element.
@@ -39,7 +39,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/**
 	 * Returns {@link Module}s that configure bindings for user-defined components.
-	 * The result will be passed when creating the app wide {@link #INJECTOR}.
+	 * The result will be passed when creating {@link #getInjector() the app wide injector}.
 	 * <p>
 	 * Implementations may use {@link com.google.inject.Scope}s,
 	 * {@link pl.morgwai.base.guice.scopes.ContextTracker}s and helper methods from
@@ -53,11 +53,12 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	protected final ServletModule servletModule = new ServletModule();
 
 	/**
-	 * App wide Guice {@link Injector}. Exposed as {@code public static} for non-programmatic
-	 * servlets/filters to manually request dependency injection with
+	 * Returns app wide Guice {@link Injector}. Exposed as {@code public static}
+	 * for non-programmatic servlets/filters to manually request dependency injection with
 	 * {@link Injector#injectMembers(Object)} (usually in the <code>init(config)</code> method).
 	 */
-	public static Injector INJECTOR;
+	public static Injector getInjector() { return injector; }
+	static Injector injector;
 
 
 
@@ -72,7 +73,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * {@link #addEndpoint(Class, String, Configurator)} are provided for the most common cases.</p>
 	 * <p>
 	 * This method is called <b>after</b> {@link #configureInjections()} is called and
-	 * {@link #INJECTOR} is created.</p>
+	 * {@link #getInjector() the injector} is created.</p>
 	 */
 	protected abstract void configureServletsFiltersEndpoints() throws ServletException;
 
@@ -98,7 +99,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			String name, Class<? extends HttpServlet> servletClass, String... urlPatterns)
 			throws ServletException {
 		Servlet servlet = servletContainer.createServlet(servletClass);
-		INJECTOR.injectMembers(servlet);
+		injector.injectMembers(servlet);
 		ServletRegistration.Dynamic reg = servletContainer.addServlet(name, servlet);
 		reg.addMapping(urlPatterns);
 		reg.setAsyncSupported(true);
@@ -119,7 +120,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			String name, Class<? extends Filter> filterClass, String... urlPatterns)
 			throws ServletException {
 		Filter filter = servletContainer.createFilter(filterClass);
-		INJECTOR.injectMembers(filter);
+		injector.injectMembers(filter);
 		FilterRegistration.Dynamic reg = servletContainer.addFilter(name, filter);
 		reg.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, urlPatterns);
 		reg.setAsyncSupported(true);
@@ -162,7 +163,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Calls {@link #configureInjections()}, creates {@link #INJECTOR} and
+	 * Calls {@link #configureInjections()}, creates {@link #getInjector() the injector} and
 	 * calls {@link #configureServletsFiltersEndpoints()}.
 	 * <p>
 	 * Also adds {@link RequestContextFilter} at the beginning of the chain.</p>
@@ -172,15 +173,15 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		try {
 			LinkedList<Module> modules = configureInjections();
 			modules.add(servletModule);
-			INJECTOR = Guice.createInjector(modules);
-			log.info("Guice INJECTOR created successfully");
+			injector = Guice.createInjector(modules);
+			log.info("Guice injector created successfully");
 
 			servletContainer = initializationEvent.getServletContext();
 			websocketContainer = ((ServerContainer) servletContainer.getAttribute(
 					"javax.websocket.server.ServerContainer"));
 
 			Filter requestContextFilter = servletContainer.createFilter(RequestContextFilter.class);
-			INJECTOR.injectMembers(requestContextFilter);
+			injector.injectMembers(requestContextFilter);
 			FilterRegistration.Dynamic reg =
 					servletContainer.addFilter("requestContextFilter", requestContextFilter);
 			reg.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, "/*");

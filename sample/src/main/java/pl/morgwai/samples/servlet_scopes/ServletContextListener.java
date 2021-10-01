@@ -50,7 +50,7 @@ public class ServletContextListener extends SimplePingingEndpointServletContextL
 		// mappings with isMatchAfter==true don't match websocket requests, so we can't just do
 		// addFilter("ensureSessionFilter", EnsureSessionFilter.class, websocketPath);
 		final var ensureSessionFilter = servletContainer.createFilter(EnsureSessionFilter.class);
-		INJECTOR.injectMembers(ensureSessionFilter);
+		getInjector().injectMembers(ensureSessionFilter);
 		final FilterRegistration.Dynamic reg = servletContainer.addFilter(
 				EnsureSessionFilter.class.getSimpleName(), ensureSessionFilter);
 		reg.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, websocketPath);
