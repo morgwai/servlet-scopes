@@ -41,7 +41,7 @@
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<guice.scopes.version>2.0</guice.scopes.version>
+		<guice.scopes.version>2.1</guice.scopes.version>
 		<servlet.utils.version>1.0</servlet.utils.version>
 		<guice.version>5.0.1</guice.version>
 	</properties>
