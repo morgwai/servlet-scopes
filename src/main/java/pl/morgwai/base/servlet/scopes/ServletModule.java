@@ -153,7 +153,8 @@ public class ServletModule implements Module {
 	 * <p>
 	 * {@link ContextTrackingExecutor#execute(Runnable)} throws a
 	 * {@link java.util.concurrent.RejectedExecutionException} if {@code workQueue} is full. It
-	 * should usually be handled by sending status {@code 503 Service Unavailable} to the client.
+	 * should usually be handled by sending
+	 * {@link javax.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} to the client.
 	 * </p>
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(
@@ -171,7 +172,8 @@ public class ServletModule implements Module {
 	 * <p>
 	 * {@link ContextTrackingExecutor#execute(Runnable)} throws a
 	 * {@link java.util.concurrent.RejectedExecutionException} if {@code workQueue} is full. It
-	 * should usually be handled by sending status {@code 503 Service Unavailable} to the client.
+	 * should usually be handled by sending
+	 * {@link javax.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} to the client.
 	 * </p>
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(
