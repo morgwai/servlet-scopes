@@ -3,8 +3,12 @@ h2-1.4.200.jar
 
 # build
 target
+build
+.gradle
 
-# eclipse
+# ide
+.idea
+local.properties
 .project
 .classpath
 .settings
