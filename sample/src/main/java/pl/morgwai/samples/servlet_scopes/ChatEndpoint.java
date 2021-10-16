@@ -56,7 +56,7 @@ public class ChatEndpoint extends Endpoint {
 		this.connection = connection;
 		connection.setMaxIdleTimeout(5l * 60l * 1000l);
 		nickname = "user-" + connection.getId();
-		connection.addMessageHandler(String.class, (message) -> this.onMessage(message));
+		connection.addMessageHandler(String.class, this::onMessage);
 		var basicRemote = connection.getBasicRemote();
 		try {
 			synchronized (connection) {
@@ -139,10 +139,10 @@ public class ChatEndpoint extends Endpoint {
 	// github.com/apache/tomcat/blob/trunk/webapps/examples/WEB-INF/classes/util/HTMLFilter.java
 	public static void appendFiltered(String message, StringBuilder target) {
 		if (message == null) return;
-		char content[] = new char[message.length()];
+		char[] content = new char[message.length()];
 		message.getChars(0, message.length(), content, 0);
-		for (int i = 0; i < content.length; i++) {
-			switch (content[i]) {
+		for (final char c: content) {
+			switch (c) {
 				case '<':
 					target.append("&lt;");
 					break;
@@ -159,7 +159,7 @@ public class ChatEndpoint extends Endpoint {
 					target.append("&apos;");
 					break;
 				default:
-					target.append(content[i]);
+					target.append(c);
 			}
 		}
 	}

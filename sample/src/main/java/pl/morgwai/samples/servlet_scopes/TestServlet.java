@@ -7,12 +7,9 @@ import java.io.PrintWriter;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import pl.morgwai.base.servlet.scopes.RequestContext;
 
 
 
@@ -20,8 +17,6 @@ import pl.morgwai.base.servlet.scopes.RequestContext;
 public class TestServlet extends HttpServlet {
 
 
-
-	@Inject Provider<RequestContext> requestContextTracker;
 
 	@Inject @Named(ServletContextListener.REQUEST)
 	Provider<Service> requestScopedProvider;
@@ -33,12 +28,19 @@ public class TestServlet extends HttpServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+			throws IOException {
+		var requestScopedService = requestScopedProvider.get();
+		var sessionScopedService = sessionScopedProvider.get();
+		if (requestScopedService != requestScopedProvider.get()
+				|| sessionScopedService != sessionScopedProvider.get()) {
+			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "scoping failure");
+			return;
+		}
 		PrintWriter writer = response.getWriter();
 		writer.println(String.format(
 				"service hashCodes: request=%d, session=%d",
-				requestScopedProvider.get().hashCode(),
-				sessionScopedProvider.get().hashCode()));
+				requestScopedService.hashCode(),
+				sessionScopedService.hashCode()));
 		writer.close();
 	}
 }
