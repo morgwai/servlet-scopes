@@ -106,15 +106,14 @@ public class ServletModule implements Module {
 		TypeLiteral<ContextTracker<RequestContext>> requestContextTrackerType =
 				new TypeLiteral<>() {};
 		binder.bind(requestContextTrackerType).toInstance(requestContextTracker);
-		binder.bind(RequestContext.class).toProvider(
-				() -> requestContextTracker.getCurrentContext());
+		binder.bind(RequestContext.class).toProvider(requestContextTracker::getCurrentContext);
 
 		TypeLiteral<ContextTracker<WebsocketConnectionContext>>
 				websocketConnectionContextTrackerType = new TypeLiteral<>() {};
 		binder.bind(websocketConnectionContextTrackerType)
 				.toInstance(websocketConnectionContextTracker);
 		binder.bind(WebsocketConnectionContext.class).toProvider(
-				() -> websocketConnectionContextTracker.getCurrentContext());
+				websocketConnectionContextTracker::getCurrentContext);
 
 		TypeLiteral<ContextTracker<?>[]> trackerArrayType = new TypeLiteral<>() {};
 		binder.bind(trackerArrayType).toInstance(allTrackers);

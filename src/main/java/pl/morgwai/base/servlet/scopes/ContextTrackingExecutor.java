@@ -43,7 +43,7 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 				if ( ! response.isCommitted()) {
 					response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
 				}
-			} catch (IOException e1) {}  // broken connection
+			} catch (IOException ignored) {}  // broken connection
 		}
 	}
 
@@ -62,7 +62,7 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 					connection.close(new CloseReason(
 							CloseCodes.TRY_AGAIN_LATER, "service overloaded or restarting"));
 				}
-			} catch (IOException e1) {}  // broken connection
+			} catch (IOException ignored) {}  // broken connection
 		}
 	}
 

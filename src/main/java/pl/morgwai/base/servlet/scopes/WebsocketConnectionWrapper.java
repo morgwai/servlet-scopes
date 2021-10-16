@@ -106,7 +106,7 @@ class WebsocketConnectionWrapper implements Session {
 
 
 
-	class MessageHandlerWrapper implements MessageHandler {
+	static abstract class MessageHandlerWrapper implements MessageHandler {
 
 		MessageHandler wrapped;
 
@@ -121,7 +121,7 @@ class WebsocketConnectionWrapper implements Session {
 
 		@Override public int hashCode() { return wrapped.hashCode(); }
 
-		public MessageHandlerWrapper(MessageHandler handler) { this.wrapped = handler; }
+		MessageHandlerWrapper(MessageHandler handler) { this.wrapped = handler; }
 	}
 
 
@@ -138,7 +138,7 @@ class WebsocketConnectionWrapper implements Session {
 							() -> wrapped.onMessage(message)));
 		}
 
-		public WholeMessageHandlerWrapper(MessageHandler.Whole<T> handler) {
+		WholeMessageHandlerWrapper(MessageHandler.Whole<T> handler) {
 			super(handler);
 			this.wrapped = handler;
 		}
@@ -158,7 +158,7 @@ class WebsocketConnectionWrapper implements Session {
 							() -> wrapped.onMessage(message, last)));
 		}
 
-		public PartialMessageHandlerWrapper(MessageHandler.Partial<T> handler) {
+		PartialMessageHandlerWrapper(MessageHandler.Partial<T> handler) {
 			super(handler);
 			this.wrapped = handler;
 		}
