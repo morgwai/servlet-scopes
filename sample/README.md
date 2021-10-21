@@ -6,8 +6,9 @@
 ## BUILDING AND RUNNIG WITH DEMO JETTY CONFIG
 
 ### Prerequisites and 1 time setup
-1. java 11 is required to build the app (newer versions will probably work also)
-1. download Jetty from https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-home/ and extract it to a folder of choice
+1. java 11 is required to build the app (newer versions will probably work also).
+1. by default `javax` flavor is built, if you want to switch to `jakarta`, run `./jakarta.sh` to replace imports and dependencies.
+1. download Jetty from https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-home/ and extract it to a folder of choice. Versions `10.0.x` support `javax`, while `11.0.x` support `jakarta`.
 1. export `JETTY_HOME` env var pointing to the above folder: `export JETTY_HOME=/path/to/folder/where/jetty/was/extracted`
 1. if you are using a SNAPSHOT version, build and install `servlet-scopes`: `cd ..; ./mvnw install; cd -`
 1. by default the project is built with maven, if you want to use gradle, run `./generate-build.gradle.sh`

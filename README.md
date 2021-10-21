@@ -111,3 +111,9 @@ class MyClass {
 * in order to extend the official Guice-servlet lib to support websockets, the code would need to pretend that everything is an `HttpServletRequest` (websocket events and websocket connections would need to be wrapped in some fake `HttpSevletRequest` wrappers), which seems awkward.
 * `guice-context-scopes` is thread-safe: a single request can be handled by multiple threads (as long as accessed scoped objects are thread-safe or properly synchronized).
 * `guice-context-scopes` allows to remove objects from scopes.
+
+
+## NOTES ON JAKARTA SUPPORT
+
+Jakarta flavor is currently based on [repackaged version of Guice](https://github.com/GedMarc/GuicedEE-Services) from [GuicedEE project](https://guicedee.com/), that has some [unresolved](https://github.com/GedMarc/GuicedEE-Services/issues/16) [issues](https://github.com/GedMarc/GuicedEE-Services/issues/17). It seems to work ok for simple cases, but should not be considered production ready at this time.<br/>
+`servlet-scopes` should however work properly with any other jakarta-repackaged build of Guice provided at runtime if and only if the difference from the upstream version is exact renaming of all `javax` references to `jakarta`.

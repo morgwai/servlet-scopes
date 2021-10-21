@@ -10,7 +10,7 @@
 
 	<groupId>pl.morgwai.base</groupId>
 	<artifactId>servlet-scopes</artifactId>
-	<version>4.0-SNAPSHOT</version>
+	<version>4.0-javax-SNAPSHOT</version><!--jakarta-->
 
 	<name>Servlet and Websocket Guice Scopes</name>
 	<description>Servlet and websocket Guice scopes, that are automatically transferred when dispatching work to other threads</description>
@@ -42,7 +42,7 @@
 		<maven.compiler.target>11</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<guice.scopes.version>3.0</guice.scopes.version>
-		<servlet.utils.version>1.0</servlet.utils.version>
+		<servlet.utils.version>1.1</servlet.utils.version>
 		<guice.version>5.0.1</guice.version>
 	</properties>
 
@@ -51,11 +51,6 @@
 			<groupId>pl.morgwai.base</groupId>
 			<artifactId>guice-context-scopes</artifactId>
 			<version>${guice.scopes.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>pl.morgwai.base</groupId>
-			<artifactId>servlet-utils</artifactId>
-			<version>${servlet.utils.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>net.bytebuddy</groupId>
@@ -67,24 +62,6 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>1.7.32</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.google.inject</groupId>
-			<artifactId>guice</artifactId>
-			<version>${guice.version}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>javax.servlet-api</artifactId>
-			<version>4.0.1</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>javax.websocket</groupId>
-			<artifactId>javax.websocket-api</artifactId>
-			<version>1.1</version>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
@@ -124,10 +101,13 @@
 					<overview>${basedir}/src/main/java/overview.html</overview>
 					<links>
 						<link>https://javadoc.io/doc/pl.morgwai.base/guice-context-scopes/${guice.scopes.version}</link>
-						<link>https://javadoc.io/doc/pl.morgwai.base/servlet-utils/${servlet.utils.version}</link>
+						<link>https://javadoc.io/doc/pl.morgwai.base/servlet-utils/${servlet.utils.version}-javax</link>
+						<link>https://javadoc.io/doc/pl.morgwai.base/servlet-utils/${servlet.utils.version}-jakarta</link>
 						<link>https://google.github.io/guice/api-docs/${guice.version}/javadoc</link>
 						<link>https://javadoc.io/doc/javax.websocket/javax.websocket-api/1.1</link>
+						<link>https://javadoc.io/doc/jakarta.websocket/jakarta.websocket-api/2.0.0</link>
 						<link>https://javadoc.io/doc/javax.servlet/javax.servlet-api/4.0.1</link>
+						<link>https://javadoc.io/doc/jakarta.servlet/jakarta.servlet-api/5.0.0</link>
 					</links>
 				</configuration>
 				<executions>
@@ -166,4 +146,69 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>javax</id>
+			<activation>
+				<activeByDefault>true</activeByDefault><!--jakarta:<activeByDefault>false</activeByDefault>-->
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>pl.morgwai.base</groupId>
+					<artifactId>servlet-utils</artifactId>
+					<version>${servlet.utils.version}-javax</version>
+				</dependency>
+				<dependency>
+					<groupId>com.google.inject</groupId>
+					<artifactId>guice</artifactId>
+					<version>${guice.version}</version>
+					<scope>provided</scope>
+				</dependency>
+				<dependency>
+					<groupId>javax.servlet</groupId>
+					<artifactId>javax.servlet-api</artifactId>
+					<version>4.0.1</version>
+					<scope>provided</scope>
+				</dependency>
+				<dependency>
+					<groupId>javax.websocket</groupId>
+					<artifactId>javax.websocket-api</artifactId>
+					<version>1.1</version>
+					<scope>provided</scope>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>jakarta</id>
+			<activation>
+				<activeByDefault>false</activeByDefault><!--jakarta:<activeByDefault>true</activeByDefault>-->
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>pl.morgwai.base</groupId>
+					<artifactId>servlet-utils</artifactId>
+					<version>${servlet.utils.version}-jakarta</version>
+				</dependency>
+				<dependency>
+					<groupId>com.guicedee.services</groupId>
+					<artifactId>guice</artifactId>
+					<version>1.1.1.7</version>
+					<scope>provided</scope>
+				</dependency>
+				<dependency>
+					<groupId>jakarta.servlet</groupId>
+					<artifactId>jakarta.servlet-api</artifactId>
+					<version>5.0.0</version>
+					<scope>provided</scope>
+				</dependency>
+				<dependency>
+					<groupId>jakarta.websocket</groupId>
+					<artifactId>jakarta.websocket-api</artifactId>
+					<version>2.0.0</version>
+					<scope>provided</scope>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
 </project>
