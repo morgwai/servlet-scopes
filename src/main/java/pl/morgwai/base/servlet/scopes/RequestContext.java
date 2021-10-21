@@ -19,8 +19,8 @@ import pl.morgwai.base.guice.scopes.ServerSideContext;
  * for storing short-living objects, such as <code>EntityManager</code>s or DB transactions.
  * Having a common super class for {@link ServletRequestContext} and {@link WebsocketEventContext}
  * allows instances from a single request scoped binding to be obtained both in servlets and
- * endpoints without a need for 2 separate bindings with different @{@link javax.inject.Named Named}
- * annotation value.
+ * endpoints without a need for 2 separate bindings with different
+ * {@link com.google.inject.name.Named @Named} annotation value.
  *
  * @see ServletModule#requestScope corresponding <code>Scope</code>
  */
