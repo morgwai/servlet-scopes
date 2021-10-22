@@ -10,7 +10,7 @@
 
 	<groupId>pl.morgwai.base</groupId>
 	<artifactId>servlet-scopes</artifactId>
-	<version>3.1-SNAPSHOT</version>
+	<version>4.0-SNAPSHOT</version>
 
 	<name>Servlet and Websocket Guice Scopes</name>
 	<description>Servlet and websocket Guice scopes, that are automatically transferred when dispatching work to other threads</description>
@@ -41,7 +41,7 @@
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<guice.scopes.version>2.1</guice.scopes.version>
+		<guice.scopes.version>3.0</guice.scopes.version>
 		<servlet.utils.version>1.0</servlet.utils.version>
 		<guice.version>5.0.1</guice.version>
 	</properties>
@@ -60,14 +60,15 @@
 		<dependency>
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy</artifactId>
-			<version>1.11.16</version>
+			<version>1.11.21</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>1.7.32</version>
+			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>com.google.inject</groupId>
 			<artifactId>guice</artifactId>
