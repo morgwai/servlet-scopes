@@ -10,7 +10,8 @@ java {
 }
 
 repositories {
-	mavenCentral() 
+	mavenLocal()
+	mavenCentral()
 }
 
 publishing {
@@ -20,4 +21,3 @@ publishing {
 		}
 	}
 }
-
