@@ -33,7 +33,7 @@ class WebsocketConnectionWrapper implements Session {
 
 
 	final Session wrappedConnection;
-	final ContextTracker<RequestContext> eventCtxTracker;
+	final ContextTracker<ContainerCallContext> eventCtxTracker;
 	final HttpSession httpSession;
 
 	/**
@@ -97,7 +97,8 @@ class WebsocketConnectionWrapper implements Session {
 
 
 
-	WebsocketConnectionWrapper(Session connection, ContextTracker<RequestContext> eventCtxTracker) {
+	WebsocketConnectionWrapper(
+			Session connection, ContextTracker<ContainerCallContext> eventCtxTracker) {
 		this.wrappedConnection = connection;
 		this.eventCtxTracker = eventCtxTracker;
 		this.httpSession = (HttpSession) wrappedConnection.getUserProperties().get(

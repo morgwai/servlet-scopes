@@ -19,8 +19,8 @@ import org.slf4j.LoggerFactory;
 /**
  * A simple chat-over-websocket endpoint that demonstrates use of scopes. It gets injected 3
  * instances of {@link Service}, each in different scope and returns their hashcode to every
- * message received. The 1 {@link pl.morgwai.base.servlet.scopes.ServletModule#requestScope}d will
- * change every time, the 1
+ * message received. The 1 {@link pl.morgwai.base.servlet.scopes.ServletModule#containerCallScope}d
+ * will change every time, the 1
  * {@link pl.morgwai.base.servlet.scopes.ServletModule#websocketConnectionScope}d will remain the
  * same within each browser tab/window (but will be different for each tab/window), the 1
  * {@link pl.morgwai.base.servlet.scopes.ServletModule#httpSessionScope}d will remain the same
@@ -40,8 +40,8 @@ public class ChatEndpoint extends Endpoint {
 
 
 
-	@Inject @Named(ServletContextListener.REQUEST)
-	Provider<Service> wsEventScopedProvider;
+	@Inject @Named(ServletContextListener.CONTAINER_CALL)
+	Provider<Service> eventScopedProvider;
 
 	@Inject @Named(ServletContextListener.WS_CONNECTION)
 	Provider<Service> connectionScopedProvider;
@@ -63,7 +63,7 @@ public class ChatEndpoint extends Endpoint {
 			basicRemote.sendText(String.format("### assigned nickname: %s", nickname));
 			basicRemote.sendText(String.format(
 					"### service hashCodes: event=%d, connection=%d, httpSession=%d",
-					wsEventScopedProvider.get().hashCode(),
+					eventScopedProvider.get().hashCode(),
 					connectionScopedProvider.get().hashCode(),
 					httpSessionScopedProvider.get().hashCode()));
 			}
@@ -85,7 +85,7 @@ public class ChatEndpoint extends Endpoint {
 			synchronized (connection) {
 			basicRemote.sendText(String.format(
 					"### service hashCodes: event=%d, connection=%d, httpSession=%d",
-					wsEventScopedProvider.get().hashCode(),
+					eventScopedProvider.get().hashCode(),
 					connectionScopedProvider.get().hashCode(),
 					httpSessionScopedProvider.get().hashCode()));
 			}

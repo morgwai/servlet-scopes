@@ -29,14 +29,16 @@ public class ServletModule implements Module {
 	/**
 	 * Allows tracking of {@link ServletRequestContext}s and {@link WebsocketEventContext}s.
 	 */
-	public final ContextTracker<RequestContext> requestContextTracker = new ContextTracker<>();
+	public final ContextTracker<ContainerCallContext> containerCallContextTracker =
+			new ContextTracker<>();
 
 	/**
 	 * Scopes bindings to either a {@link ServletRequestContext} or a {@link WebsocketEventContext}.
 	 * Objects bound in this scope can be obtained both in servlets and endpoints.
-	 * @see RequestContext
+	 * @see ContainerCallContext
 	 */
-	public final Scope requestScope = new ContextScope<>("REQUEST_sCOPE", requestContextTracker);
+	public final Scope containerCallScope =
+			new ContextScope<>("CONTAINER_CALL_SCOPE", containerCallContextTracker);
 
 
 
@@ -56,7 +58,7 @@ public class ServletModule implements Module {
 		public <T> Provider<T> scope(Key<T> key, Provider<T> unscoped) {
 			return () -> {
 				try {
-					return (T) requestContextTracker
+					return (T) containerCallContextTracker
 							.getCurrentContext()
 							.getHttpSessionContextAttributes()
 							.computeIfAbsent(key, (ignored) -> unscoped.get());
@@ -96,17 +98,18 @@ public class ServletModule implements Module {
 
 
 	/**
-	 * Binds {@link #requestContextTracker} and {@link #websocketConnectionContextTracker} and
+	 * Binds {@link #containerCallContextTracker} and {@link #websocketConnectionContextTracker} and
 	 * corresponding contexts for injection. Binds {@code ContextTracker<?>[]} to
 	 * {@link #allTrackers} that contains all trackers for use with
 	 * {@link ContextTrackingExecutor#getActiveContexts(ContextTracker...)}.
 	 */
 	@Override
 	public void configure(Binder binder) {
-		TypeLiteral<ContextTracker<RequestContext>> requestContextTrackerType =
+		TypeLiteral<ContextTracker<ContainerCallContext>> requestContextTrackerType =
 				new TypeLiteral<>() {};
-		binder.bind(requestContextTrackerType).toInstance(requestContextTracker);
-		binder.bind(RequestContext.class).toProvider(requestContextTracker::getCurrentContext);
+		binder.bind(requestContextTrackerType).toInstance(containerCallContextTracker);
+		binder.bind(ContainerCallContext.class)
+				.toProvider(containerCallContextTracker::getCurrentContext);
 
 		TypeLiteral<ContextTracker<WebsocketConnectionContext>>
 				websocketConnectionContextTrackerType = new TypeLiteral<>() {};
@@ -126,7 +129,7 @@ public class ServletModule implements Module {
 	 * for use with {@link ContextTrackingExecutor#getActiveContexts(ContextTracker...)}.
 	 */
 	public final ContextTracker<?>[] allTrackers =
-		{websocketConnectionContextTracker, requestContextTracker};
+		{websocketConnectionContextTracker, containerCallContextTracker};
 
 
 

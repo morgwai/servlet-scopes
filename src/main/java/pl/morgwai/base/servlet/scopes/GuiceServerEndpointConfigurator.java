@@ -30,8 +30,8 @@ import static pl.morgwai.base.servlet.scopes.GuiceServletContextListener.getInje
 
 
 /**
- * Automatically sets up {@link WebsocketConnectionContext} &amp; {@link RequestContext} and injects
- * dependencies of endpoint instances.
+ * Automatically sets up {@link WebsocketConnectionContext} &amp; {@link ContainerCallContext} and
+ * injects dependencies of endpoint instances.
  * <p>
  * For endpoints annotated with @{@link ServerEndpoint} add this class as
  * {@link ServerEndpoint#configurator() configurator} param:</p>
@@ -84,8 +84,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	/**
 	 * Creates an {@code endpointClass} instance and a proxy for it.
-	 * @return proxy that sets up {@link RequestContext} and {@link WebsocketConnectionContext} for
-	 * a new underlying instance of {@code endpointClass}.
+	 * @return proxy that sets up {@link ContainerCallContext} and
+	 * {@link WebsocketConnectionContext} for a new underlying instance of {@code endpointClass}.
 	 */
 	@Override
 	public <EndpointT> EndpointT getEndpointInstance(Class<EndpointT> endpointClass)
@@ -134,7 +134,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-	@Inject ContextTracker<RequestContext> eventCtxTracker;
+	@Inject ContextTracker<ContainerCallContext> eventCtxTracker;
 	@Inject ContextTracker<WebsocketConnectionContext> connectionCtxTracker;
 
 	public GuiceServerEndpointConfigurator() {
@@ -144,8 +144,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	/**
-	 * Decorates each call to the supplied endpoint instance with setting up {@link RequestContext}
-	 * and {@link WebsocketConnectionContext}.
+	 * Decorates each call to the supplied endpoint instance with setting up
+	 * {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
 	 */
 	class EndpointDecorator implements InvocationHandler {
 

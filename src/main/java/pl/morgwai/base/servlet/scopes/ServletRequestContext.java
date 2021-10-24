@@ -11,9 +11,9 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 /**
  * Context of a {@link HttpServletRequest}.
  *
- * @see RequestContext super class for more info
+ * @see ContainerCallContext super class for more info
  */
-public class ServletRequestContext extends RequestContext {
+public class ServletRequestContext extends ContainerCallContext {
 
 
 
@@ -29,7 +29,8 @@ public class ServletRequestContext extends RequestContext {
 
 
 
-	ServletRequestContext(HttpServletRequest request, ContextTracker<RequestContext> tracker) {
+	ServletRequestContext(
+			HttpServletRequest request, ContextTracker<ContainerCallContext> tracker) {
 		super(tracker);
 		this.request = request;
 	}

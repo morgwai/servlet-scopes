@@ -14,17 +14,21 @@ import pl.morgwai.base.guice.scopes.ServerSideContext;
 
 
 /**
- * Context of a {@link javax.servlet.http.HttpServletRequest} or a websocket event.
- * Each instance is coupled with a single invocation of some method, which makes it suitable
- * for storing short-living objects, such as <code>EntityManager</code>s or DB transactions.
+ * Context of either an {@link ServletRequestContext HttpServletRequest} or a
+ * {@link WebsocketEventContext websocket event}. Each instance corresponds to a single
+ * container-initiated call to either one of servlet's {@code doXXX(...)} methods or to a websocket
+ * endpoint life-cycle method.
+ * <p>
+ * Suitable for storing short-living objects, such as {@code EntityManager}s or DB transactions.</p>
+ * <p>
  * Having a common super class for {@link ServletRequestContext} and {@link WebsocketEventContext}
- * allows instances from a single request scoped binding to be obtained both in servlets and
+ * allows instances from a single container-call scoped binding to be obtained both in servlets and
  * endpoints without a need for 2 separate bindings with different
- * {@link com.google.inject.name.Named @Named} annotation value.
+ * {@link com.google.inject.name.Named @Named} annotation value.</p>
  *
- * @see ServletModule#requestScope corresponding <code>Scope</code>
+ * @see ServletModule#containerCallScope corresponding <code>Scope</code>
  */
-public abstract class RequestContext extends ServerSideContext<RequestContext> {
+public abstract class ContainerCallContext extends ServerSideContext<ContainerCallContext> {
 
 
 
@@ -58,11 +62,11 @@ public abstract class RequestContext extends ServerSideContext<RequestContext> {
 	}
 
 	static final String SESSION_CONTEXT_ATTRIBUTE_NAME =
-			RequestContext.class.getPackageName() + ".contextAttributes";
+			ContainerCallContext.class.getPackageName() + ".contextAttributes";
 
 
 
-	protected RequestContext(ContextTracker<RequestContext> tracker) {
+	protected ContainerCallContext(ContextTracker<ContainerCallContext> tracker) {
 		super(tracker);
 	}
 }

@@ -23,7 +23,7 @@ public class RequestContextFilter implements Filter {
 
 
 
-	@Inject ContextTracker<RequestContext> tracker;
+	@Inject ContextTracker<ContainerCallContext> tracker;
 
 
 

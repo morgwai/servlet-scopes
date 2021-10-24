@@ -20,9 +20,9 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * {@link javax.websocket.Endpoint} or {@link javax.websocket.MessageHandler}s, are
  * executed within a separate new {@code WebsocketEventContext} instance.</p>
  *
- * @see RequestContext super class for more info
+ * @see ContainerCallContext super class for more info
  */
-public class WebsocketEventContext extends RequestContext {
+public class WebsocketEventContext extends ContainerCallContext {
 
 
 
@@ -31,7 +31,7 @@ public class WebsocketEventContext extends RequestContext {
 
 
 
-	WebsocketEventContext(HttpSession httpSession, ContextTracker<RequestContext> tracker) {
+	WebsocketEventContext(HttpSession httpSession, ContextTracker<ContainerCallContext> tracker) {
 		super(tracker);
 		this.httpSession = httpSession;
 	}

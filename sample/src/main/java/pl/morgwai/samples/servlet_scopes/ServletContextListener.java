@@ -21,7 +21,7 @@ public class ServletContextListener extends SimplePingingEndpointServletContextL
 
 
 
-	public static final String REQUEST = "request";
+	public static final String CONTAINER_CALL = "call";
 	public static final String WS_CONNECTION = "wsconn";
 	public static final String HTTP_SESSION = "session";
 
@@ -31,8 +31,8 @@ public class ServletContextListener extends SimplePingingEndpointServletContextL
 	protected LinkedList<Module> configureInjections() {
 		final var modules = new LinkedList<Module>();
 		modules.add((binder) -> {
-			binder.bind(Service.class).annotatedWith(Names.named(REQUEST))
-					.to(Service.class).in(servletModule.requestScope);
+			binder.bind(Service.class).annotatedWith(Names.named(CONTAINER_CALL))
+					.to(Service.class).in(servletModule.containerCallScope);
 			binder.bind(Service.class).annotatedWith(Names.named(WS_CONNECTION))
 					.to(Service.class).in(servletModule.websocketConnectionScope);
 			binder.bind(Service.class).annotatedWith(Names.named(HTTP_SESSION))

@@ -18,7 +18,7 @@ public class TestServlet extends HttpServlet {
 
 
 
-	@Inject @Named(ServletContextListener.REQUEST)
+	@Inject @Named(ServletContextListener.CONTAINER_CALL)
 	Provider<Service> requestScopedProvider;
 
 	@Inject @Named(ServletContextListener.HTTP_SESSION)

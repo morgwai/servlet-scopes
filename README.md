@@ -10,9 +10,9 @@ Servlet and websocket Guice scopes, that are automatically transferred when disp
 
 Provides the below Guice scopes built using [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes) which automatically transfers them to a new thread when dispatching using `ContextTrackingExecutor` (see below).
 
-### requestScope
+### containerCallScope
 Scopes bindings to either an `HttpServletRequest` or a websocket event (connection opened/closed, message received, error occurred).<br/>
-Spans over a single container initiated invocation of servlet or websocket endpoint method (`Servlet.doXXX` methods, endpoint methods annotated with `@OnOpen`, `@OnMessage`, `@OnError`, `@OnClose`, methods overriding those of `javax.websocket.Endpoint` and methods of registered `MessageHandler`s).<br/>
+Spans over a single container-initiated call to either one of servlet's `doXXX(...)` methods or to a websocket endpoint life-cycle method (annotated with one of the websocket annotations or overriding those of `javax.websocket.Endpoint` or of registered `javax.websocket.MessageHandler`s).<br/>
 Having a common scope for servlet requests and websocket events allows the same binding to be available both in servlets and endpoints.
 
 ### websocketConnectionScope
