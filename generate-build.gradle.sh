@@ -4,7 +4,7 @@ rm -f build.gradle settings.gradle &&
 ./gradlew init --type pom --dsl groovy &&
 sed -n -e '/^dependencies {/,/^}/p' <build.gradle |head -n -1 |sed -e 's#implementation#api#' \
     >dependencies.txt &&
-egrep 'compileOnly|providedCompile' <dependencies.txt |sed -e 's#compileOnly#testImplementation#' \
+grep -E 'compileOnly|providedCompile' <dependencies.txt |sed -e 's#compileOnly#testImplementation#' \
     -e 's#providedCompile#testImplementation#' >testDependencies.txt &&
 echo '// Generated from build.gradle.header and pom.xml using generate-build.gradle.sh' \
     >build.gradle &&
