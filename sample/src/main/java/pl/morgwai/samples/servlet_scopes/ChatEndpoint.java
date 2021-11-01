@@ -6,10 +6,10 @@ import java.io.IOException;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.google.inject.Provider;
-import javax.websocket.CloseReason;
-import javax.websocket.Endpoint;
-import javax.websocket.EndpointConfig;
-import javax.websocket.Session;
+import jakarta.websocket.CloseReason;
+import jakarta.websocket.Endpoint;
+import jakarta.websocket.EndpointConfig;
+import jakarta.websocket.Session;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
