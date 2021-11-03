@@ -1,15 +1,14 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.samples.servlet_scopes;
 
-import java.io.IOException;
-
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import com.google.inject.Provider;
 import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
 import javax.websocket.Session;
+
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import com.google.inject.Provider;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,53 +56,42 @@ public class ChatEndpoint extends Endpoint {
 		connection.setMaxIdleTimeout(5l * 60l * 1000l);
 		nickname = "user-" + connection.getId();
 		connection.addMessageHandler(String.class, this::onMessage);
-		var basicRemote = connection.getBasicRemote();
-		try {
-			synchronized (connection) {
-			basicRemote.sendText(String.format("### assigned nickname: %s", nickname));
-			basicRemote.sendText(String.format(
+		var asyncRemote = connection.getAsyncRemote();
+		synchronized (connection) {
+			asyncRemote.sendText(String.format("### assigned nickname: %s", nickname));
+			asyncRemote.sendText(String.format(
 					"### service hashCodes: event=%d, connection=%d, httpSession=%d",
 					eventScopedProvider.get().hashCode(),
 					connectionScopedProvider.get().hashCode(),
 					httpSessionScopedProvider.get().hashCode()));
-			}
-			broadcast(String.format("### %s has joined", nickname));
-		} catch (IOException e) {
-			log.warn("", e);
 		}
+		broadcast(String.format("### %s has joined", nickname));
 	}
 
 
 
-	public void onMessage(String message) {
+	void onMessage(String message) {
 		StringBuilder formattedMessageBuilder =
 				new StringBuilder(nickname.length() + message.length() + 10);
 		formattedMessageBuilder.append(nickname).append(": ");
 		appendFiltered(message, formattedMessageBuilder);
-		var basicRemote = connection.getBasicRemote();
-		try {
-			synchronized (connection) {
-			basicRemote.sendText(String.format(
+		var asyncRemote = connection.getAsyncRemote();
+		synchronized (connection) {
+			asyncRemote.sendText(String.format(
 					"### service hashCodes: event=%d, connection=%d, httpSession=%d",
 					eventScopedProvider.get().hashCode(),
 					connectionScopedProvider.get().hashCode(),
 					httpSessionScopedProvider.get().hashCode()));
-			}
-			broadcast(formattedMessageBuilder.toString());
-		} catch (IOException e) {
-			log.warn("", e);
 		}
+		broadcast(formattedMessageBuilder.toString());
 	}
 
 
 
 	@Override
 	public void onClose(Session connection, CloseReason reason) {
-		try {
-			broadcast(String.format("### %s has disconnected", nickname));
-		} catch (IOException e) {
-			log.warn("", e);
-		}
+		broadcast(String.format("### %s has disconnected with code '%s'",
+				nickname, reason.getCloseCode()));
 	}
 
 
@@ -115,12 +103,12 @@ public class ChatEndpoint extends Endpoint {
 
 
 
-	void broadcast(String msg) throws IOException {
+	void broadcast(String msg) {
 		if (isShutdown) return;
 		for (Session peerConnection: connection.getOpenSessions()) {
 			if (peerConnection.isOpen()) {
 				synchronized (peerConnection) {
-					peerConnection.getBasicRemote().sendText(msg);
+					peerConnection.getAsyncRemote().sendText(msg);
 				}
 			}
 		}
