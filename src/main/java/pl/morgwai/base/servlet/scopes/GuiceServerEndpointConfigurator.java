@@ -24,7 +24,7 @@ import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.matcher.ElementMatchers;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
-
+import pl.morgwai.base.servlet.guiced.utils.EndpointPingerDecorator;
 
 
 /**
@@ -152,27 +152,30 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 		@Override
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-			if (args == null) {
-				// this is most commonly toString() call when running in a debugger
-				return additionalEndpointDecorator.invoke(proxy, method, args);
-			}
 
 			// replace wsConnection arg with a wrapper
 			WebsocketConnectionWrapper wrappedConnection = null;
-			for (int i = 0; i < args.length; i++) {
-				if (args[i] instanceof Session) {
-					if (connectionCtx == null) {
-						args[i] = wrappedConnection = new WebsocketConnectionWrapper(
+			if (args != null) {
+				for (int i = 0; i < args.length; i++) {
+					if (args[i] instanceof Session) {
+						if (connectionCtx == null) {
+							args[i] = wrappedConnection = new WebsocketConnectionWrapper(
 								(Session) args[i], eventCtxTracker);
-					} else {
-						args[i] = connectionCtx.getConnection();
+						} else {
+							args[i] = connectionCtx.getConnection();
+						}
+						break;
 					}
-					break;
 				}
 			}
 
 			// onOpen: create connectionCtx, retrieve HttpSession
 			if (connectionCtx == null) {
+				// TODO: move static websocket helpers to servlet-utils project
+				if ( ! EndpointPingerDecorator.isOnOpen(method)) {
+					// this is most commonly toString() call from a debugger
+					return additionalEndpointDecorator.invoke(proxy, method, args);
+				}
 				if (wrappedConnection == null) throw new RuntimeException(NO_SESSION_PARAM_MESSAGE);
 				final var userProperties = wrappedConnection.getUserProperties();
 				httpSession = (HttpSession) userProperties.get(HTTP_SESSION_PROPERTY_NAME);
