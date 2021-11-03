@@ -152,6 +152,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 		@Override
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+			if (args == null) {
+				// this is most commonly toString() call when running in a debugger
+				return additionalEndpointDecorator.invoke(proxy, method, args);
+			}
 
 			// replace wsConnection arg with a wrapper
 			WebsocketConnectionWrapper wrappedConnection = null;
