@@ -12,12 +12,12 @@ import javax.servlet.annotation.WebListener;
 import com.google.inject.Module;
 import com.google.inject.name.Names;
 
-import pl.morgwai.base.servlet.guiced.utils.SimplePingingEndpointServletContextListener;
+import pl.morgwai.base.servlet.guiced.utils.PingingServletContextListener;
 
 
 
 @WebListener
-public class ServletContextListener extends SimplePingingEndpointServletContextListener {
+public class ServletContextListener extends PingingServletContextListener {
 
 
 

@@ -11,18 +11,13 @@ import pl.morgwai.base.servlet.scopes.GuiceServletContextListener;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
-
 /**
  * A {@link GuiceServletContextListener} that automatically register/deregister endpoint instances
  * to a {@link WebsocketPingerService}. Endpoints need to be created with
  * {@link #addEndpoint(Class, String) addEndpoint(Class, String)} or annotated to use
- * {@link SimplePingingEndpointConfigurator}.
- * @deprecated use {@link PingingServletContextListener} instead.
+ * {@link PingingEndpointConfigurator}.
  */
-@Deprecated(
-	since = "4.1",
-	forRemoval = true)
-public abstract class SimplePingingEndpointServletContextListener
+public abstract class PingingServletContextListener
 		extends GuiceServletContextListener {
 
 
@@ -56,24 +51,32 @@ public abstract class SimplePingingEndpointServletContextListener
 
 
 	/**
-	 * Adds an endpoint using a {@link SimplePingingEndpointConfigurator}.
+	 * Adds an endpoint using a {@link PingingEndpointConfigurator}.
 	 */
 	@Override
 	protected void addEndpoint(Class<?> endpointClass, String path) throws ServletException {
-		super.addEndpoint(endpointClass, path, new SimplePingingEndpointConfigurator());
+		super.addEndpoint(endpointClass, path, new PingingEndpointConfigurator());
 	}
 
 
 
 	/**
 	 * Automatically registers and deregisters created endpoints to the
-	 * {@link WebsocketPingerService} of the {@link SimplePingingEndpointServletContextListener}.
+	 * {@link WebsocketPingerService} of the {@link PingingServletContextListener}.
 	 */
-	public class SimplePingingEndpointConfigurator extends GuiceServerEndpointConfigurator {
+	public static class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator {
 
 		@Override
 		protected InvocationHandler getAdditionalDecorator(Object endpoint) {
-			return new EndpointPingerDecorator(endpoint, pingerService);
+			return new EndpointPingerDecorator(endpoint, staticPingerService);
 		}
 	}
+
+	public PingingServletContextListener() {
+		// ugly hack as PingingEndpointConfigurator must be static in order to be usable as
+		// configurator class in @ServerEndpoint.
+		staticPingerService = pingerService;
+	}
+
+	static WebsocketPingerService staticPingerService;
 }
