@@ -25,8 +25,6 @@ import net.bytebuddy.matcher.ElementMatchers;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
-import static pl.morgwai.base.servlet.scopes.GuiceServletContextListener.getInjector;
-
 
 
 /**
@@ -91,13 +89,16 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	public <EndpointT> EndpointT getEndpointInstance(Class<EndpointT> endpointClass)
 			throws InstantiationException {
 		try {
-			final EndpointT endPoint = getInjector().getInstance(endpointClass);
+			final var injector = GuiceServletContextListener.getInjector();
+			injector.injectMembers(this);  // annotated endpoints may be created before
+					// ServletContextListener is called, so this cannot be done in constructor
+			final EndpointT endpoint = injector.getInstance(endpointClass);
 			@SuppressWarnings("unchecked")
 			final var proxyClass = (Class<? extends EndpointT>) proxyClasses.computeIfAbsent(
 					endpointClass, this::createProxyClass);
 			final EndpointT endpointProxy = super.getEndpointInstance(proxyClass);
-			proxyClass.getDeclaredField(PROXY_DECORATOR_FIELD_NAME).set(
-					endpointProxy, new EndpointDecorator(endPoint));
+			proxyClass.getDeclaredField(PROXY_DECORATOR_FIELD_NAME)
+					.set(endpointProxy, new EndpointDecorator(endpoint));
 			return endpointProxy;
 		} catch (Exception e) {
 			throw new InstantiationException(e.toString());
@@ -113,7 +114,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * Creates dynamic proxy class that delegates calls to the associated {@link EndpointDecorator}.
 	 */
 	<EndpointT> Class<? extends EndpointT> createProxyClass(Class<EndpointT> endpointClass) {
-		final DynamicType.Builder<EndpointT> proxyClassBuilder = new ByteBuddy()
+		DynamicType.Builder<EndpointT> proxyClassBuilder = new ByteBuddy()
 				.subclass(endpointClass)
 				.name(GuiceServerEndpointConfigurator.class.getPackageName() + ".ProxyFor_"
 						+ endpointClass.getName().replace('.', '_'))
@@ -124,7 +125,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				.method(ElementMatchers.any())
 				.intercept(InvocationHandlerAdapter.toField(PROXY_DECORATOR_FIELD_NAME));
 		final ServerEndpoint annotation = endpointClass.getAnnotation(ServerEndpoint.class);
-		if (annotation != null) proxyClassBuilder.annotateType(annotation);
+		if (annotation != null) proxyClassBuilder = proxyClassBuilder.annotateType(annotation);
 		return proxyClassBuilder
 				.make()
 				.load(GuiceServerEndpointConfigurator.class.getClassLoader(),
@@ -136,12 +137,6 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	@Inject ContextTracker<ContainerCallContext> eventCtxTracker;
 	@Inject ContextTracker<WebsocketConnectionContext> connectionCtxTracker;
-
-	public GuiceServerEndpointConfigurator() {
-		getInjector().injectMembers(this);
-	}
-
-
 
 	/**
 	 * Decorates each call to the supplied endpoint instance with setting up
