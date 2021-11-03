@@ -90,15 +90,15 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			throws InstantiationException {
 		try {
 			final var injector = GuiceServletContextListener.getInjector();
-			injector.injectMembers(this);  // annotated endpoints may be created before
-					// ServletContextListener is called, so this cannot be done in constructor
 			final EndpointT endpoint = injector.getInstance(endpointClass);
 			@SuppressWarnings("unchecked")
 			final var proxyClass = (Class<? extends EndpointT>) proxyClasses.computeIfAbsent(
 					endpointClass, this::createProxyClass);
 			final EndpointT endpointProxy = super.getEndpointInstance(proxyClass);
+			final var endpointDecorator = new EndpointDecorator(getAdditionalDecorator(endpoint));
+			injector.injectMembers(endpointDecorator);
 			proxyClass.getDeclaredField(PROXY_DECORATOR_FIELD_NAME)
-					.set(endpointProxy, new EndpointDecorator(endpoint));
+					.set(endpointProxy, endpointDecorator);
 			return endpointProxy;
 		} catch (Exception e) {
 			throw new InstantiationException(e.toString());
@@ -135,18 +135,18 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-	@Inject ContextTracker<ContainerCallContext> eventCtxTracker;
-	@Inject ContextTracker<WebsocketConnectionContext> connectionCtxTracker;
-
 	/**
 	 * Decorates each call to the supplied endpoint instance with setting up
 	 * {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
 	 */
-	class EndpointDecorator implements InvocationHandler {
+	static class EndpointDecorator implements InvocationHandler {
 
-		final InvocationHandler additionalDecorator;
+		final InvocationHandler additionalEndpointDecorator;
 		WebsocketConnectionContext connectionCtx;
 		HttpSession httpSession;
+
+		@Inject ContextTracker<ContainerCallContext> eventCtxTracker;
+		@Inject ContextTracker<WebsocketConnectionContext> connectionCtxTracker;
 
 
 
@@ -182,7 +182,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				() -> new WebsocketEventContext(httpSession, eventCtxTracker).executeWithinSelf(
 					() -> {
 						try {
-							return additionalDecorator.invoke(proxy, method, args);
+							return additionalEndpointDecorator.invoke(proxy, method, args);
 						} catch (Error | Exception e) {
 							throw e;
 						} catch (Throwable e) {
@@ -195,8 +195,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-		EndpointDecorator(Object endpoint) {
-			this.additionalDecorator = getAdditionalDecorator(endpoint);
+		EndpointDecorator(InvocationHandler additionalEndpointDecorator) {
+			this.additionalEndpointDecorator = additionalEndpointDecorator;
 		}
 	}
 
