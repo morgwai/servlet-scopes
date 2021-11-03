@@ -171,6 +171,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	@Override
 	public final void contextInitialized(ServletContextEvent initializationEvent) {
 		try {
+			initialize(initializationEvent);
 			LinkedList<Module> modules = configureInjections();
 			modules.add(servletModule);
 			injector = Guice.createInjector(modules);
@@ -193,6 +194,12 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			System.exit(1);
 		}
 	}
+
+	/**
+	 * Additional initialization steps performed before {@link #configureInjections()}.
+	 * By default does nothing.
+	 */
+	protected void initialize(ServletContextEvent initializationEvent) throws ServletException {}
 
 
 
