@@ -102,6 +102,8 @@ class MyClass {
 }
 ```
 
+Dependencies of this lib on `slf4j-api` and `guice` are declared with scope `provided`, so that apps using `servlet-scopes` can use any versions with compatible API.
+
 
 ## EXAMPLES
 [a trivial sample app](sample)<br/>
