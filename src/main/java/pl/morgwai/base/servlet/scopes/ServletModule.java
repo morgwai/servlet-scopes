@@ -43,13 +43,13 @@ public class ServletModule implements Module {
 
 
 	/**
-	 * Scopes bindings to the context of a given {@link javax.servlet.http.HttpSession}. Available
+	 * Scopes bindings to the context of a given {@link jakarta.servlet.http.HttpSession}. Available
 	 * both to servlets and websocket endpoints.
 	 * <p>
-	 * <b>NOTE:</b> there's no way to create an {@link javax.servlet.http.HttpSession} from the
+	 * <b>NOTE:</b> there's no way to create an {@link jakarta.servlet.http.HttpSession} from the
 	 * websocket endpoint layer if it does not exist yet. To safely use this scope in websocket
 	 * endpoints, other layers must ensure that a session exists (for example a
-	 * {@link javax.servlet.Filter} targeting URL patterns of websockets can be used).</p>
+	 * {@link jakarta.servlet.Filter} targeting URL patterns of websockets can be used).</p>
 	 */
 	public final Scope httpSessionScope = new Scope() {
 
@@ -83,14 +83,14 @@ public class ServletModule implements Module {
 
 	/**
 	 * Allows tracking of the {@link WebsocketConnectionContext context of a websocket connection
-	 * (javax.websocket.Session)}.
+	 * (jakarta.websocket.Session)}.
 	 */
 	public final ContextTracker<WebsocketConnectionContext> websocketConnectionContextTracker =
 			new ContextTracker<>();
 
 	/**
 	 * Scopes bindings to the {@link WebsocketConnectionContext context of a websocket connection
-	 * (javax.websocket.Session)}.
+	 * (jakarta.websocket.Session)}.
 	 */
 	public final Scope websocketConnectionScope =
 			new ContextScope<>("WEBSOCKET_CONNECTION_SCOPE", websocketConnectionContextTracker);
@@ -156,7 +156,7 @@ public class ServletModule implements Module {
 	 * {@link ContextTrackingExecutor#execute(Runnable)} throws a
 	 * {@link java.util.concurrent.RejectedExecutionException} if {@code workQueue} is full. It
 	 * should usually be handled by sending
-	 * {@link javax.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} to the client.
+	 * {@link jakarta.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} to the client.
 	 * </p>
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(
@@ -175,7 +175,7 @@ public class ServletModule implements Module {
 	 * {@link ContextTrackingExecutor#execute(Runnable)} throws a
 	 * {@link java.util.concurrent.RejectedExecutionException} if {@code workQueue} is full. It
 	 * should usually be handled by sending
-	 * {@link javax.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} to the client.
+	 * {@link jakarta.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} to the client.
 	 * </p>
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(
@@ -193,7 +193,7 @@ public class ServletModule implements Module {
 	 * <p>
 	 * <b>NOTE:</b> {@code backingExecutor.execute(task)} must throw
 	 * {@link java.util.concurrent.RejectedExecutionException} in case of rejection for
-	 * {@link ContextTrackingExecutor#execute(javax.servlet.http.HttpServletResponse, Runnable)
+	 * {@link ContextTrackingExecutor#execute(jakarta.servlet.http.HttpServletResponse, Runnable)
 	 * execute(httpResponse, task)} to work properly.</p>
 	 * <p>
 	 * {@code poolSize} is informative only, to be returned by

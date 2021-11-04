@@ -4,7 +4,7 @@ package pl.morgwai.base.servlet.scopes;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 import com.google.inject.Key;
 
