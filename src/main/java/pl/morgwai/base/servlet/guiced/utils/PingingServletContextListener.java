@@ -17,8 +17,7 @@ import pl.morgwai.base.servlet.utils.WebsocketPingerService;
  * {@link #addEndpoint(Class, String) addEndpoint(Class, String)} or annotated to use
  * {@link PingingEndpointConfigurator}.
  */
-public abstract class PingingServletContextListener
-		extends GuiceServletContextListener {
+public abstract class PingingServletContextListener extends GuiceServletContextListener {
 
 
 
