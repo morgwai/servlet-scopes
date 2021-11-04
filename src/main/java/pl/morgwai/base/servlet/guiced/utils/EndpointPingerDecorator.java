@@ -23,7 +23,7 @@ import pl.morgwai.base.servlet.utils.WebsocketPingerService;
  * For use with {@link
  * pl.morgwai.base.servlet.scopes.GuiceServerEndpointConfigurator#getAdditionalDecorator(Object)}.
  *
- * @see SimplePingingEndpointServletContextListener
+ * @see PingingServletContextListener
  */
 public class EndpointPingerDecorator implements InvocationHandler {
 
