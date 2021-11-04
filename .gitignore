@@ -7,6 +7,7 @@ build
 .gradle
 build.gradle
 settings.gradle
+dependency-reduced-pom.xml
 
 # ide
 .idea
