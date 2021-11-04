@@ -2,7 +2,6 @@
 package pl.morgwai.base.servlet.scopes;
 
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -24,7 +23,9 @@ import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.matcher.ElementMatchers;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
-import pl.morgwai.base.servlet.guiced.utils.EndpointPingerDecorator;
+
+import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnOpen;
+
 
 
 /**
@@ -171,8 +172,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 			// onOpen: create connectionCtx, retrieve HttpSession
 			if (connectionCtx == null) {
-				// TODO: move static websocket helpers to servlet-utils project
-				if ( ! EndpointPingerDecorator.isOnOpen(method)) {
+				if ( ! isOnOpen(method)) {
 					// this is most commonly toString() call from a debugger
 					return additionalEndpointDecorator.invoke(proxy, method, args);
 				}
@@ -193,7 +193,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 						} catch (Error | Exception e) {
 							throw e;
 						} catch (Throwable e) {
-							throw new InvocationTargetException(e);  // dead code
+							throw new Exception(e);  // dead code
 						}
 					}
 				)
