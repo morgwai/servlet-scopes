@@ -42,7 +42,7 @@ A websocket endpoint `Configurator` that automatically injects dependencies of n
 ### [GuiceServletContextListener](src/main/java/pl/morgwai/base/servlet/scopes/GuiceServletContextListener.java)
 Base class for app's `ServletContextListener`. Creates and configures apps Guice `Injector` and the above `ServletModule`. Provides also some helper methods.
 
-### [SimplePingingEndpointServletContextListener](src/main/java/pl/morgwai/base/servlet/guiced/utils/SimplePingingEndpointServletContextListener.java)
+### [PingingServletContextListener](src/main/java/pl/morgwai/base/servlet/guiced/utils/PingingServletContextListener.java)
 Subclass of `GuiceServletContextListener` that additionally automatically registers/deregisters created endpoint instances to a [WebsocketPingerService](https://github.com/morgwai/servlet-utils#main-user-classes).
 
 
@@ -56,7 +56,7 @@ public class ServletContextListener extends GuiceServletContextListener {
 	protected LinkedList<Module> configureInjections() {
 		LinkedList<Module> modules = new LinkedList<Module>();
 		modules.add((binder) -> {
-			binder.bind(MyService.class).in(servletModule.requestScope);
+			binder.bind(MyService.class).in(servletModule.containerCallScope);
 				// @Inject Provider<MyService> myServiceProvider;
 				// will now work both in servlets and endpoints
 			// more bindings here...
@@ -67,7 +67,7 @@ public class ServletContextListener extends GuiceServletContextListener {
 	@Override
 	protected void configureServletsFiltersEndpoints() throws ServletException {
 		addServlet("myServlet", MyServlet.class, "/myServlet");  // will have its fields injected
-		// more servlets/filters here...
+		// more servlets / filters / unannotated endpoints here...
 	}
 }
 ```
@@ -75,15 +75,15 @@ public class ServletContextListener extends GuiceServletContextListener {
 ```java
 @ServerEndpoint(
 	value = "/websocket/mySocket",
-	configurator = GuiceServerEndpointConfigurator.class)
+	configurator = GuiceServerEndpointConfigurator.class)  // ...or PingingServletContextListener
 public class MyEndpoint {
 	// endpoint implementation here...
 }
 // MyEndpoint will have its fields injected. Methods onOpen, onClose, onError and registered
-// MessageHandlers will run within requestScope, websocketConnectionScope and httpSessionScope
+// MessageHandlers will run within containerCallScope, websocketConnectionScope and httpSessionScope
 ```
 
-Hint: in cases when it's not possible to avoid thread switching without the use of `ContextTrackingExecutor` (for example when passing callbacks to some async calls), static helper methods `getActiveContexts(ContextTracker...)` and `executeWithinAll(List<ServerSideContext>, Runnable)` defined in `ContextTrackingExecutor` can be used to transfer context manually:
+In cases when it's not possible to avoid thread switching without the use of `ContextTrackingExecutor` (for example when passing callbacks to some async calls), static helper methods `getActiveContexts(ContextTracker...)` and `executeWithinAll(List<ServerSideContext>, Runnable)` defined in `ContextTrackingExecutor` can be used to transfer context manually:
 
 ```java
 class MyClass {
@@ -96,8 +96,8 @@ class MyClass {
         someAsyncMethod(param, (callbackParam) ->
             ContextTrackingExecutor.executeWithinAll(activeCtxList, () -> {
                 // callback code
-            }
-        ));
+            })
+        );
     }
 }
 ```
