@@ -174,15 +174,7 @@
 						<link>https://javadoc.io/doc/jakarta.servlet/jakarta.servlet-api/5.0.0</link>
 					</links>
 					<offlineLinks>
-						<!--
-						# to prepare for off-line javadoc generation, perform the following commands:
-						./mvnw dependency:resolve -Dclassifier=javadoc
-						cd $(./mvnw -q -N exec:exec -Dexec.executable=echo '-Dexec.args=${settings.localRepository}')
-						find . -name '*-javadoc.jar' |rev |cut -d / -f '2-' |rev | while read folder ; do cd ${folder} ; unzip *javadoc.jar element-list ; cd - ; done
-						find . -name '*-javadoc.jar' |xargs rm   # OPTIONAL
-						# to force offline mode use -o flag, for example
-						# ./mvnw -o clean install
-						-->
+						<!-- to setup offline javadoc generation run ./setup-offline-javadocs.sh -->
 						<offlineLink>
 							<url>https://javadoc.io/doc/pl.morgwai.base/guice-context-scopes/${guice.scopes.version}</url>
 							<location>${settings.localRepository}/pl/morgwai/base/guice-context-scopes/${guice.scopes.version}</location>
