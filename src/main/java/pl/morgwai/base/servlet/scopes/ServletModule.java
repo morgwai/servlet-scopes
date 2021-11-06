@@ -63,9 +63,8 @@ public class ServletModule implements Module {
 							.getHttpSessionContextAttributes()
 							.computeIfAbsent(key, (ignored) -> unscoped.get());
 				} catch (NullPointerException e) {
-					// NPE here is a result of a bug that will be usually eliminated in development
-					// phase and not happen in production, so we catch NPE instead of checking
-					// manually each time.
+					// result of a bug that will be fixed in development phase: don't check manually
+					// in production each time.
 					throw new RuntimeException("no request context for thread "
 							+ Thread.currentThread().getName() + " in scope " + toString()
 							+ ". See javadoc for ContextScope.scope(...)");

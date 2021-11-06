@@ -44,20 +44,23 @@ public abstract class ContainerCallContext extends ServerSideContext<ContainerCa
 	 */
 	public ConcurrentMap<Key<?>, Object> getHttpSessionContextAttributes() {
 		HttpSession session = getHttpSession();
-		if (session == null) {
-			throw new RuntimeException("no session in request context,  consider using a filter"
-					+ " that creates a session for every incoming request");
-		}
 		// TODO: consider maintaining ConcurrentMap<Session, Attributes> to avoid synchronization
-		synchronized (session) {
-			@SuppressWarnings("unchecked")
-			var sessionContextAttributes = (ConcurrentMap<Key<?>, Object>)
+		try {
+			synchronized (session) {
+				@SuppressWarnings("unchecked")
+				var sessionContextAttributes = (ConcurrentMap<Key<?>, Object>)
 					session.getAttribute(SESSION_CONTEXT_ATTRIBUTE_NAME);
-			if (sessionContextAttributes == null) {
-				sessionContextAttributes = new ConcurrentHashMap<>();
-				session.setAttribute(SESSION_CONTEXT_ATTRIBUTE_NAME, sessionContextAttributes);
+				if (sessionContextAttributes == null) {
+					sessionContextAttributes = new ConcurrentHashMap<>();
+					session.setAttribute(SESSION_CONTEXT_ATTRIBUTE_NAME, sessionContextAttributes);
+				}
+				return sessionContextAttributes;
 			}
-			return sessionContextAttributes;
+		} catch (NullPointerException e) {
+			// result of a bug that will be fixed in development phase: don't check manually
+			// in production each time.
+			throw new RuntimeException("no session in request context,  consider using a filter"
+				+ " that creates a session for every incoming request");
 		}
 	}
 
