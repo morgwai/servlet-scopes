@@ -39,10 +39,7 @@ public abstract class ContainerCallContext extends ServerSideContext<ContainerCa
 
 
 
-	/**
-	 * Returns attributes of the context of the {@link HttpSession}  this request belongs to.
-	 */
-	public ConcurrentMap<Key<?>, Object> getHttpSessionContextAttributes() {
+	ConcurrentMap<Key<?>, Object> getHttpSessionContextAttributes() {
 		HttpSession session = getHttpSession();
 		// TODO: consider maintaining ConcurrentMap<Session, Attributes> to avoid synchronization
 		try {
@@ -66,6 +63,16 @@ public abstract class ContainerCallContext extends ServerSideContext<ContainerCa
 
 	static final String SESSION_CONTEXT_ATTRIBUTE_NAME =
 			ContainerCallContext.class.getPackageName() + ".contextAttributes";
+
+
+
+	/**
+	 * Removes the attribute given by <code>key</code> from the context of the {@link HttpSession}
+	 * this request belongs to.
+	 */
+	public void removeSessionContextAttribute(Key<?> key) {
+		getHttpSessionContextAttributes().remove(key);
+	}
 
 
 
