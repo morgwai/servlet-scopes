@@ -7,14 +7,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 import com.google.inject.Binder;
-import com.google.inject.Key;
 import com.google.inject.Module;
-import com.google.inject.Provider;
 import com.google.inject.Scope;
 import com.google.inject.TypeLiteral;
 
 import pl.morgwai.base.guice.scopes.ContextScope;
 import pl.morgwai.base.guice.scopes.ContextTracker;
+import pl.morgwai.base.guice.scopes.InducedContextScope;
 
 
 
@@ -52,32 +51,10 @@ public class ServletModule implements Module {
 	 * endpoints, other layers must ensure that a session exists (for example a
 	 * {@link javax.servlet.Filter} targeting URL patterns of websockets can be used).</p>
 	 */
-	public final Scope httpSessionScope = new Scope() {
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public <T> Provider<T> scope(Key<T> key, Provider<T> unscoped) {
-			return () -> {
-				try {
-					return (T) containerCallContextTracker
-							.getCurrentContext()
-							.getHttpSessionContextAttributes()
-							.computeIfAbsent(key, (ignored) -> unscoped.get());
-				} catch (NullPointerException e) {
-					// result of a bug that will be fixed in development phase: don't check manually
-					// in production each time.
-					throw new RuntimeException("no request context for thread "
-							+ Thread.currentThread().getName() + " in scope " + toString()
-							+ ". See javadoc for ContextScope.scope(...)");
-				}
-			};
-		}
-
-		@Override
-		public String toString() {
-			return "HTTP_SESSION_SCOPE";
-		}
-	};
+	public final Scope httpSessionScope = new InducedContextScope<>(
+			"HTTP_SESSION_SCOPE",
+			containerCallContextTracker,
+			ContainerCallContext::getHttpSessionContext);
 
 
 
