@@ -9,7 +9,7 @@ import javax.servlet.http.HttpSession;
 import com.google.inject.Key;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
-import pl.morgwai.base.guice.scopes.ServerSideContext;
+import pl.morgwai.base.guice.scopes.TrackableContext;
 
 
 
@@ -28,7 +28,7 @@ import pl.morgwai.base.guice.scopes.ServerSideContext;
  *
  * @see ServletModule#containerCallScope corresponding <code>Scope</code>
  */
-public abstract class ContainerCallContext extends ServerSideContext<ContainerCallContext> {
+public abstract class ContainerCallContext extends TrackableContext<ContainerCallContext> {
 
 
 

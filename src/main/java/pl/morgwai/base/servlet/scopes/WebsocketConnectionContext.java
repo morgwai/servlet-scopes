@@ -4,7 +4,7 @@ package pl.morgwai.base.servlet.scopes;
 import javax.websocket.Session;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
-import pl.morgwai.base.guice.scopes.ServerSideContext;
+import pl.morgwai.base.guice.scopes.TrackableContext;
 
 
 
@@ -21,7 +21,7 @@ import pl.morgwai.base.guice.scopes.ServerSideContext;
  *
  * @see ServletModule#websocketConnectionScope corresponding <code>Scope</code>
  */
-public class WebsocketConnectionContext extends ServerSideContext<WebsocketConnectionContext> {
+public class WebsocketConnectionContext extends TrackableContext<WebsocketConnectionContext> {
 
 
 

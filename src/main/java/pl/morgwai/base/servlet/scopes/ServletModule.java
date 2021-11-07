@@ -1,6 +1,7 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.scopes;
 
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -97,10 +98,19 @@ public class ServletModule implements Module {
 
 
 	/**
+	 * Contains all trackers. {@link #configure(Binder)} binds {@code ContextTracker<?>[]} to it
+	 * for use with {@link ContextTrackingExecutor#getActiveContexts(List)}.
+	 */
+	public final List<ContextTracker<?>> allTrackers =
+			List.of(websocketConnectionContextTracker, containerCallContextTracker);
+
+
+
+	/**
 	 * Binds {@link #containerCallContextTracker} and {@link #websocketConnectionContextTracker} and
 	 * corresponding contexts for injection. Binds {@code ContextTracker<?>[]} to
 	 * {@link #allTrackers} that contains all trackers for use with
-	 * {@link ContextTrackingExecutor#getActiveContexts(ContextTracker...)}.
+	 * {@link ContextTrackingExecutor#getActiveContexts(List)}.
 	 */
 	@Override
 	public void configure(Binder binder) {
@@ -117,18 +127,9 @@ public class ServletModule implements Module {
 		binder.bind(WebsocketConnectionContext.class).toProvider(
 				websocketConnectionContextTracker::getCurrentContext);
 
-		TypeLiteral<ContextTracker<?>[]> trackerArrayType = new TypeLiteral<>() {};
-		binder.bind(trackerArrayType).toInstance(allTrackers);
+		TypeLiteral<List<ContextTracker<?>>> trackersType = new TypeLiteral<>() {};
+		binder.bind(trackersType).toInstance(allTrackers);
 	}
-
-
-
-	/**
-	 * Contains all trackers. {@link #configure(Binder)} binds {@code ContextTracker<?>[]} to it
-	 * for use with {@link ContextTrackingExecutor#getActiveContexts(ContextTracker...)}.
-	 */
-	public final ContextTracker<?>[] allTrackers =
-		{websocketConnectionContextTracker, containerCallContextTracker};
 
 
 
