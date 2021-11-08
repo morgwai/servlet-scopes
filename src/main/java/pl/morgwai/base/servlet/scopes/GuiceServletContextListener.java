@@ -180,6 +180,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			servletContainer = initializationEvent.getServletContext();
 			websocketContainer = ((ServerContainer) servletContainer.getAttribute(
 					"javax.websocket.server.ServerContainer"));
+			servletContainer.addListener(new ContainerCallContext.SessionContextCreator());
 
 			Filter requestContextFilter = servletContainer.createFilter(RequestContextFilter.class);
 			injector.injectMembers(requestContextFilter);

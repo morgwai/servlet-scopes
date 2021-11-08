@@ -2,6 +2,8 @@
 package pl.morgwai.base.servlet.scopes;
 
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
 import pl.morgwai.base.guice.scopes.TrackableContext;
@@ -38,18 +40,9 @@ public abstract class ContainerCallContext extends TrackableContext<ContainerCal
 	 * Returns context of {@link #getHttpSession() the session this request belongs to}.
 	 */
 	public HttpSessionContext getHttpSessionContext() {
-		HttpSession session = getHttpSession();
-		// TODO: consider maintaining ConcurrentMap<Session, Attributes> to avoid synchronization
 		try {
-			synchronized (session) {
-				var sessionCtx = (HttpSessionContext)
-						session.getAttribute(SESSION_CONTEXT_ATTRIBUTE_NAME);
-				if (sessionCtx == null) {
-					sessionCtx = new HttpSessionContext(session);
-					session.setAttribute(SESSION_CONTEXT_ATTRIBUTE_NAME, sessionCtx);
-				}
-				return sessionCtx;
-			}
+			return (HttpSessionContext)
+					getHttpSession().getAttribute(HttpSessionContext.class.getName());
 		} catch (NullPointerException e) {
 			// result of a bug that will be fixed in development phase: don't check manually
 			// in production each time.
@@ -58,8 +51,17 @@ public abstract class ContainerCallContext extends TrackableContext<ContainerCal
 		}
 	}
 
-	static final String SESSION_CONTEXT_ATTRIBUTE_NAME =
-			ContainerCallContext.class.getPackageName() + ".contextAttributes";
+
+
+	static class SessionContextCreator implements HttpSessionListener {
+
+		@Override
+		public void sessionCreated(HttpSessionEvent event) {
+			var session = event.getSession();
+			session.setAttribute(
+					HttpSessionContext.class.getName(), new HttpSessionContext(session));
+		}
+	}
 
 
 
