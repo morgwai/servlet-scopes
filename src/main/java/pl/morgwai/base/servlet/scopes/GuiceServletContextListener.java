@@ -171,16 +171,15 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	@Override
 	public final void contextInitialized(ServletContextEvent initializationEvent) {
 		try {
-			initialize(initializationEvent);
-			LinkedList<Module> modules = configureInjections();
-			modules.add(servletModule);
-			injector = createInjector(modules);
-			log.info("Guice injector created successfully");
-
 			servletContainer = initializationEvent.getServletContext();
 			websocketContainer = ((ServerContainer) servletContainer.getAttribute(
 					"javax.websocket.server.ServerContainer"));
 			servletContainer.addListener(new ContainerCallContext.SessionContextCreator());
+
+			LinkedList<Module> modules = configureInjections();
+			modules.add(servletModule);
+			injector = createInjector(modules);
+			log.info("Guice injector created successfully");
 
 			Filter requestContextFilter = servletContainer.createFilter(RequestContextFilter.class);
 			injector.injectMembers(requestContextFilter);
@@ -195,12 +194,6 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			System.exit(1);
 		}
 	}
-
-	/**
-	 * Additional initialization steps performed before {@link #configureInjections()}.
-	 * By default does nothing.
-	 */
-	protected void initialize(ServletContextEvent initializationEvent) throws ServletException {}
 
 	/**
 	 * Creates injector. By default {@code return Guice.createInjector(modules)}.
