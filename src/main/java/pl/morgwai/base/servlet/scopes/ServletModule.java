@@ -75,7 +75,7 @@ public class ServletModule implements Module {
 
 
 	/**
-	 * Contains all trackers. {@link #configure(Binder)} binds {@code ContextTracker<?>[]} to it
+	 * Contains all trackers. {@link #configure(Binder)} binds {@code List<ContextTracker<?>>} to it
 	 * for use with {@link ContextTrackingExecutor#getActiveContexts(List)}.
 	 */
 	public final List<ContextTracker<?>> allTrackers =
@@ -85,7 +85,7 @@ public class ServletModule implements Module {
 
 	/**
 	 * Binds {@link #containerCallContextTracker} and {@link #websocketConnectionContextTracker} and
-	 * corresponding contexts for injection. Binds {@code ContextTracker<?>[]} to
+	 * corresponding contexts for injection. Binds {@code List<ContextTracker<?>>} to
 	 * {@link #allTrackers} that contains all trackers for use with
 	 * {@link ContextTrackingExecutor#getActiveContexts(List)}.
 	 */

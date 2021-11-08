@@ -83,12 +83,12 @@ public class MyEndpoint {
 // MessageHandlers will run within containerCallScope, websocketConnectionScope and httpSessionScope
 ```
 
-In cases when it's not possible to avoid thread switching without the use of `ContextTrackingExecutor` (for example when passing callbacks to some async calls), static helper methods `getActiveContexts(ContextTracker...)` and `executeWithinAll(List<ServerSideContext>, Runnable)` defined in `ContextTrackingExecutor` can be used to transfer context manually:
+In cases when it's not possible to avoid thread switching without the use of `ContextTrackingExecutor` (for example when passing callbacks to some async calls), static helper methods `getActiveContexts(List<ContextTracker<?>>)` and `executeWithinAll(List<TrackableContext>, Runnable)` defined in `ContextTrackingExecutor` can be used to transfer context manually:
 
 ```java
 class MyClass {
 
-    @Inject ContextTracker<?>[] allTrackers;
+    @Inject List<ContextTracker<?>> allTrackers;
 
     void myMethod(Object param) {
         // myMethod code
