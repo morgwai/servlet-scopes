@@ -8,10 +8,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 
-import javax.servlet.http.HttpServletResponse;
-import javax.websocket.CloseReason;
-import javax.websocket.CloseReason.CloseCodes;
-import javax.websocket.Session;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.websocket.CloseReason;
+import jakarta.websocket.CloseReason.CloseCodes;
+import jakarta.websocket.Session;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
 

@@ -4,7 +4,7 @@ package pl.morgwai.base.servlet.guiced.utils;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
-import javax.websocket.Session;
+import jakarta.websocket.Session;
 
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
@@ -13,7 +13,7 @@ import static pl.morgwai.base.servlet.utils.EndpointUtils.*;
 
 
 /**
- * Decorator for websocket {@link javax.websocket.Endpoint}s that automatically registers and
+ * Decorator for websocket {@link jakarta.websocket.Endpoint}s that automatically registers and
  * deregisters them to {@link WebsocketPingerService}.
  * For use with {@link
  * pl.morgwai.base.servlet.scopes.GuiceServerEndpointConfigurator#getAdditionalDecorator(Object)}.
