@@ -174,7 +174,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			initialize(initializationEvent);
 			LinkedList<Module> modules = configureInjections();
 			modules.add(servletModule);
-			injector = Guice.createInjector(modules);
+			injector = createInjector(modules);
 			log.info("Guice injector created successfully");
 
 			servletContainer = initializationEvent.getServletContext();
@@ -201,6 +201,13 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * By default does nothing.
 	 */
 	protected void initialize(ServletContextEvent initializationEvent) throws ServletException {}
+
+	/**
+	 * Creates injector. By default {@code return Guice.createInjector(modules)}.
+	 */
+	protected Injector createInjector(LinkedList<Module> modules) {
+		return Guice.createInjector(modules);
+	}
 
 
 
