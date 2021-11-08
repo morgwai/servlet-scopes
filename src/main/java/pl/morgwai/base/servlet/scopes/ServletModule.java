@@ -1,6 +1,7 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.scopes;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -110,6 +111,10 @@ public class ServletModule implements Module {
 
 
 
+	final List<ContextTrackingExecutor> executors = new LinkedList<>();
+
+
+
 	/**
 	 * Constructs an executor backed by a new fixed size
 	 * {@link java.util.concurrent.ThreadPoolExecutor} that uses a
@@ -118,9 +123,13 @@ public class ServletModule implements Module {
 	 * <p>
 	 * To avoid {@link OutOfMemoryError}s, an external mechanism that limits maximum number of tasks
 	 * (such as a load balancer or frontend) should be used.</p>
+	 * <p>
+	 * Returned executor will be shutdown automatically at app shutdown.</p>
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(String name, int poolSize) {
-		return new ContextTrackingExecutor(name, poolSize, allTrackers);
+		var executor = new ContextTrackingExecutor(name, poolSize, allTrackers);
+		executors.add(executor);
+		return executor;
 	}
 
 
@@ -133,14 +142,17 @@ public class ServletModule implements Module {
 	 * {@link ContextTrackingExecutor#execute(Runnable)} throws a
 	 * {@link java.util.concurrent.RejectedExecutionException} if {@code workQueue} is full. It
 	 * should usually be handled by sending
-	 * {@link javax.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} to the client.
-	 * </p>
+	 * {@link javax.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} to the client.</p>
+	 * <p>
+	 * Returned executor will be shutdown automatically at app shutdown.</p>
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(
 			String name,
 			int poolSize,
 			BlockingQueue<Runnable> workQueue) {
-		return new ContextTrackingExecutor(name, poolSize, workQueue, allTrackers);
+		var executor = new ContextTrackingExecutor(name, poolSize, workQueue, allTrackers);
+		executors.add(executor);
+		return executor;
 	}
 
 
@@ -152,15 +164,18 @@ public class ServletModule implements Module {
 	 * {@link ContextTrackingExecutor#execute(Runnable)} throws a
 	 * {@link java.util.concurrent.RejectedExecutionException} if {@code workQueue} is full. It
 	 * should usually be handled by sending
-	 * {@link javax.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} to the client.
-	 * </p>
+	 * {@link javax.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} to the client.</p>
+	 * <p>
+	 * Returned executor will be shutdown automatically at app shutdown.</p>
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(
 			String name,
 			int poolSize,
 			BlockingQueue<Runnable> workQueue,
 			ThreadFactory threadFactory) {
-		return new ContextTrackingExecutor(name, poolSize, workQueue, threadFactory, allTrackers);
+		var executor = new ContextTrackingExecutor(name, poolSize, workQueue, threadFactory, allTrackers);
+		executors.add(executor);
+		return executor;
 	}
 
 
@@ -175,11 +190,31 @@ public class ServletModule implements Module {
 	 * <p>
 	 * {@code poolSize} is informative only, to be returned by
 	 * {@link ContextTrackingExecutor#getPoolSize()}.</p>
+	 * <p>
+	 * Returned executor will be shutdown automatically at app shutdown.</p>
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(
 			String name,
 			ExecutorService backingExecutor,
 			int poolSize) {
-		return new ContextTrackingExecutor(name, backingExecutor, poolSize, allTrackers);
+		var executor = new ContextTrackingExecutor(name, backingExecutor, poolSize, allTrackers);
+		executors.add(executor);
+		return executor;
+	}
+
+
+
+	void shutdownAllExecutors(int timeoutSeconds) {
+		var shutdownThreads = new LinkedList<Thread>();
+		for (var executor: executors) {
+			var thread = new Thread(() -> executor.tryShutdownGracefully(timeoutSeconds));
+			shutdownThreads.add(thread);
+			thread.start();
+		}
+		for (var thread: shutdownThreads) {
+			try {
+				thread.join();
+			} catch (InterruptedException ignored) {}
+		}
 	}
 }

@@ -204,6 +204,22 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 
+	/**
+	 * Shutdowns all executors from {@link #servletModule}.
+	 */
+	@Override
+	public void contextDestroyed(ServletContextEvent destructionEvent) {
+		servletModule.shutdownAllExecutors(getExecutorsShutdownTimeoutSeconds());
+	}
+
+	/**
+	 * Returns the timeout for shutdown of executors obtained from {@link #servletModule}.
+	 * By default 5 seconds.
+	 */
+	protected int getExecutorsShutdownTimeoutSeconds() { return 5; }
+
+
+
 	protected static final Logger log =
 			LoggerFactory.getLogger(GuiceServletContextListener.class.getName());
 }
