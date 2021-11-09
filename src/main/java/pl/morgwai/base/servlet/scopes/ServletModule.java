@@ -173,7 +173,8 @@ public class ServletModule implements Module {
 			int poolSize,
 			BlockingQueue<Runnable> workQueue,
 			ThreadFactory threadFactory) {
-		var executor = new ContextTrackingExecutor(name, poolSize, workQueue, threadFactory, allTrackers);
+		var executor =
+				new ContextTrackingExecutor(name, poolSize, workQueue, threadFactory, allTrackers);
 		executors.add(executor);
 		return executor;
 	}
