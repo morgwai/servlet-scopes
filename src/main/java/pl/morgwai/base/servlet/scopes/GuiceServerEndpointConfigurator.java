@@ -124,7 +124,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 						EndpointDecorator.class,
 						Visibility.PACKAGE_PRIVATE)
 				.method(ElementMatchers.any())
-				.intercept(InvocationHandlerAdapter.toField(PROXY_DECORATOR_FIELD_NAME));
+					.intercept(InvocationHandlerAdapter.toField(PROXY_DECORATOR_FIELD_NAME));
 		final ServerEndpoint annotation = endpointClass.getAnnotation(ServerEndpoint.class);
 		if (annotation != null) proxyClassBuilder = proxyClassBuilder.annotateType(annotation);
 		return proxyClassBuilder
