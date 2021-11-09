@@ -3,6 +3,7 @@ package pl.morgwai.base.servlet.scopes;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
@@ -65,6 +66,20 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 				}
 			} catch (IOException ignored) {}  // broken connection
 		}
+	}
+
+
+
+	@Override
+	public Optional<List<Runnable>> tryShutdownGracefully(int timeoutSeconds) {
+		throw new RuntimeException(
+				"executors obtained from ServletModule are shutdown automatically at app shutdown");
+	}
+
+
+
+	void shutdown(int timeoutSeconds) {
+		super.tryShutdownGracefully(timeoutSeconds);
 	}
 
 

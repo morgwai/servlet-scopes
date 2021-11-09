@@ -207,7 +207,7 @@ public class ServletModule implements Module {
 	void shutdownAllExecutors(int timeoutSeconds) {
 		var shutdownThreads = new LinkedList<Thread>();
 		for (var executor: executors) {
-			var thread = new Thread(() -> executor.tryShutdownGracefully(timeoutSeconds));
+			var thread = new Thread(() -> executor.shutdown(timeoutSeconds));
 			shutdownThreads.add(thread);
 			thread.start();
 		}
