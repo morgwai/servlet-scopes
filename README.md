@@ -33,7 +33,7 @@ Scopes bindings to a given `HttpSession`. Available both to servlets and websock
 Contains the above `Scope`s, `ContextTracker`s and some helper methods.
 
 ### [ContextTrackingExecutor](src/main/java/pl/morgwai/base/servlet/scopes/ContextTrackingExecutor.java)
-An `Executor` (backed by a fixed size `ThreadPoolExecutor` by default) that upon dispatching automatically updates which thread runs within which `Context` (`HttpRequest`/`WebsocketEvent`, `WebsocketConnection`, `HttpSession`).<br/>
+An `Executor` (backed by a fixed size `ThreadPoolExecutor` by default) that upon dispatching automatically updates which thread runs within which `Context` (`ServletRequest`/`WebsocketEvent`, `WebsocketConnection`, `HttpSession`).<br/>
 Instances should usually be created using helper methods from the above `ServletModule` and configured for named instance injection in user modules.
 
 ### [GuiceServerEndpointConfigurator](src/main/java/pl/morgwai/base/servlet/scopes/GuiceServerEndpointConfigurator.java)
@@ -101,6 +101,8 @@ class MyClass {
     }
 }
 ```
+
+When dispatching work to servlet container threads using any of `AsyncContext.dispatch()` methods, the context is transferred automatically.
 
 Dependencies of this jar on `slf4j-api` and `guice` are declared with scope `provided`, so that apps can use any versions of these libs with compatible API.
 

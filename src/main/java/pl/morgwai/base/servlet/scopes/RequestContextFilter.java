@@ -3,6 +3,7 @@ package pl.morgwai.base.servlet.scopes;
 
 import java.io.IOException;
 
+import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -17,7 +18,8 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 /**
- * Starts tracking contexts of newly incoming {@link HttpServletRequest}s.
+ * Starts tracking contexts of newly incoming {@link HttpServletRequest}s and transfers context when
+ * {@link javax.servlet.AsyncContext#dispatch(String) dispatching from AsyncContext}.
  */
 public class RequestContextFilter implements Filter {
 
@@ -30,7 +32,10 @@ public class RequestContextFilter implements Filter {
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
-		final var ctx = new ServletRequestContext((HttpServletRequest) request, tracker);
+		final var ctx = request.getDispatcherType() == DispatcherType.REQUEST
+				? new ServletRequestContext((HttpServletRequest) request, tracker)
+				: (ServletRequestContext)
+						request.getAttribute(ServletRequestContext.class.getName());
 		try {
 			ctx.executeWithinSelf(() -> {
 				try {

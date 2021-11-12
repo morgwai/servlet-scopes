@@ -10,6 +10,9 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 /**
  * Context of a {@link HttpServletRequest}.
+ * <p>
+ * Note: this context is transfered automatically when
+ * {@link javax.servlet.AsyncContext#dispatch(String) dispatching from AsyncContext}.</p>
  *
  * @see ContainerCallContext super class for more info
  */
@@ -33,5 +36,6 @@ public class ServletRequestContext extends ContainerCallContext {
 			HttpServletRequest request, ContextTracker<ContainerCallContext> tracker) {
 		super(tracker);
 		this.request = request;
+		request.setAttribute(ServletRequestContext.class.getName(), this);
 	}
 }

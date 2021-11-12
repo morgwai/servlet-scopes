@@ -208,7 +208,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			log.info("Guice injector created successfully");
 
 			addFilter(RequestContextFilter.class.getSimpleName(), RequestContextFilter.class)
-					.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, "/*");
+					.addMappingForUrlPatterns(
+							EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC), false, "/*");
 
 			configureServletsFiltersEndpoints();
 		} catch (ServletException e) {

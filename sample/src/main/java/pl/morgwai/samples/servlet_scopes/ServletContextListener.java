@@ -12,6 +12,7 @@ import com.google.inject.Module;
 import com.google.inject.name.Names;
 
 import pl.morgwai.base.servlet.guiced.utils.PingingServletContextListener;
+import pl.morgwai.base.servlet.scopes.ContextTrackingExecutor;
 
 
 
@@ -23,6 +24,8 @@ public class ServletContextListener extends PingingServletContextListener {
 	public static final String CONTAINER_CALL = "call";
 	public static final String WS_CONNECTION = "wsconn";
 	public static final String HTTP_SESSION = "session";
+
+	ContextTrackingExecutor executor = servletModule.newContextTrackingExecutor("testExecutor", 2);
 
 
 
@@ -36,6 +39,7 @@ public class ServletContextListener extends PingingServletContextListener {
 					.to(Service.class).in(servletModule.websocketConnectionScope);
 			binder.bind(Service.class).annotatedWith(Names.named(HTTP_SESSION))
 					.to(Service.class).in(servletModule.httpSessionScope);
+			binder.bind(ContextTrackingExecutor.class).toInstance(executor);
 		});
 		return modules;
 	}
@@ -50,7 +54,10 @@ public class ServletContextListener extends PingingServletContextListener {
 				.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, websocketPath);
 		addEndpoint(ChatEndpoint.class, websocketPath);
 
-		addServlet(TestServlet.class.getSimpleName(), TestServlet.class, "/test");
+		addServlet(
+				AsyncDispatchingServlet.class.getSimpleName(),
+				AsyncDispatchingServlet.class,
+				"/test");
 	}
 
 
