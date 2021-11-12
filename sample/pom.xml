@@ -45,7 +45,7 @@
 				<dependency>
 					<groupId>pl.morgwai.base</groupId>
 					<artifactId>servlet-scopes</artifactId>
-					<version>6.1-SNAPSHOT-javax</version>
+					<version>6.1-javax</version>
 				</dependency>
 				<dependency>
 					<groupId>com.google.inject</groupId>
@@ -75,7 +75,7 @@
 				<dependency>
 					<groupId>pl.morgwai.base</groupId>
 					<artifactId>servlet-scopes</artifactId>
-					<version>6.1-SNAPSHOT-jakarta-experimental</version>
+					<version>6.1-jakarta-experimental</version>
 				</dependency>
 				<dependency>
 					<groupId>com.guicedee.services</groupId>
