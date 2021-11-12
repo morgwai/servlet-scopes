@@ -5,7 +5,6 @@ import java.util.EnumSet;
 import java.util.LinkedList;
 
 import javax.servlet.DispatcherType;
-import javax.servlet.FilterRegistration;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebListener;
@@ -46,17 +45,11 @@ public class ServletContextListener extends PingingServletContextListener {
 	@Override
 	protected void configureServletsFiltersEndpoints() throws ServletException {
 		final var websocketPath = "/websocket/chat";
-
-		// mappings with isMatchAfter==true don't match websocket requests, so we can't just do
-		// addFilter("ensureSessionFilter", EnsureSessionFilter.class, websocketPath);
-		final var ensureSessionFilter = servletContainer.createFilter(EnsureSessionFilter.class);
-		getInjector().injectMembers(ensureSessionFilter);
-		final FilterRegistration.Dynamic reg = servletContainer.addFilter(
-				EnsureSessionFilter.class.getSimpleName(), ensureSessionFilter);
-		reg.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, websocketPath);
-		reg.setAsyncSupported(true);
-
+		// mappings with isMatchAfter==true don't match websocket requests
+		addFilter(EnsureSessionFilter.class.getSimpleName(), EnsureSessionFilter.class)
+				.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, websocketPath);
 		addEndpoint(ChatEndpoint.class, websocketPath);
+
 		addServlet(TestServlet.class.getSimpleName(), TestServlet.class, "/test");
 	}
 

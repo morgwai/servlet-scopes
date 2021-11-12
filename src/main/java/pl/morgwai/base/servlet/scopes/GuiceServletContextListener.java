@@ -7,7 +7,6 @@ import java.util.LinkedList;
 import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
 import javax.servlet.FilterRegistration;
-import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -90,42 +89,69 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Adds a servlet and injects its dependencies.<br/>
-	 * For use in {@link #configureServletsFiltersEndpoints()}.
+	 * Adds a servlet with async support and injects its dependencies.
 	 * <p>
-	 * The servlet will support async processing.</p>
+	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
 	 */
 	protected ServletRegistration.Dynamic addServlet(
 			String name, Class<? extends HttpServlet> servletClass, String... urlPatterns)
 			throws ServletException {
-		Servlet servlet = servletContainer.createServlet(servletClass);
+		final var servlet = servletContainer.createServlet(servletClass);
 		injector.injectMembers(servlet);
-		ServletRegistration.Dynamic reg = servletContainer.addServlet(name, servlet);
-		reg.addMapping(urlPatterns);
-		reg.setAsyncSupported(true);
+		final var registration = servletContainer.addServlet(name, servlet);
+		registration.addMapping(urlPatterns);
+		registration.setAsyncSupported(true);
 		log.info("registered servlet " + name);
-		return reg;
+		return registration;
 	}
 
 
 
 	/**
-	 * Adds a filter at the end of the chain and injects its dependencies.<br/>
-	 * For use in {@link #configureServletsFiltersEndpoints()}.
+	 * Adds a filter with async support and injects its dependencies. Filter mappings should be
+	 * added afterwards with
+	 * {@link FilterRegistration.Dynamic#addMappingForUrlPatterns(EnumSet, boolean, String...)} or
+	 * {@link FilterRegistration.Dynamic#addMappingForServletNames(EnumSet, boolean, String...)}.
 	 * <p>
-	 * The filter will support async processing and {@link DispatcherType} will be set to
-	 * {@link DispatcherType#REQUEST}.</p>
+	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
+	 */
+	protected FilterRegistration.Dynamic addFilter(String name, Class<? extends Filter> filterClass)
+			throws ServletException {
+		final var filter = servletContainer.createFilter(filterClass);
+		injector.injectMembers(filter);
+		final var registration = servletContainer.addFilter(name, filter);
+		registration.setAsyncSupported(true);
+		log.info("registered filter " + name);
+		return registration;
+	}
+
+	/**
+	 * Adds a filter with async support and injects its dependencies, then adds a mapping at the
+	 * end of the chain for {@code urlPatterns} and {@code dispatcherTypes}.
+	 * <p>
+	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
+	 */
+	protected FilterRegistration.Dynamic addFilter(
+			String name,
+			Class<? extends Filter> filterClass,
+			EnumSet<DispatcherType> dispatcherTypes,
+			String... urlPatterns)
+			throws ServletException {
+		final var registration = addFilter(name, filterClass);
+		registration.addMappingForUrlPatterns(dispatcherTypes, true, urlPatterns);
+		return registration;
+	}
+
+	/**
+	 * Adds a filter with async support and injects its dependencies, then adds a mapping at the
+	 * end of the chain for {@code urlPatterns} and {@link DispatcherType#REQUEST} .
+	 * <p>
+	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
 	 */
 	protected FilterRegistration.Dynamic addFilter(
 			String name, Class<? extends Filter> filterClass, String... urlPatterns)
 			throws ServletException {
-		Filter filter = servletContainer.createFilter(filterClass);
-		injector.injectMembers(filter);
-		FilterRegistration.Dynamic reg = servletContainer.addFilter(name, filter);
-		reg.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, urlPatterns);
-		reg.setAsyncSupported(true);
-		log.info("registered filter " + name);
-		return reg;
+		return addFilter(name, filterClass, null, urlPatterns);
 	}
 
 
@@ -176,17 +202,13 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 					"javax.websocket.server.ServerContainer"));
 			servletContainer.addListener(new ContainerCallContext.SessionContextCreator());
 
-			LinkedList<Module> modules = configureInjections();
+			final var modules = configureInjections();
 			modules.add(servletModule);
 			injector = createInjector(modules);
 			log.info("Guice injector created successfully");
 
-			Filter requestContextFilter = servletContainer.createFilter(RequestContextFilter.class);
-			injector.injectMembers(requestContextFilter);
-			FilterRegistration.Dynamic reg =
-					servletContainer.addFilter("requestContextFilter", requestContextFilter);
-			reg.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, "/*");
-			reg.setAsyncSupported(true);
+			addFilter(RequestContextFilter.class.getSimpleName(), RequestContextFilter.class)
+					.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, "/*");
 
 			configureServletsFiltersEndpoints();
 		} catch (ServletException e) {
