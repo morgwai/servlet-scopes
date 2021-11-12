@@ -4,10 +4,10 @@ package pl.morgwai.samples.servlet_scopes;
 import java.util.EnumSet;
 import java.util.LinkedList;
 
-import javax.servlet.DispatcherType;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebListener;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebListener;
 import com.google.inject.Module;
 import com.google.inject.name.Names;
 
