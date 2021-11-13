@@ -50,7 +50,7 @@ Subclass of `GuiceServletContextListener` that additionally automatically regist
 
 ```java
 @WebListener
-public class ServletContextListener extends GuiceServletContextListener {
+public class ServletContextListener extends GuiceServletContextListener {  // ...or PingingServletContextListener
 
 	@Override
 	protected LinkedList<Module> configureInjections() {
@@ -75,8 +75,11 @@ public class ServletContextListener extends GuiceServletContextListener {
 ```java
 @ServerEndpoint(
 	value = "/websocket/mySocket",
-	configurator = GuiceServerEndpointConfigurator.class)  // ...or PingingServletContextListener
+	configurator = GuiceServerEndpointConfigurator.class)  // ...or PingingEndpointConfigurator
 public class MyEndpoint {
+
+	@Inject Service service;
+
 	// endpoint implementation here...
 }
 // MyEndpoint will have its fields injected. Methods onOpen, onClose, onError and registered
