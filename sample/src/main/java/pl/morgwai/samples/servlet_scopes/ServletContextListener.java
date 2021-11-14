@@ -55,9 +55,11 @@ public class ServletContextListener extends PingingServletContextListener {
 		addEndpoint(ChatEndpoint.class, websocketPath);
 
 		addServlet(
-				AsyncDispatchingServlet.class.getSimpleName(),
-				AsyncDispatchingServlet.class,
-				"/test");
+				AsyncServlet.class.getSimpleName(), AsyncServlet.class, AsyncServlet.URI);
+		addServlet(
+				DispatchingServlet.class.getSimpleName(),
+				DispatchingServlet.class,
+				DispatchingServlet.URI);
 	}
 
 

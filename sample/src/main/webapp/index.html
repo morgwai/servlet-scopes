@@ -8,7 +8,9 @@
 </head>
 
 <body>
-	<a href='test' >servlet test</a><br/>
+	<a href='test/dispatch' >unwrapped test (expected DispatchingServlet)</a><br/>
+	<a href='test/dispatch?mode=wrapped' >wrapped test (expected AsyncServlet)</a><br/>
+	<a href='test/dispatch?dispatch=/test/async' >targeted test (expected AsyncServlet)</a><br/>
 	<a href='chat.html' >chat app</a><br/>
 </body>
 
