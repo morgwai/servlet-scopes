@@ -46,8 +46,9 @@ public abstract class ContainerCallContext extends TrackableContext<ContainerCal
 		} catch (NullPointerException e) {
 			// result of a bug that will be fixed in development phase: don't check manually
 			// in production each time.
-			throw new RuntimeException("no session in request context,  consider using a filter"
-					+ " that creates a session for every incoming request");
+			throw new RuntimeException("No session in call context. Consider either using a filter"
+					+ " that creates a session for every incoming request or using websocket"
+					+ " connection scope instead.");
 		}
 	}
 
