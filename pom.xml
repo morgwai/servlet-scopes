@@ -64,6 +64,19 @@
 			<version>1.7.32</version>
 			<scope>provided</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.13.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-jdk14</artifactId>
+			<version>1.7.32</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<profiles>
@@ -96,6 +109,18 @@
 					<version>1.1</version>
 					<scope>provided</scope>
 				</dependency>
+				<dependency>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-servlet</artifactId>
+					<version>10.0.7</version>
+					<scope>test</scope>
+				</dependency>
+				<dependency>
+					<groupId>org.eclipse.jetty.websocket</groupId>
+					<artifactId>websocket-javax-server</artifactId>
+					<version>10.0.7</version>
+					<scope>test</scope>
+				</dependency>
 			</dependencies>
 		</profile>
 		<profile>
@@ -126,6 +151,18 @@
 					<artifactId>jakarta.websocket-api</artifactId>
 					<version>2.0.0</version>
 					<scope>provided</scope>
+				</dependency>
+				<dependency>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-servlet</artifactId>
+					<version>11.0.7</version>
+					<scope>test</scope>
+				</dependency>
+				<dependency>
+					<groupId>org.eclipse.jetty.websocket</groupId>
+					<artifactId>websocket-jakarta-server</artifactId>
+					<version>11.0.7</version>
+					<scope>test</scope>
 				</dependency>
 			</dependencies>
 		</profile>

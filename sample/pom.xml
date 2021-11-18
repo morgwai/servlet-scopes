@@ -11,7 +11,6 @@
 	<groupId>pl.morgwai.samples</groupId>
 	<artifactId>servlet-scopes-sample</artifactId>
 	<version>1.0-SNAPSHOT</version>
-	<packaging>war</packaging>
 
 	<name>Sample apps for servlet-scopes library</name>
 
@@ -53,16 +52,14 @@
 					<version>5.0.1</version>
 				</dependency>
 				<dependency>
-					<groupId>javax.servlet</groupId>
-					<artifactId>javax.servlet-api</artifactId>
-					<version>4.0.1</version>
-					<scope>provided</scope>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-servlet</artifactId>
+					<version>10.0.7</version>
 				</dependency>
 				<dependency>
-					<groupId>javax.websocket</groupId>
-					<artifactId>javax.websocket-api</artifactId>
-					<version>1.1</version>
-					<scope>provided</scope>
+					<groupId>org.eclipse.jetty.websocket</groupId>
+					<artifactId>websocket-javax-server</artifactId>
+					<version>10.0.7</version>
 				</dependency>
 			</dependencies>
 		</profile>
@@ -83,18 +80,43 @@
 					<version>1.1.1.7</version>
 				</dependency>
 				<dependency>
-					<groupId>jakarta.servlet</groupId>
-					<artifactId>jakarta.servlet-api</artifactId>
-					<version>5.0.0</version>
-					<scope>provided</scope>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-servlet</artifactId>
+					<version>11.0.7</version>
 				</dependency>
 				<dependency>
-					<groupId>jakarta.websocket</groupId>
-					<artifactId>jakarta.websocket-api</artifactId>
-					<version>2.0.0</version>
-					<scope>provided</scope>
+					<groupId>org.eclipse.jetty.websocket</groupId>
+					<artifactId>websocket-jakarta-server</artifactId>
+					<version>11.0.7</version>
 				</dependency>
 			</dependencies>
 		</profile>
 	</profiles>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<archive>
+								<manifest>
+									<mainClass>pl.morgwai.base.servlet.scopes.tests.server.TestServer</mainClass>
+								</manifest>
+							</archive>
+							<descriptorRefs>
+								<descriptorRef>jar-with-dependencies</descriptorRef>
+							</descriptorRefs>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 </project>
