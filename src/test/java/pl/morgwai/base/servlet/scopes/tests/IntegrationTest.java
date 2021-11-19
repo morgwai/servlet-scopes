@@ -43,19 +43,21 @@ public class IntegrationTest {
 
 
 
-	WebSocketContainer websocketContainer;
-	HttpClient client;
+	WebSocketContainer clientWebsocketContainer;
+	HttpClient httpClient;
 	TestServer server;
 	int port;
 	String dispatchingServletUrl;
 	String websocketUrl;
 
+
+
 	@Before
 	public void setup() throws Exception {
 		final var cookieManager = new CookieManager();
 		CookieHandler.setDefault(cookieManager);
-		websocketContainer = ContainerProvider.getWebSocketContainer();
-		client = HttpClient.newBuilder().cookieHandler(cookieManager).build();
+		clientWebsocketContainer = ContainerProvider.getWebSocketContainer();
+		httpClient = HttpClient.newBuilder().cookieHandler(cookieManager).build();
 		server = new TestServer(0);
 		server.start();
 		port = ((ServerSocketChannel) server.getConnectors()[0].getTransport())
@@ -66,36 +68,40 @@ public class IntegrationTest {
 				+ ServletContextListener.WEBSOCKET_PATH + '/';
 	}
 
+
+
 	@After
 	public void shutdown() throws Exception {
 		server.stop();
 		server.join();
-		LifeCycle.stop(websocketContainer);
+		LifeCycle.stop(clientWebsocketContainer);
 	}
 
 
 
 	/**
-	 * Returns a list containing 2 response bodies. Each response body is split into lines. Each
-	 * response body is expected to have the format defined in {@link TestServlet}. Both responses
-	 * are expected to be sent from the same HTTP session scope.
+	 * Sends 2 GET requests to {@code url}.
+	 * Returns a list containing both response bodies. Each response body is split into lines.
+	 * Each response body is expected to have the format defined in {@link TestServlet}.
+	 * Both responses are expected to be sent from the same HTTP session scope.
 	 */
-	List<String[]> testAsyncCtxDispatch(String url, Class<?> targetServletClass) throws Exception {
+	List<String[]> testAsyncCtxDispatch(String url, Class<?> expectedTargetServletClass)
+			throws Exception {
 		final var request = HttpRequest.newBuilder(URI.create(url)).GET().build();
 
-		final var response = client.send(request, BodyHandlers.ofString()).body();
+		final var response = httpClient.send(request, BodyHandlers.ofString()).body();
 		if (log.isLoggable(Level.FINE)) log.fine("response from " + url + '\n' + response);
 		final var responseLines = response.split("\n");
 		assertEquals("response should have 4 lines", 4, responseLines.length);
 		assertEquals("processing should be dispatched to the correct servlet",
-				targetServletClass.getSimpleName(), responseLines[0]);
+				expectedTargetServletClass.getSimpleName(), responseLines[0]);
 
-		final var response2 = client.send(request, BodyHandlers.ofString()).body();
-		if (log.isLoggable(Level.FINE)) log.fine("response to " + url + '\n' + response2);
+		final var response2 = httpClient.send(request, BodyHandlers.ofString()).body();
+		if (log.isLoggable(Level.FINE)) log.fine("response from " + url + '\n' + response2);
 		final var responseLines2 = response2.split("\n");
 		assertEquals("response should have 4 lines", 4, responseLines2.length);
 		assertEquals("processing should be dispatched to the correct servlet",
-				targetServletClass.getSimpleName(), responseLines2[0]);
+				expectedTargetServletClass.getSimpleName(), responseLines2[0]);
 		assertEquals("session scoped object hash should remain the same",
 				responseLines[3], responseLines2[3]);
 		assertNotEquals("request scoped object hash should change",
@@ -104,14 +110,10 @@ public class IntegrationTest {
 		return List.of(responseLines, responseLines2);
 	}
 
-
-
 	@Test
 	public void testUnwrappedAsyncCtxDispatch() throws Exception {
 		testAsyncCtxDispatch(dispatchingServletUrl, DispatchingServlet.class);
 	}
-
-
 
 	@Test
 	public void testWrappedAsyncCtxDispatch() throws Exception {
@@ -119,8 +121,6 @@ public class IntegrationTest {
 				dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED,
 				AsyncServlet.class);
 	}
-
-
 
 	@Test
 	public void testTargetedAsyncCtxDispatch() throws Exception {
@@ -132,11 +132,14 @@ public class IntegrationTest {
 
 
 	/**
-	 * Returns a list containing 2 messages. Each message is split into lines. Each message is
-	 * expected to have the format defined in {@link EchoEndpoint}. Both messages are expected to be
-	 * sent from the same HTTP session scope and the same websocket connection scope.
+	 * Connects to a server endpoint at {@code url} and sends 1 test message.
+	 * Returns a list containing 2 messages received from the server: the initial welcome message
+	 * and the reply to the test message that was sent.
+	 * Each message is split into lines. Each message is expected to have the format defined in
+	 * {@link EchoEndpoint}. Both messages are expected to be sent from the same HTTP session scope
+	 * and the same websocket connection scope.
 	 */
-	List<String[]> testWebsocketConnection(URI url) throws Exception {
+	List<String[]> testSingleConnectionToServerEndpoint(URI url) throws Exception {
 		final var testMessage = "test message for " + url;
 		final var messages = new ArrayList<String[]>(4);
 		final var latch = new CountDownLatch(2);
@@ -150,7 +153,7 @@ public class IntegrationTest {
 				log.log(Level.WARNING, "error on connection " + connection.getId(), error);
 			}
 		);
-		final var connection = websocketContainer.connectToServer(endpoint, null, url);
+		final var connection = clientWebsocketContainer.connectToServer(endpoint, null, url);
 		connection.getAsyncRemote().sendText(testMessage);
 		latch.await();
 		connection.close();
@@ -171,14 +174,14 @@ public class IntegrationTest {
 	}
 
 	/**
-	 * Returns a list containing 4 messages from 2 calls to {@link #testWebsocketConnection(URI)}
-	 * made via separate websocket connections. All 4 messages are expected to be sent from the same
-	 * HTTP session scope.
+	 * Returns a list containing 4 messages received from the server via 2 calls to
+	 * {@link #testSingleConnectionToServerEndpoint(URI)} made via separate websocket connections.
+	 * All 4 messages are expected to be sent from the same HTTP session scope.
 	 */
 	List<String[]> testServerEndpoint(String type) throws Exception {
 		final var url = URI.create(websocketUrl + type);
-		final var messages = testWebsocketConnection(url);
-		messages.addAll(testWebsocketConnection(url));
+		final var messages = testSingleConnectionToServerEndpoint(url);
+		messages.addAll(testSingleConnectionToServerEndpoint(url));
 		assertEquals("session scoped object hash should remain the same",
 				messages.get(0)[3], messages.get(2)[3]);
 		assertNotEquals("connection scoped object hash should change",
@@ -186,21 +189,15 @@ public class IntegrationTest {
 		return messages;
 	}
 
-
-
 	@Test
 	public void testProgrammaticEndpoint() throws Exception {
 		testServerEndpoint(ProgrammaticEndpoint.TYPE);
 	}
 
-
-
 	@Test
 	public void testExtendingEndpoint() throws Exception {
 		testServerEndpoint(ExtendingEndpoint.TYPE);
 	}
-
-
 
 	@Test
 	public void testAnnotatedEndpoint() throws Exception {
