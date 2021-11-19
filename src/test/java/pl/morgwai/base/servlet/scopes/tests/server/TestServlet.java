@@ -49,7 +49,7 @@ public abstract class TestServlet extends HttpServlet {
 		) {
 			response.setStatus(HttpServletResponse.SC_OK);
 			output.println(String.format(
-				"%s\nservice hashCodes:\nrequest=%d\nsession=%d",
+				"%s\nservice hashCodes:\ncall=%d\nsession=%d",
 				getClass().getSimpleName(),
 				requestScopedProvider.get().hashCode(),
 				sessionScopedProvider.get().hashCode())

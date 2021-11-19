@@ -2,6 +2,7 @@
 package pl.morgwai.base.servlet.scopes.tests.server;
 
 import javax.websocket.EndpointConfig;
+import javax.websocket.RemoteEndpoint.Async;
 import javax.websocket.Session;
 
 import com.google.inject.Inject;
@@ -27,17 +28,15 @@ public class EchoEndpoint {
 	@Inject @Named(ServletContextListener.HTTP_SESSION)
 	Provider<Service> httpSessionScopedProvider;
 
+	Async sender;
+
 
 
 	public void onOpen(Session connection, EndpointConfig config) {
 		this.connection = connection;
 		connection.setMaxIdleTimeout(5l * 60l * 1000l);
-		var asyncRemote = connection.getAsyncRemote();
-		asyncRemote.sendText(String.format(
-				"service hashCodes:\nevent=%d\nconnection=%d\nhttpSession=%d",
-				eventScopedProvider.get().hashCode(),
-				connectionScopedProvider.get().hashCode(),
-				httpSessionScopedProvider.get().hashCode()));
+		sender = connection.getAsyncRemote();
+		send("welcome");
 	}
 
 
@@ -45,13 +44,18 @@ public class EchoEndpoint {
 	public void onMessage(String message) {
 		StringBuilder formattedMessageBuilder = new StringBuilder(message.length() + 10);
 		appendFiltered(message, formattedMessageBuilder);
-		var asyncRemote = connection.getAsyncRemote();
-		asyncRemote.sendText(String.format(
-				"%s\nservice hashCodes:\nevent=%d\nconnection=%d\nhttpSession=%d",
-				formattedMessageBuilder.toString(),
+		send(formattedMessageBuilder.toString());
+	}
+
+
+
+	void send(String message) {
+		sender.sendText(String.format(
+				"%s\nservice hashCodes:\ncall=%d\nhttpSession=%d\nconnection=%d",
+				message,
 				eventScopedProvider.get().hashCode(),
-				connectionScopedProvider.get().hashCode(),
-				httpSessionScopedProvider.get().hashCode()));
+				httpSessionScopedProvider.get().hashCode(),
+				connectionScopedProvider.get().hashCode()));
 	}
 
 

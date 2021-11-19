@@ -1,23 +1,41 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.scopes.tests;
 
+import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.channels.ServerSocketChannel;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
+import javax.websocket.ContainerProvider;
+import javax.websocket.Endpoint;
+import javax.websocket.EndpointConfig;
+import javax.websocket.MessageHandler.Whole;
+import javax.websocket.Session;
+import javax.websocket.WebSocketContainer;
+
+import org.eclipse.jetty.util.component.LifeCycle;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import pl.morgwai.base.servlet.scopes.tests.server.AnnotatedEndpoint;
 import pl.morgwai.base.servlet.scopes.tests.server.AsyncServlet;
 import pl.morgwai.base.servlet.scopes.tests.server.DispatchingServlet;
+import pl.morgwai.base.servlet.scopes.tests.server.EchoEndpoint;
+import pl.morgwai.base.servlet.scopes.tests.server.ExtendingEndpoint;
+import pl.morgwai.base.servlet.scopes.tests.server.ProgrammaticEndpoint;
+import pl.morgwai.base.servlet.scopes.tests.server.ServletContextListener;
 import pl.morgwai.base.servlet.scopes.tests.server.TestServer;
+import pl.morgwai.base.servlet.scopes.tests.server.TestServlet;
 
 import static org.junit.Assert.*;
 import static pl.morgwai.base.servlet.scopes.tests.server.AsyncServlet.*;
@@ -28,34 +46,48 @@ public class IntegrationTest {
 
 
 
+	WebSocketContainer websocketContainer;
 	HttpClient client;
 	TestServer server;
+	int port;
 	String dispatchingServletUrl;
+	String websocketUrl;
 
 	@Before
 	public void setup() throws Exception {
-		client = HttpClient.newBuilder().cookieHandler(new CookieManager()).build();
+		final var cookieManager = new CookieManager();
+		CookieHandler.setDefault(cookieManager);
+		websocketContainer = ContainerProvider.getWebSocketContainer();
+		client = HttpClient.newBuilder().cookieHandler(cookieManager).build();
 		server = new TestServer(0);
 		server.start();
-		final var port = ((ServerSocketChannel) server.getConnectors()[0].getTransport())
+		port = ((ServerSocketChannel) server.getConnectors()[0].getTransport())
 				.socket().getLocalPort();
 		dispatchingServletUrl =
 				"http://localhost:" + port + TestServer.APP_PATH + DispatchingServlet.PATH;
+		websocketUrl = "ws://localhost:" + port + TestServer.APP_PATH
+				+ ServletContextListener.WEBSOCKET_PATH + '/';
 	}
 
 	@After
 	public void shutdown() throws Exception {
 		server.stop();
 		server.join();
+		LifeCycle.stop(websocketContainer);
 	}
 
 
 
-	String[] testAsyncCtxDispatch(String url, Class<?> targetServletClass) throws Exception {
+	/**
+	 * Returns a list containing 2 response bodies. Each response body is split into lines. Each
+	 * response body has format defined in {@link TestServlet}. Both responses come from the same
+	 * HTTP session.
+	 */
+	List<String[]> testAsyncCtxDispatch(String url, Class<?> targetServletClass) throws Exception {
 		final var request = HttpRequest.newBuilder(URI.create(url)).GET().build();
 
 		final var response = client.send(request, BodyHandlers.ofString()).body();
-		if (log.isDebugEnabled()) log.debug("response to " + url + '\n' + response);
+		if (log.isDebugEnabled()) log.debug("response from " + url + '\n' + response);
 		final var responseLines = response.split("\n");
 		assertEquals("response should have 4 lines", 4, responseLines.length);
 		assertEquals("processing should be dispatched to the correct servlet",
@@ -72,7 +104,7 @@ public class IntegrationTest {
 		assertNotEquals("request scoped object hash should change",
 				responseLines[2], responseLines2[2]);
 
-		return new String[] {responseLines[3], responseLines[2], responseLines2[2]};
+		return List.of(responseLines, responseLines2);
 	}
 
 
@@ -102,38 +134,164 @@ public class IntegrationTest {
 
 
 
+	static class ClientEndpoint extends Endpoint {
+
+		static final String TEST_MESSAGE = "yada yada yada";
+
+		final Whole<String> messageHandler;
+
+		public ClientEndpoint(Whole<String> messageHandler) {
+			this.messageHandler = messageHandler;
+		}
+
+		@Override public void onOpen(Session connection, EndpointConfig config) {
+			connection.addMessageHandler(String.class, messageHandler);
+			connection.getAsyncRemote().sendText(TEST_MESSAGE);
+		}
+	}
+
+	/**
+	 * Returns a list containing 2 messages. Each message is split into lines. Each message has
+	 * format defined in {@link EchoEndpoint}. Both messages come from the same HTTP session and the
+	 * same websocket connection.
+	 */
+	List<String[]> testWebsocketConnection(URI url) throws Exception {
+		final var messages = new ArrayList<String[]>(2);
+		final var latch = new CountDownLatch(2);
+		final var endpoint = new ClientEndpoint((message) -> {
+			if (log.isDebugEnabled()) log.debug("message from " + url + '\n' + message);
+			messages.add(message.split("\n"));
+			latch.countDown();
+		});
+		final var connection = websocketContainer.connectToServer(endpoint, null, url);
+		latch.await();
+		connection.close();
+		assertEquals("message should have 5 lines", 5, messages.get(0).length);
+		assertEquals("message should have 5 lines", 5, messages.get(1).length);
+		assertEquals("session scoped object hash should remain the same",
+				messages.get(0)[3], messages.get(1)[3]);
+		assertEquals("connection scoped object hash should remain the same",
+				messages.get(0)[4], messages.get(1)[4]);
+		assertNotEquals("evemt scoped object hash should change",
+				messages.get(0)[2], messages.get(1)[2]);
+		return messages;
+	}
+
+	/**
+	 * Returns a list containing 4 messages from 2 calls to {@link #testWebsocketConnection(URI)}
+	 * made via separate websocket connections. All 4 messages come from the same HTTP session.
+	 */
+	List<String[]> testServerEndpoint(String type) throws Exception {
+		final var url = URI.create(websocketUrl + type);
+		final var messages = testWebsocketConnection(url);
+		messages.addAll(testWebsocketConnection(url));
+		assertEquals("session scoped object hash should remain the same",
+				messages.get(0)[3], messages.get(2)[3]);
+		assertNotEquals("connection scoped object hash should change",
+				messages.get(0)[4], messages.get(2)[4]);
+		return messages;
+	}
+
+
+
+	@Test
+	public void testProgrammaticEndpoint() throws Exception {
+		testServerEndpoint(ProgrammaticEndpoint.TYPE);
+	}
+
+
+
+	@Test
+	public void testExtendingEndpoint() throws Exception {
+		testServerEndpoint(ExtendingEndpoint.TYPE);
+	}
+
+
+
+	@Test
+	public void testAnnotatedEndpoint() throws Exception {
+		testServerEndpoint(AnnotatedEndpoint.TYPE);
+	}
+
+
+
 	@Test
 	public void testAllInOne() throws Exception {
 		final var requestScopedHashes = new HashSet<>();
+		final var connectionScopedHashes = new HashSet<>();
 
-		final var unwrappedAsyncCtxResponseLines = testAsyncCtxDispatch(
+		final var unwrappedAsyncCtxResponses = testAsyncCtxDispatch(
 				dispatchingServletUrl,
 				DispatchingServlet.class);
-		final var sessionScopedHash = unwrappedAsyncCtxResponseLines[0];
-		requestScopedHashes.add(unwrappedAsyncCtxResponseLines[1]);
-		requestScopedHashes.add(unwrappedAsyncCtxResponseLines[2]);
+		final var servletSessionScopedHash = unwrappedAsyncCtxResponses.get(0)[3];
+		requestScopedHashes.add(unwrappedAsyncCtxResponses.get(0)[2]);
+		requestScopedHashes.add(unwrappedAsyncCtxResponses.get(1)[2]);
 
-		final var wrappedAsyncCtxResponseLines = testAsyncCtxDispatch(
+		final var wrappedAsyncCtxResponses = testAsyncCtxDispatch(
 				dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED,
 				AsyncServlet.class);
 		assertEquals("session scoped object hash should remain the same",
-				sessionScopedHash, wrappedAsyncCtxResponseLines[0]);
-		assertTrue("request scoped object hash should change",
-				requestScopedHashes.add(wrappedAsyncCtxResponseLines[1]));
-		assertTrue("request scoped object hash should change",
-				requestScopedHashes.add(wrappedAsyncCtxResponseLines[2]));
+				servletSessionScopedHash, wrappedAsyncCtxResponses.get(0)[3]);
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(wrappedAsyncCtxResponses.get(0)[2]));
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(wrappedAsyncCtxResponses.get(1)[2]));
 
-		final var targetedAsyncCtxResponseLines = testAsyncCtxDispatch(
+		final var targetedAsyncCtxResponses = testAsyncCtxDispatch(
 				dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_TARGETED,
 				AsyncServlet.class);
 		assertEquals("session scoped object hash should remain the same",
-				sessionScopedHash, targetedAsyncCtxResponseLines[0]);
-		assertTrue("request scoped object hash should change",
-				requestScopedHashes.add(targetedAsyncCtxResponseLines[1]));
-		assertTrue("request scoped object hash should change",
-				requestScopedHashes.add(targetedAsyncCtxResponseLines[2]));
+				servletSessionScopedHash, targetedAsyncCtxResponses.get(0)[3]);
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(targetedAsyncCtxResponses.get(0)[2]));
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(targetedAsyncCtxResponses.get(1)[2]));
 
-		// TODO: add websockets
+		final var programmaticEndpointResponses = testServerEndpoint(ProgrammaticEndpoint.TYPE);
+		// TODO: figure out how to share cookieHandler between HttpClient and WebSocketContainer
+		final var websocketSessionScopedHash = programmaticEndpointResponses.get(0)[3];
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(programmaticEndpointResponses.get(0)[2]));
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(programmaticEndpointResponses.get(1)[2]));
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(programmaticEndpointResponses.get(2)[2]));
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(programmaticEndpointResponses.get(3)[2]));
+		connectionScopedHashes.add(programmaticEndpointResponses.get(0)[4]);
+		connectionScopedHashes.add(programmaticEndpointResponses.get(2)[4]);
+
+		final var extendingEndpointResponses = testServerEndpoint(ExtendingEndpoint.TYPE);
+		assertEquals("session scoped object hash should remain the same",
+				websocketSessionScopedHash, extendingEndpointResponses.get(0)[3]);
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(extendingEndpointResponses.get(0)[2]));
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(extendingEndpointResponses.get(1)[2]));
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(extendingEndpointResponses.get(2)[2]));
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(extendingEndpointResponses.get(3)[2]));
+		assertTrue("connection scoped object hash should change",
+				connectionScopedHashes.add(extendingEndpointResponses.get(0)[4]));
+		assertTrue("connection scoped object hash should change",
+				connectionScopedHashes.add(extendingEndpointResponses.get(2)[4]));
+
+		final var annotatedEndpointResponses = testServerEndpoint(AnnotatedEndpoint.TYPE);
+		assertEquals("session scoped object hash should remain the same",
+				websocketSessionScopedHash, annotatedEndpointResponses.get(0)[3]);
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(annotatedEndpointResponses.get(0)[2]));
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(annotatedEndpointResponses.get(1)[2]));
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(annotatedEndpointResponses.get(2)[2]));
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(annotatedEndpointResponses.get(3)[2]));
+		assertTrue("connection scoped object hash should change",
+				connectionScopedHashes.add(annotatedEndpointResponses.get(0)[4]));
+		assertTrue("connection scoped object hash should change",
+				connectionScopedHashes.add(annotatedEndpointResponses.get(2)[4]));
 	}
 
 
