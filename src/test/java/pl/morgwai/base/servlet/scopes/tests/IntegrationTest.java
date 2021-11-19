@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.websocket.ContainerProvider;
 import javax.websocket.Endpoint;
@@ -23,9 +25,8 @@ import javax.websocket.WebSocketContainer;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import pl.morgwai.base.servlet.scopes.tests.server.AnnotatedEndpoint;
 import pl.morgwai.base.servlet.scopes.tests.server.AsyncServlet;
@@ -87,14 +88,14 @@ public class IntegrationTest {
 		final var request = HttpRequest.newBuilder(URI.create(url)).GET().build();
 
 		final var response = client.send(request, BodyHandlers.ofString()).body();
-		if (log.isDebugEnabled()) log.debug("response from " + url + '\n' + response);
+		if (log.isLoggable(Level.FINE)) log.fine("response from " + url + '\n' + response);
 		final var responseLines = response.split("\n");
 		assertEquals("response should have 4 lines", 4, responseLines.length);
 		assertEquals("processing should be dispatched to the correct servlet",
 				targetServletClass.getSimpleName(), responseLines[0]);
 
 		final var response2 = client.send(request, BodyHandlers.ofString()).body();
-		if (log.isDebugEnabled()) log.debug("response to " + url + '\n' + response2);
+		if (log.isLoggable(Level.FINE)) log.fine("response to " + url + '\n' + response2);
 		final var responseLines2 = response2.split("\n");
 		assertEquals("response should have 4 lines", 4, responseLines2.length);
 		assertEquals("processing should be dispatched to the correct servlet",
@@ -159,7 +160,7 @@ public class IntegrationTest {
 		final var messages = new ArrayList<String[]>(2);
 		final var latch = new CountDownLatch(2);
 		final var endpoint = new ClientEndpoint((message) -> {
-			if (log.isDebugEnabled()) log.debug("message from " + url + '\n' + message);
+			if (log.isLoggable(Level.FINE)) log.fine("message from " + url + '\n' + message);
 			messages.add(message.split("\n"));
 			latch.countDown();
 		});
@@ -301,5 +302,22 @@ public class IntegrationTest {
 
 
 
-	static final Logger log = LoggerFactory.getLogger(IntegrationTest.class.getName());
+	/**
+	 * Change the below value if you need logging:<br/>
+	 * <code>INFO</code> will log server startup and shutdown diagnostics<br/>
+	 * <code>FINE</code> will log every response/message received from the server.
+	 */
+	static Level LOG_LEVEL = Level.WARNING;
+
+	static final Logger log = Logger.getLogger(IntegrationTest.class.getName());
+
+	@BeforeClass
+	public static void setupLogging() {
+		try {
+			LOG_LEVEL = Level.parse(System.getProperty(
+					IntegrationTest.class.getPackageName() + ".level"));
+		} catch (Exception ignored) {}
+		log.setLevel(LOG_LEVEL);
+		for (final var handler: Logger.getLogger("").getHandlers()) handler.setLevel(LOG_LEVEL);
+	}
 }
