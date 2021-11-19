@@ -20,9 +20,9 @@ public class AsyncServlet extends TestServlet {
 
 
 	public static final String PATH = "/async";
-	public static final String MODE_PARAM_NAME = "mode";
+	public static final String MODE_PARAM = "mode";
 	public static final String MODE_WRAPPED = "wrapped";
-	public static final String DISPATCH_PARAM_NAME = "dispatch";
+	public static final String MODE_TARGETED = "targeted";
 
 	@Inject
 	ContextTrackingExecutor executor;
@@ -38,7 +38,7 @@ public class AsyncServlet extends TestServlet {
 		}
 
 		verifyScoping(request, "the original container thread");
-		final var asyncCtx = MODE_WRAPPED.equals(request.getParameter(MODE_PARAM_NAME))
+		final var asyncCtx = MODE_WRAPPED.equals(request.getParameter(MODE_PARAM))
 				? request.startAsync(request, response)
 				: request.startAsync();
 		asyncCtx.setTimeout(0l);
@@ -46,9 +46,8 @@ public class AsyncServlet extends TestServlet {
 			try {
 				try {
 					verifyScoping(request, "the executor thread");
-					String dispatchUri = request.getParameter(DISPATCH_PARAM_NAME);
-					if (dispatchUri != null) {
-						asyncCtx.dispatch(dispatchUri);
+					if (MODE_TARGETED.equals(request.getParameter(MODE_PARAM))) {
+						asyncCtx.dispatch(PATH);
 					} else {
 						asyncCtx.dispatch();
 					}

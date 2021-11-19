@@ -20,9 +20,7 @@ import pl.morgwai.base.servlet.scopes.tests.server.DispatchingServlet;
 import pl.morgwai.base.servlet.scopes.tests.server.TestServer;
 
 import static org.junit.Assert.*;
-import static pl.morgwai.base.servlet.scopes.tests.server.AsyncServlet.DISPATCH_PARAM_NAME;
-import static pl.morgwai.base.servlet.scopes.tests.server.AsyncServlet.MODE_PARAM_NAME;
-import static pl.morgwai.base.servlet.scopes.tests.server.AsyncServlet.MODE_WRAPPED;
+import static pl.morgwai.base.servlet.scopes.tests.server.AsyncServlet.*;
 
 
 
@@ -89,7 +87,7 @@ public class IntegrationTest {
 	@Test
 	public void testWrappedAsyncCtxDispatch() throws Exception {
 		testAsyncCtxDispatch(
-				dispatchingServletUrl + '?' + MODE_PARAM_NAME + '=' + MODE_WRAPPED,
+				dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED,
 				AsyncServlet.class);
 	}
 
@@ -98,7 +96,7 @@ public class IntegrationTest {
 	@Test
 	public void testTargetedAsyncCtxDispatch() throws Exception {
 		testAsyncCtxDispatch(
-				dispatchingServletUrl + '?' + DISPATCH_PARAM_NAME + '=' + AsyncServlet.PATH,
+				dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_TARGETED,
 				AsyncServlet.class);
 	}
 
@@ -116,7 +114,7 @@ public class IntegrationTest {
 		requestScopedHashes.add(unwrappedAsyncCtxResponseLines[2]);
 
 		final var wrappedAsyncCtxResponseLines = testAsyncCtxDispatch(
-				dispatchingServletUrl + '?' + MODE_PARAM_NAME + '=' + MODE_WRAPPED,
+				dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED,
 				AsyncServlet.class);
 		assertEquals("session scoped object hash should remain the same",
 				sessionScopedHash, wrappedAsyncCtxResponseLines[0]);
@@ -126,7 +124,7 @@ public class IntegrationTest {
 				requestScopedHashes.add(wrappedAsyncCtxResponseLines[2]));
 
 		final var targetedAsyncCtxResponseLines = testAsyncCtxDispatch(
-				dispatchingServletUrl + '?' + DISPATCH_PARAM_NAME + '=' + AsyncServlet.PATH,
+				dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_TARGETED,
 				AsyncServlet.class);
 		assertEquals("session scoped object hash should remain the same",
 				sessionScopedHash, targetedAsyncCtxResponseLines[0]);
