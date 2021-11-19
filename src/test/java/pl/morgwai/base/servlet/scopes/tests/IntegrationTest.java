@@ -15,6 +15,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.websocket.CloseReason;
 import javax.websocket.ContainerProvider;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
@@ -140,6 +141,7 @@ public class IntegrationTest {
 		static final String TEST_MESSAGE = "yada yada yada";
 
 		final Whole<String> messageHandler;
+		final CountDownLatch closureLatch = new CountDownLatch(1);
 
 		public ClientEndpoint(Whole<String> messageHandler) {
 			this.messageHandler = messageHandler;
@@ -148,6 +150,20 @@ public class IntegrationTest {
 		@Override public void onOpen(Session connection, EndpointConfig config) {
 			connection.addMessageHandler(String.class, messageHandler);
 			connection.getAsyncRemote().sendText(TEST_MESSAGE);
+		}
+
+		@Override public void onError(Session connection, Throwable error) {
+			log.log(Level.WARNING, "error on connection " + connection.getId(), error);
+		}
+
+		@Override public void onClose(Session session, CloseReason closeReason) {
+			closureLatch.countDown();
+		}
+
+		public void awaitClosure() {
+			try {
+				closureLatch.await();
+			} catch (InterruptedException ignored) {}
 		}
 	}
 
@@ -167,6 +183,7 @@ public class IntegrationTest {
 		final var connection = websocketContainer.connectToServer(endpoint, null, url);
 		latch.await();
 		connection.close();
+		endpoint.awaitClosure();
 		assertEquals("message should have 5 lines", 5, messages.get(0).length);
 		assertEquals("message should have 5 lines", 5, messages.get(1).length);
 		assertEquals("onOpen message should be a welcome",
