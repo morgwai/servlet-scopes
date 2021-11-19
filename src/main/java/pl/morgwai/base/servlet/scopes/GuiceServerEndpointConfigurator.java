@@ -54,20 +54,6 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	/**
-	 * Name of the user property containing {@link HttpSession}.
-	 */
-	public static final String HTTP_SESSION_PROPERTY_NAME =
-			EndpointDecorator.class.getName() + ".httpSession";
-
-	/**
-	 * Name of the user property containing {@link WebsocketConnectionContext}.
-	 */
-	public static final String CONNECTION_CTX_PROPERTY_NAME =
-			EndpointDecorator.class.getName() + ".connectionCtx";
-
-
-
-	/**
 	 * Stores {@link HttpSession} in user properties.
 	 */
 	@Override
@@ -75,7 +61,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			ServerEndpointConfig config, HandshakeRequest request, HandshakeResponse response) {
 		final var httpSession = request.getHttpSession();
 		if (httpSession != null) {
-			config.getUserProperties().put(HTTP_SESSION_PROPERTY_NAME, httpSession);
+			config.getUserProperties().put(HttpSession.class.getName(), httpSession);
 		}
 	}
 
@@ -178,10 +164,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				}
 				if (wrappedConnection == null) throw new RuntimeException(NO_SESSION_PARAM_MESSAGE);
 				final var userProperties = wrappedConnection.getUserProperties();
-				httpSession = (HttpSession) userProperties.get(HTTP_SESSION_PROPERTY_NAME);
+				httpSession = (HttpSession) userProperties.get(HttpSession.class.getName());
 				connectionCtx = new WebsocketConnectionContext(
 						wrappedConnection, connectionCtxTracker);
-				userProperties.put(CONNECTION_CTX_PROPERTY_NAME, connectionCtx);
+				userProperties.put(WebsocketConnectionContext.class.getName(), connectionCtx);
 			}
 
 			// run original endpoint method within both contexts
@@ -221,4 +207,21 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	static final String NO_SESSION_PARAM_MESSAGE =
 			"method annotated with @OnOpen must have a javax.websocket.Session param";
+
+
+
+	/**
+	 * Name of the user property containing {@link HttpSession}.
+	 * @deprecated use {@code HttpSession.class.getName()} instead.
+	 */
+	@Deprecated(forRemoval = true)
+	public static final String HTTP_SESSION_PROPERTY_NAME = HttpSession.class.getName();
+
+	/**
+	 * Name of the user property containing {@link WebsocketConnectionContext}.
+	 * @deprecated use {@code WebsocketConnectionContext.class.getName()} instead.
+	 */
+	@Deprecated(forRemoval = true)
+	public static final String CONNECTION_CTX_PROPERTY_NAME =
+			WebsocketConnectionContext.class.getName();
 }

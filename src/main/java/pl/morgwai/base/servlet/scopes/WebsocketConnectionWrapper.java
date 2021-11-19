@@ -58,17 +58,19 @@ class WebsocketConnectionWrapper implements Session {
 
 
 	@Override
-	public <T> void addMessageHandler(Class<T> clazz, MessageHandler.Whole<T> handler) {
+	public <T> void addMessageHandler(Class<T> messageClass, MessageHandler.Whole<T> handler) {
 		wrappedConnection.addMessageHandler(
-				clazz, new WebsocketConnectionWrapper.WholeMessageHandlerWrapper<>(handler));
+				messageClass,
+				new WebsocketConnectionWrapper.WholeMessageHandlerWrapper<>(handler));
 	}
 
 
 
 	@Override
-	public <T> void addMessageHandler(Class<T> clazz, MessageHandler.Partial<T> handler) {
+	public <T> void addMessageHandler(Class<T> messageClass, MessageHandler.Partial<T> handler) {
 		wrappedConnection.addMessageHandler(
-				clazz, new WebsocketConnectionWrapper.PartialMessageHandlerWrapper<>(handler));
+				messageClass,
+				new WebsocketConnectionWrapper.PartialMessageHandlerWrapper<>(handler));
 	}
 
 
@@ -76,9 +78,9 @@ class WebsocketConnectionWrapper implements Session {
 	@Override
 	public Set<Session> getOpenSessions() {
 		Set<Session> result = new HashSet<>();
-		for (Session connection: wrappedConnection.getOpenSessions()) {
-			var connectionCtx = (WebsocketConnectionContext) connection.getUserProperties().get(
-					GuiceServerEndpointConfigurator.CONNECTION_CTX_PROPERTY_NAME);
+		for (final var connection: wrappedConnection.getOpenSessions()) {
+			final var connectionCtx = (WebsocketConnectionContext)
+					connection.getUserProperties().get(WebsocketConnectionContext.class.getName());
 			result.add(connectionCtx.getConnection());
 		}
 		return result;
@@ -101,8 +103,8 @@ class WebsocketConnectionWrapper implements Session {
 			Session connection, ContextTracker<ContainerCallContext> eventCtxTracker) {
 		this.wrappedConnection = connection;
 		this.eventCtxTracker = eventCtxTracker;
-		this.httpSession = (HttpSession) wrappedConnection.getUserProperties().get(
-				GuiceServerEndpointConfigurator.HTTP_SESSION_PROPERTY_NAME);
+		this.httpSession = (HttpSession)
+				wrappedConnection.getUserProperties().get(HttpSession.class.getName());
 	}
 
 
