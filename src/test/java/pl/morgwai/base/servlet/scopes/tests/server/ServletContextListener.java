@@ -5,7 +5,6 @@ import java.util.EnumSet;
 import java.util.LinkedList;
 
 import javax.servlet.DispatcherType;
-import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebListener;
 import com.google.inject.Module;
@@ -20,6 +19,8 @@ import pl.morgwai.base.servlet.scopes.ContextTrackingExecutor;
 public class ServletContextListener extends PingingServletContextListener {
 
 
+
+	public static final String WEBSOCKET_PATH = "/websocket";
 
 	public static final String CONTAINER_CALL = "containerCall";
 	public static final String WEBSOCKET_CONNECTION = "wsConnection";
@@ -51,22 +52,19 @@ public class ServletContextListener extends PingingServletContextListener {
 		// mappings with isMatchAfter==true don't match websocket requests
 		addFilter(EnsureSessionFilter.class.getSimpleName(), EnsureSessionFilter.class)
 				.addMappingForUrlPatterns(
-						EnumSet.of(DispatcherType.REQUEST), false, ChatEndpoint.PATH);
-		addEndpoint(ChatEndpoint.class, ChatEndpoint.PATH);
-
+						EnumSet.of(DispatcherType.REQUEST), false, WEBSOCKET_PATH + "/*");
+		addEndpoint(ProgrammaticEndpoint.class, ProgrammaticEndpoint.PATH);
 		addServlet(
 				AsyncServlet.class.getSimpleName(), AsyncServlet.class, AsyncServlet.PATH);
 		addServlet(
 				DispatchingServlet.class.getSimpleName(),
 				DispatchingServlet.class,
 				DispatchingServlet.PATH);
-	}
-
-
-
-	@Override
-	public void contextDestroyed(ServletContextEvent event) {
-		super.contextDestroyed(event);
-		ChatEndpoint.shutdown();
+		addServlet("IndexPageServlet", FilteredResouceServlet.class, "/", "/index.html")
+				.setInitParameter(FilteredResouceServlet.RESOURCE_PATH_PARAM, "/index.html");
+		addServlet(
+				WebsocketPageServlet.class.getSimpleName(),
+				WebsocketPageServlet.class,
+				WebsocketPageServlet.PATH);
 	}
 }

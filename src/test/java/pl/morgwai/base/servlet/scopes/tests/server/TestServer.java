@@ -24,6 +24,8 @@ public class TestServer extends org.eclipse.jetty.server.Server {
 					appHandler,
 					(servletContainer, websocketContainer) -> {
 						websocketContainer.setDefaultMaxTextMessageBufferSize(1023);
+						websocketContainer.addEndpoint(AnnotatedEndpoint.class);
+						websocketContainer.addEndpoint(ExtendingEndpoint.class);
 					}
 				);
 	}

@@ -1,9 +1,5 @@
 <!DOCTYPE html>
 <!-- Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0 -->
-<!--
-General idea of the app and some DOM processing based on Tomcat example Chat app:
-https://github.com/apache/tomcat/blob/trunk/webapps/examples/websocket/chat.xhtml
--->
 <html lang='en' >
 
 <head>
@@ -111,7 +107,7 @@ https://github.com/apache/tomcat/blob/trunk/webapps/examples/websocket/chat.xhtm
 			if (window.location.protocol == 'http:') {
 				proto = 'ws://';
 			}
-			return new WebSocket(proto + window.location.host + '/websocket/chat');
+			return new WebSocket(proto + window.location.host + '/websocket/path');
 		};
 
 

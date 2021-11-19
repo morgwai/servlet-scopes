@@ -8,10 +8,13 @@
 </head>
 
 <body>
-	<a href='test/dispatch' >unwrapped test (expected DispatchingServlet)</a><br/>
-	<a href='test/dispatch?mode=wrapped' >wrapped test (expected AsyncServlet)</a><br/>
-	<a href='test/dispatch?dispatch=/test/async' >targeted test (expected AsyncServlet)</a><br/>
-	<a href='chat.html' >chat app</a><br/>
+	<a href='dispatch' >unwrapped async ctx dispatch (expecting DispatchingServlet)</a><br/>
+	<a href='dispatch?mode=wrapped' >wrapped async ctx dispatch (expecting AsyncServlet)</a><br/>
+	<a href='dispatch?dispatch=/async' >targeted async ctx dispatch (expecting AsyncServlet)</a><br/>
+	<br/>
+	<a href='echo?type=programmatic' >programmatic websocket</a><br/>
+	<a href='echo?type=extending' >extending websocket</a><br/>
+	<a href='echo?type=annotated' >annotated websocket</a><br/>
 </body>
 
 </html>
