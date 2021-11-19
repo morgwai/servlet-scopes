@@ -17,6 +17,10 @@ public class EchoEndpoint {
 
 
 
+	public static final String WELCOME_MESSAGE = "welcome :)";
+
+
+
 	Session connection;
 
 	@Inject @Named(ServletContextListener.CONTAINER_CALL)
@@ -36,7 +40,7 @@ public class EchoEndpoint {
 		this.connection = connection;
 		connection.setMaxIdleTimeout(5l * 60l * 1000l);
 		sender = connection.getAsyncRemote();
-		send("welcome");
+		send(WELCOME_MESSAGE);
 	}
 
 

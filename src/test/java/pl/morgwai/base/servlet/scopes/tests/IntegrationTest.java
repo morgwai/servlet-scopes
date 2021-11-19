@@ -80,8 +80,8 @@ public class IntegrationTest {
 
 	/**
 	 * Returns a list containing 2 response bodies. Each response body is split into lines. Each
-	 * response body has format defined in {@link TestServlet}. Both responses come from the same
-	 * HTTP session.
+	 * response body is expected to have the format defined in {@link TestServlet}. Both responses
+	 * are expected to be sent from the same HTTP session scope.
 	 */
 	List<String[]> testAsyncCtxDispatch(String url, Class<?> targetServletClass) throws Exception {
 		final var request = HttpRequest.newBuilder(URI.create(url)).GET().build();
@@ -151,9 +151,9 @@ public class IntegrationTest {
 	}
 
 	/**
-	 * Returns a list containing 2 messages. Each message is split into lines. Each message has
-	 * format defined in {@link EchoEndpoint}. Both messages come from the same HTTP session and the
-	 * same websocket connection.
+	 * Returns a list containing 2 messages. Each message is split into lines. Each message is
+	 * expected to have the format defined in {@link EchoEndpoint}. Both messages are expected to be
+	 * sent from the same HTTP session scope and the same websocket connection scope.
 	 */
 	List<String[]> testWebsocketConnection(URI url) throws Exception {
 		final var messages = new ArrayList<String[]>(2);
@@ -168,6 +168,10 @@ public class IntegrationTest {
 		connection.close();
 		assertEquals("message should have 5 lines", 5, messages.get(0).length);
 		assertEquals("message should have 5 lines", 5, messages.get(1).length);
+		assertEquals("onOpen message should be a welcome",
+				EchoEndpoint.WELCOME_MESSAGE, messages.get(0)[0]);
+		assertEquals("2nd message should be an echo",
+				ClientEndpoint.TEST_MESSAGE, messages.get(1)[0]);
 		assertEquals("session scoped object hash should remain the same",
 				messages.get(0)[3], messages.get(1)[3]);
 		assertEquals("connection scoped object hash should remain the same",
@@ -179,7 +183,8 @@ public class IntegrationTest {
 
 	/**
 	 * Returns a list containing 4 messages from 2 calls to {@link #testWebsocketConnection(URI)}
-	 * made via separate websocket connections. All 4 messages come from the same HTTP session.
+	 * made via separate websocket connections. All 4 messages are expected to be sent from the same
+	 * HTTP session scope.
 	 */
 	List<String[]> testServerEndpoint(String type) throws Exception {
 		final var url = URI.create(websocketUrl + type);
