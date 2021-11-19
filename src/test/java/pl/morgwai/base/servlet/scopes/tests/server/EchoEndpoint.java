@@ -53,10 +53,19 @@ public class EchoEndpoint {
 
 
 
+	/**
+	 * Sends {@code message} to the peer together with scoped object hashes. The format is coherent
+	 * with the one in {@link TestServlet}: 3rd line contains container call scoped object hash,
+	 * 4th line contains HTTP session scoped object hash.<br/>
+	 * The 1st line contains the messages with EOL characters replaced by space. The 5th line
+	 * contains websocket connection scoped object hash.
+	 *
+	 * @see TestServlet#RESPONSE_FORMAT
+	 */
 	void send(String message) {
 		sender.sendText(String.format(
-				"%s\nservice hashCodes:\ncall=%d\nhttpSession=%d\nconnection=%d",
-				message,
+				TestServlet.RESPONSE_FORMAT + "\nconnection=%d",
+				message.replace('\n', ' '),
 				eventScopedProvider.get().hashCode(),
 				httpSessionScopedProvider.get().hashCode(),
 				connectionScopedProvider.get().hashCode()));

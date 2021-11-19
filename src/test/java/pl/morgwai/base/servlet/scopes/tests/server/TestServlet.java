@@ -21,6 +21,10 @@ public abstract class TestServlet extends HttpServlet {
 
 
 
+	public static final String RESPONSE_FORMAT = "%s\nservice hashCodes:\ncall=%d\nsession=%d";
+
+
+
 	@Inject @Named(CONTAINER_CALL)
 	Provider<Service> requestScopedProvider;
 
@@ -41,6 +45,14 @@ public abstract class TestServlet extends HttpServlet {
 
 
 
+	/**
+	 * Sends the final response. The format is coherent with the one in {@link EchoEndpoint}:
+	 * 3rd line contains container call scoped object hash, 4th line contains HTTP session scoped
+	 * object hash.<br/>
+	 * The 1st line contains simple class name of the actual servlet that sent the response.
+	 *
+	 * @see #RESPONSE_FORMAT
+	 */
 	void doAsyncDispatch(HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
 		verifyScoping(request, "the 2nd container thread");
@@ -49,7 +61,7 @@ public abstract class TestServlet extends HttpServlet {
 		) {
 			response.setStatus(HttpServletResponse.SC_OK);
 			output.println(String.format(
-				"%s\nservice hashCodes:\ncall=%d\nsession=%d",
+				RESPONSE_FORMAT,
 				getClass().getSimpleName(),
 				requestScopedProvider.get().hashCode(),
 				sessionScopedProvider.get().hashCode())
