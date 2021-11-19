@@ -15,12 +15,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.websocket.CloseReason;
 import javax.websocket.ContainerProvider;
-import javax.websocket.Endpoint;
-import javax.websocket.EndpointConfig;
-import javax.websocket.MessageHandler.Whole;
-import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 
 import org.eclipse.jetty.util.component.LifeCycle;
@@ -136,51 +131,27 @@ public class IntegrationTest {
 
 
 
-	static class ClientEndpoint extends Endpoint {
-
-		static final String TEST_MESSAGE = "yada yada yada";
-
-		final Whole<String> messageHandler;
-		final CountDownLatch closureLatch = new CountDownLatch(1);
-
-		public ClientEndpoint(Whole<String> messageHandler) {
-			this.messageHandler = messageHandler;
-		}
-
-		@Override public void onOpen(Session connection, EndpointConfig config) {
-			connection.addMessageHandler(String.class, messageHandler);
-			connection.getAsyncRemote().sendText(TEST_MESSAGE);
-		}
-
-		@Override public void onError(Session connection, Throwable error) {
-			log.log(Level.WARNING, "error on connection " + connection.getId(), error);
-		}
-
-		@Override public void onClose(Session session, CloseReason closeReason) {
-			closureLatch.countDown();
-		}
-
-		public void awaitClosure() {
-			try {
-				closureLatch.await();
-			} catch (InterruptedException ignored) {}
-		}
-	}
-
 	/**
 	 * Returns a list containing 2 messages. Each message is split into lines. Each message is
 	 * expected to have the format defined in {@link EchoEndpoint}. Both messages are expected to be
 	 * sent from the same HTTP session scope and the same websocket connection scope.
 	 */
 	List<String[]> testWebsocketConnection(URI url) throws Exception {
-		final var messages = new ArrayList<String[]>(2);
+		final var testMessage = "test message for " + url;
+		final var messages = new ArrayList<String[]>(4);
 		final var latch = new CountDownLatch(2);
-		final var endpoint = new ClientEndpoint((message) -> {
-			if (log.isLoggable(Level.FINE)) log.fine("message from " + url + '\n' + message);
-			messages.add(message.split("\n"));
-			latch.countDown();
-		});
+		final var endpoint = new ClientEndpoint(
+			(message) -> {
+				if (log.isLoggable(Level.FINE)) log.fine("message from " + url + '\n' + message);
+				messages.add(message.split("\n"));
+				latch.countDown();
+			},
+			(connection, error) -> {
+				log.log(Level.WARNING, "error on connection " + connection.getId(), error);
+			}
+		);
 		final var connection = websocketContainer.connectToServer(endpoint, null, url);
+		connection.getAsyncRemote().sendText(testMessage);
 		latch.await();
 		connection.close();
 		endpoint.awaitClosure();
@@ -189,7 +160,7 @@ public class IntegrationTest {
 		assertEquals("onOpen message should be a welcome",
 				EchoEndpoint.WELCOME_MESSAGE, messages.get(0)[0]);
 		assertEquals("2nd message should be an echo",
-				ClientEndpoint.TEST_MESSAGE, messages.get(1)[0]);
+				testMessage, messages.get(1)[0]);
 		assertEquals("session scoped object hash should remain the same",
 				messages.get(0)[3], messages.get(1)[3]);
 		assertEquals("connection scoped object hash should remain the same",
