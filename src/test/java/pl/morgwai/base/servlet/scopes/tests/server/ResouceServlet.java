@@ -12,22 +12,16 @@ import javax.servlet.http.HttpServletResponse;
 
 
 @SuppressWarnings("serial")
-public class FilteredResouceServlet extends HttpServlet {
+public class ResouceServlet extends HttpServlet {
 
 
 
 	public static final String RESOURCE_PATH_PARAM =
-			FilteredResouceServlet.class.getName() + ".resourcePath";
+			ResouceServlet.class.getName() + ".resourcePath";
 
 
 
-	protected String filter(String input, HttpServletRequest request) throws ServletException {
-		return input;
-	}
-
-
-
-	String resource;
+	protected String resource;
 
 
 
@@ -51,11 +45,10 @@ public class FilteredResouceServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		final var outputData = filter(resource, request);
 		try (
 			final var output = response.getOutputStream();
 		) {
-			output.println(outputData);
+			output.println(resource);
 		}
 	}
 }

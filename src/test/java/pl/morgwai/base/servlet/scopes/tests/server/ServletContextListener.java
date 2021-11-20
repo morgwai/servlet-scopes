@@ -60,8 +60,8 @@ public class ServletContextListener extends PingingServletContextListener {
 				DispatchingServlet.class.getSimpleName(),
 				DispatchingServlet.class,
 				DispatchingServlet.PATH);
-		addServlet("IndexPageServlet", FilteredResouceServlet.class, "", "/index.html")
-				.setInitParameter(FilteredResouceServlet.RESOURCE_PATH_PARAM, "/index.html");
+		addServlet("IndexPageServlet", ResouceServlet.class, "", "/index.html")
+				.setInitParameter(ResouceServlet.RESOURCE_PATH_PARAM, "/index.html");
 		addServlet(
 				WebsocketPageServlet.class.getSimpleName(),
 				WebsocketPageServlet.class,
