@@ -8,10 +8,12 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.channels.ServerSocketChannel;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -87,7 +89,8 @@ public class IntegrationTest {
 	 */
 	List<String[]> testAsyncCtxDispatch(String url, Class<?> expectedTargetServletClass)
 			throws Exception {
-		final var request = HttpRequest.newBuilder(URI.create(url)).GET().build();
+		final var request = HttpRequest.newBuilder(URI.create(url)).GET()
+				.timeout(Duration.ofSeconds(2)).build();
 
 		final var response = httpClient.send(request, BodyHandlers.ofString()).body();
 		if (log.isLoggable(Level.FINE)) log.fine("response from " + url + '\n' + response);
@@ -155,9 +158,9 @@ public class IntegrationTest {
 		);
 		final var connection = clientWebsocketContainer.connectToServer(endpoint, null, url);
 		connection.getAsyncRemote().sendText(testMessage);
-		latch.await();
+		if ( ! latch.await(2l, TimeUnit.SECONDS)) fail("timeout");
 		connection.close();
-		endpoint.awaitClosure();
+		if ( ! endpoint.awaitClosure(2l, TimeUnit.SECONDS)) fail("timeout");
 		assertEquals("message should have 5 lines", 5, messages.get(0).length);
 		assertEquals("message should have 5 lines", 5, messages.get(1).length);
 		assertEquals("onOpen message should be a welcome",

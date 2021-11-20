@@ -2,6 +2,7 @@
 package pl.morgwai.base.servlet.scopes.tests;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 import javax.websocket.CloseReason;
@@ -56,9 +57,7 @@ class ClientEndpoint extends Endpoint {
 
 
 
-	public void awaitClosure() {
-		try {
-			closureLatch.await();
-		} catch (InterruptedException ignored) {}
+	public boolean awaitClosure(long timeout, TimeUnit unit) throws InterruptedException {
+		return closureLatch.await(timeout, unit);
 	}
 }
