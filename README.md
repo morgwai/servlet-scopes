@@ -123,6 +123,10 @@ Dependencies of this jar on `slf4j-api` and `guice` are declared with scope `pro
 * `guice-context-scopes` is thread-safe: a single request can be handled by multiple threads (as long as accessed scoped objects are thread-safe or properly synchronized).
 * `guice-context-scopes` allows to remove objects from scopes.
 
+**Why do I have to myself create a filter that automatically creates HTTP session for websockets? Can't this lib do it for me?**
+
+Always enforcing a session creation is not acceptable in many cases, so this would limit applicability of this lib. Reasons may be technical (cookies disabled, non-browser clients that don't even follow redirections), legal (user explicitly refusing any data storage) and probably others. It's a sad trade-off between applicability and API safety.
+
 
 ## NOTES ON JAKARTA SUPPORT
 
