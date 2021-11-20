@@ -22,6 +22,7 @@ public class WebsocketPageServlet extends FilteredResouceServlet {
 	@Override
 	protected String filter(String input, HttpServletRequest request) throws ServletException {
 		final var type = request.getParameter(TYPE_PARAM);
+		if (type == null) throw new ServletException("type param missing");
 		switch (type) {
 			case ProgrammaticEndpoint.TYPE:
 				return replaceWebsocketPath(input, ProgrammaticEndpoint.PATH);
