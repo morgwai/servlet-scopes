@@ -1,7 +1,6 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.scopes.tests;
 
-import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -17,10 +16,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.websocket.ContainerProvider;
 import javax.websocket.WebSocketContainer;
 
 import org.eclipse.jetty.util.component.LifeCycle;
+import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -45,6 +44,7 @@ public class IntegrationTest {
 
 
 
+	org.eclipse.jetty.client.HttpClient wsHttpClient;
 	WebSocketContainer clientWebsocketContainer;
 	HttpClient httpClient;
 	TestServer server;
@@ -57,8 +57,9 @@ public class IntegrationTest {
 	@Before
 	public void setup() throws Exception {
 		final var cookieManager = new CookieManager();
-		CookieHandler.setDefault(cookieManager);
-		clientWebsocketContainer = ContainerProvider.getWebSocketContainer();
+		wsHttpClient = new org.eclipse.jetty.client.HttpClient();
+		wsHttpClient.setCookieStore(cookieManager.getCookieStore());
+		clientWebsocketContainer = JavaxWebSocketClientContainerProvider.getContainer(wsHttpClient);
 		httpClient = HttpClient.newBuilder().cookieHandler(cookieManager).build();
 		server = new TestServer(0);
 		server.start();
@@ -74,9 +75,12 @@ public class IntegrationTest {
 
 	@After
 	public void shutdown() throws Exception {
+		LifeCycle.stop(clientWebsocketContainer);
+		wsHttpClient.stop();
+		wsHttpClient.destroy();
 		server.stop();
 		server.join();
-		LifeCycle.stop(clientWebsocketContainer);
+		server.destroy();
 	}
 
 
@@ -217,7 +221,7 @@ public class IntegrationTest {
 		final var unwrappedAsyncCtxResponses = testAsyncCtxDispatch(
 				dispatchingServletUrl,
 				DispatchingServlet.class);
-		final var servletSessionScopedHash = unwrappedAsyncCtxResponses.get(0)[3];
+		final var sessionScopedHash = unwrappedAsyncCtxResponses.get(0)[3];
 		requestScopedHashes.add(unwrappedAsyncCtxResponses.get(0)[2]);
 		requestScopedHashes.add(unwrappedAsyncCtxResponses.get(1)[2]);
 
@@ -225,7 +229,7 @@ public class IntegrationTest {
 				dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED,
 				AsyncServlet.class);
 		assertEquals("session scoped object hash should remain the same",
-				servletSessionScopedHash, wrappedAsyncCtxResponses.get(0)[3]);
+				sessionScopedHash, wrappedAsyncCtxResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
 				requestScopedHashes.add(wrappedAsyncCtxResponses.get(0)[2]));
 		assertTrue("call scoped object hash should change",
@@ -235,15 +239,15 @@ public class IntegrationTest {
 				dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_TARGETED,
 				AsyncServlet.class);
 		assertEquals("session scoped object hash should remain the same",
-				servletSessionScopedHash, targetedAsyncCtxResponses.get(0)[3]);
+				sessionScopedHash, targetedAsyncCtxResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
 				requestScopedHashes.add(targetedAsyncCtxResponses.get(0)[2]));
 		assertTrue("call scoped object hash should change",
 				requestScopedHashes.add(targetedAsyncCtxResponses.get(1)[2]));
 
 		final var programmaticEndpointResponses = testServerEndpoint(ProgrammaticEndpoint.TYPE);
-		// TODO: figure out how to share cookieHandler between HttpClient and WebSocketContainer
-		final var websocketSessionScopedHash = programmaticEndpointResponses.get(0)[3];
+		assertEquals("session scoped object hash should remain the same",
+				sessionScopedHash, programmaticEndpointResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
 				requestScopedHashes.add(programmaticEndpointResponses.get(0)[2]));
 		assertTrue("call scoped object hash should change",
@@ -257,7 +261,7 @@ public class IntegrationTest {
 
 		final var extendingEndpointResponses = testServerEndpoint(ExtendingEndpoint.TYPE);
 		assertEquals("session scoped object hash should remain the same",
-				websocketSessionScopedHash, extendingEndpointResponses.get(0)[3]);
+				sessionScopedHash, extendingEndpointResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
 				requestScopedHashes.add(extendingEndpointResponses.get(0)[2]));
 		assertTrue("call scoped object hash should change",
@@ -273,7 +277,7 @@ public class IntegrationTest {
 
 		final var annotatedEndpointResponses = testServerEndpoint(AnnotatedEndpoint.TYPE);
 		assertEquals("session scoped object hash should remain the same",
-				websocketSessionScopedHash, annotatedEndpointResponses.get(0)[3]);
+				sessionScopedHash, annotatedEndpointResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
 				requestScopedHashes.add(annotatedEndpointResponses.get(0)[2]));
 		assertTrue("call scoped object hash should change",

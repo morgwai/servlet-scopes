@@ -2,6 +2,7 @@
 package pl.morgwai.base.servlet.scopes.tests.server;
 
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.websocket.javax.server.config.JavaxWebSocketServletContainerInitializer;
 
 
 
@@ -19,15 +20,14 @@ public class TestServer extends org.eclipse.jetty.server.Server {
 		appHandler.setContextPath(APP_PATH);
 		appHandler.addEventListener(new ServletContextListener());
 		setHandler(appHandler);
-		org.eclipse.jetty.websocket.javax.server.config.JavaxWebSocketServletContainerInitializer
-				.configure(
-					appHandler,
-					(servletContainer, websocketContainer) -> {
-						websocketContainer.setDefaultMaxTextMessageBufferSize(1023);
-						websocketContainer.addEndpoint(AnnotatedEndpoint.class);
-						websocketContainer.addEndpoint(ExtendingEndpoint.class);
-					}
-				);
+		JavaxWebSocketServletContainerInitializer.configure(
+			appHandler,
+			(servletContainer, websocketContainer) -> {
+				websocketContainer.setDefaultMaxTextMessageBufferSize(1023);
+				websocketContainer.addEndpoint(AnnotatedEndpoint.class);
+				websocketContainer.addEndpoint(ExtendingEndpoint.class);
+			}
+		);
 	}
 
 
