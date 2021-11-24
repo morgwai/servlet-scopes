@@ -10,7 +10,7 @@
 
 	<groupId>pl.morgwai.base</groupId>
 	<artifactId>servlet-scopes</artifactId>
-	<version>6.2-javax</version><!--jakarta-experimental-->
+	<version>6.3-SNAPSHOT-javax</version><!--jakarta-experimental-->
 
 	<name>Servlet and Websocket Guice Scopes</name>
 	<description>Servlet and websocket Guice scopes, that are automatically transferred when dispatching work to other threads</description>
