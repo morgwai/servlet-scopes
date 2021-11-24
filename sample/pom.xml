@@ -45,6 +45,7 @@
 					<groupId>pl.morgwai.base</groupId>
 					<artifactId>servlet-scopes</artifactId>
 					<version>6.2-SNAPSHOT-javax</version>
+					<classifier>shadeddeps</classifier>
 				</dependency>
 				<dependency>
 					<groupId>com.google.inject</groupId>
@@ -73,6 +74,7 @@
 					<groupId>pl.morgwai.base</groupId>
 					<artifactId>servlet-scopes</artifactId>
 					<version>6.2-SNAPSHOT-jakarta-experimental</version>
+					<classifier>shadeddeps</classifier>
 				</dependency>
 				<dependency>
 					<groupId>com.guicedee.services</groupId>
