@@ -44,7 +44,7 @@
 				<dependency>
 					<groupId>pl.morgwai.base</groupId>
 					<artifactId>servlet-scopes</artifactId>
-					<version>6.2-SNAPSHOT-javax</version>
+					<version>6.2-javax</version>
 					<classifier>shadeddeps</classifier>
 				</dependency>
 				<dependency>
@@ -73,7 +73,7 @@
 				<dependency>
 					<groupId>pl.morgwai.base</groupId>
 					<artifactId>servlet-scopes</artifactId>
-					<version>6.2-SNAPSHOT-jakarta-experimental</version>
+					<version>6.2-jakarta-experimental</version>
 					<classifier>shadeddeps</classifier>
 				</dependency>
 				<dependency>
