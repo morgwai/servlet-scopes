@@ -33,15 +33,13 @@ public class TestServer extends org.eclipse.jetty.server.Server {
 
 
 	public static void main(String[] args) throws Exception {
-		int port;
+		var port = DEFAULT_PORT;
 		try {
 			port = Integer.parseInt(args[0]);
 		} catch (Exception e) {
 			try {
 				port = Integer.parseInt(System.getenv(PORT_ENVVAR));
-			} catch (Exception e2) {
-				port = DEFAULT_PORT;
-			}
+			} catch (Exception ignored) {}
 		}
 		final var server = new TestServer(port);
 		server.setStopAtShutdown(true);
