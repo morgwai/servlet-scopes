@@ -18,8 +18,8 @@ import java.util.logging.Logger;
 
 import javax.websocket.WebSocketContainer;
 
-import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
+import org.eclipse.jetty.websocket.javax.common.JavaxWebSocketContainer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -75,7 +75,9 @@ public class IntegrationTest {
 
 	@After
 	public void shutdown() throws Exception {
-		LifeCycle.stop(clientWebsocketContainer);
+		final var jettyWsContainer = ((JavaxWebSocketContainer) clientWebsocketContainer);
+		jettyWsContainer.stop();
+		jettyWsContainer.destroy();
 		wsHttpClient.stop();
 		wsHttpClient.destroy();
 		server.stop();
