@@ -1,5 +1,4 @@
 local
-sample/src/main/jetty/servlet-scopes-sample.war
 
 # build
 target
