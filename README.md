@@ -5,9 +5,9 @@ Servlet and websocket Guice scopes, that are automatically transferred when disp
 **latest release: 6.2**<br/>
 [javax flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/6.2-javax/jar)
 ([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/6.2-javax))<br/>
-[experimental jakarta flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/6.2-jakarta-experimental/jar)
+[jakarta flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/6.2-jakarta-experimental/jar) (experimental: see [notes](#notes-on-jakarta-support))
 ([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/6.2-jakarta-experimental))
-([see notes](#notes-on-jakarta-support))
+
 
 
 ## OVERVIEW
@@ -136,4 +136,4 @@ Always enforcing a session creation is not acceptable in many cases, so this wou
 ## NOTES ON JAKARTA SUPPORT
 
 Jakarta flavor is currently based on [repackaged version of Guice](https://github.com/GedMarc/GuicedEE-Services) from [GuicedEE project](https://guicedee.com/), that has some [unresolved](https://github.com/GedMarc/GuicedEE-Services/issues/16) [issues](https://github.com/GedMarc/GuicedEE-Services/issues/17). It seems to work ok for simple cases, but should not be considered production ready at this time.<br/>
-`servlet-scopes` should however work properly with any other jakarta-repackaged build of Guice provided at runtime if and only if the difference from the upstream version is exact renaming of all `javax` references to `jakarta`.
+`servlet-scopes` should however work properly with any other jakarta-repackaged build of Guice with compatible API provided at assemble or runtime. "Compatible API" means the only difference from the upstream API is an exact renaming of all `javax` references to `jakarta`.
