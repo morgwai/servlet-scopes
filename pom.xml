@@ -169,11 +169,15 @@
 		</profile>
 		<profile>
 			<id>shadeddeps</id>
+			<!-- Releases must be built using this profile. Not activated by default, as dependent
+				apps would include 2nd copy of byte-buddy due to its scope being compile in this
+				profile. -->
 			<dependencies>
 				<dependency>
 					<groupId>net.bytebuddy</groupId>
 					<artifactId>byte-buddy</artifactId>
 					<version>1.12.2</version>
+					<scope>compile</scope>
 				</dependency>
 			</dependencies>
 			<build>
