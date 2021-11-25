@@ -19,6 +19,7 @@
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<servlet.scopes.version>6.3-SNAPSHOT</servlet.scopes.version>
 	</properties>
 
 	<dependencies>
@@ -50,7 +51,7 @@
 				<dependency>
 					<groupId>pl.morgwai.base</groupId>
 					<artifactId>servlet-scopes</artifactId>
-					<version>6.3-SNAPSHOT-javax</version>
+					<version>${servlet.scopes.version}-javax</version>
 				</dependency>
 				<dependency>
 					<groupId>com.google.inject</groupId>
@@ -78,7 +79,7 @@
 				<dependency>
 					<groupId>pl.morgwai.base</groupId>
 					<artifactId>servlet-scopes</artifactId>
-					<version>6.3-SNAPSHOT-jakarta</version>
+					<version>${servlet.scopes.version}-jakarta</version>
 				</dependency>
 				<dependency>
 					<groupId>com.guicedee.services</groupId>
