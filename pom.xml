@@ -55,27 +55,27 @@
 		<dependency>
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy</artifactId>
-			<version>1.12.2</version>
+			<version>[1.12.2,)</version>
 			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-			<version>1.7.32</version>
+			<version>[1.7.32,)</version>
 			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.13.2</version>
+			<version>[4.13.2,4.999.0]</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-jdk14</artifactId>
-			<version>1.7.32</version>
+			<version>[1.7.32,)</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -113,13 +113,13 @@
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-servlet</artifactId>
-					<version>10.0.7</version>
+					<version>[10.0.7,10.999.0]</version>
 					<scope>test</scope>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty.websocket</groupId>
 					<artifactId>websocket-javax-server</artifactId>
-					<version>10.0.7</version>
+					<version>[10.0.7,10.999.0]</version>
 					<scope>test</scope>
 				</dependency>
 			</dependencies>
@@ -156,13 +156,13 @@
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-servlet</artifactId>
-					<version>11.0.7</version>
+					<version>[11.0.7,11.999.0]</version>
 					<scope>test</scope>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty.websocket</groupId>
 					<artifactId>websocket-jakarta-server</artifactId>
-					<version>11.0.7</version>
+					<version>[11.0.7,11.999.0]</version>
 					<scope>test</scope>
 				</dependency>
 			</dependencies>
@@ -176,7 +176,7 @@
 				<dependency>
 					<groupId>net.bytebuddy</groupId>
 					<artifactId>byte-buddy</artifactId>
-					<version>1.12.2</version>
+					<version>[1.12.2,)</version>
 					<scope>compile</scope>
 				</dependency>
 			</dependencies>
@@ -185,7 +185,6 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-shade-plugin</artifactId>
-						<version>3.2.4</version>
 						<executions>
 							<execution>
 								<phase>package</phase>
@@ -232,7 +231,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
-				<version>3.2.1</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
@@ -245,7 +243,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.2.0</version>
 				<configuration>
 					<javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
 					<overview>${basedir}/src/main/java/overview.html</overview>
@@ -302,7 +299,6 @@
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>1.6.8</version>
 				<extensions>true</extensions>
 				<configuration>
 					<serverId>ossrh</serverId>
@@ -313,7 +309,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-gpg-plugin</artifactId>
-				<version>1.5</version>
 				<executions>
 					<execution>
 						<id>sign-artifacts</id>
