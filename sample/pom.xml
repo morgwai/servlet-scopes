@@ -78,7 +78,7 @@
 				<dependency>
 					<groupId>pl.morgwai.base</groupId>
 					<artifactId>servlet-scopes</artifactId>
-					<version>6.3-SNAPSHOT-jakarta-experimental</version>
+					<version>6.3-SNAPSHOT-jakarta</version>
 				</dependency>
 				<dependency>
 					<groupId>com.guicedee.services</groupId>
