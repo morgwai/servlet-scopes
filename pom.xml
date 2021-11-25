@@ -189,6 +189,11 @@
 									<goal>shade</goal>
 								</goals>
 								<configuration>
+									<artifactSet>
+										<includes>
+											<include>net.bytebuddy:byte-buddy</include>
+										</includes>
+									</artifactSet>
 									<relocations>
 										<relocation>
 											<pattern>net.bytebuddy</pattern>

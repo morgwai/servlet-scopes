@@ -111,7 +111,7 @@ When dispatching work to servlet container threads using any of `AsyncContext.di
 Dependencies of this jar on `slf4j-api` and `guice` are declared with scope `provided`, so that apps can use any versions of these libs with compatible API.
 
 There are 2 builds available:
-- build with `shadeddeps` classifier includes relocated dependency on [byte-buddy](https://bytebuddy.net/) (as well as other `compile` scoped dependencies). Most apps should use this build. To do so, add `<classifier>shadeddeps</classifier>` to your dependency declaration.
+- build with `shadeddeps` classifier includes relocated dependency on [byte-buddy](https://bytebuddy.net/). Most apps should use this build. To do so, add `<classifier>shadeddeps</classifier>` to your dependency declaration.
 - "default" build does not include any shaded dependencies and dependency on `byte-buddy` has scope `provided`. This is useful for apps that also depend on `byte-buddy` and need to save space (`byte-buddy` is over 3MB in size). Note that the version provided by the app needs to be compatible with the version that `servlet-scopes` depends on (in regard to features used by `servlet-scopes`). If this is not the case, then `shaded` build should be used.
 
 
