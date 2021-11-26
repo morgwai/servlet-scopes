@@ -207,21 +207,4 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	static final String NO_SESSION_PARAM_MESSAGE =
 			"method annotated with @OnOpen must have a javax.websocket.Session param";
-
-
-
-	/**
-	 * Name of the user property containing {@link HttpSession}.
-	 * @deprecated use {@code HttpSession.class.getName()} instead.
-	 */
-	@Deprecated(forRemoval = true)
-	public static final String HTTP_SESSION_PROPERTY_NAME = HttpSession.class.getName();
-
-	/**
-	 * Name of the user property containing {@link WebsocketConnectionContext}.
-	 * @deprecated use {@code WebsocketConnectionContext.class.getName()} instead.
-	 */
-	@Deprecated(forRemoval = true)
-	public static final String CONNECTION_CTX_PROPERTY_NAME =
-			WebsocketConnectionContext.class.getName();
 }
