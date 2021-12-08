@@ -3,6 +3,7 @@ package pl.morgwai.base.servlet.scopes;
 
 import java.util.EnumSet;
 import java.util.LinkedList;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
@@ -232,7 +233,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	@Override
 	public void contextDestroyed(ServletContextEvent destructionEvent) {
-		servletModule.shutdownAllExecutors(getExecutorsShutdownTimeoutSeconds());
+		servletModule.shutdownAndEnforceTerminationOfAllExecutors(
+				getExecutorsShutdownTimeoutSeconds(), TimeUnit.SECONDS);
 	}
 
 	/**

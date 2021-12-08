@@ -6,12 +6,15 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Scope;
 import com.google.inject.TypeLiteral;
 
+import pl.morgwai.base.concurrent.Awaitable;
+import pl.morgwai.base.concurrent.Awaitable.AwaitInterruptedException;
 import pl.morgwai.base.guice.scopes.ContextScope;
 import pl.morgwai.base.guice.scopes.ContextTracker;
 import pl.morgwai.base.guice.scopes.InducedContextScope;
@@ -205,17 +208,21 @@ public class ServletModule implements Module {
 
 
 
-	void shutdownAllExecutors(int timeoutSeconds) {
-		var shutdownThreads = new LinkedList<Thread>();
-		for (var executor: executors) {
-			var thread = new Thread(() -> executor.shutdown(timeoutSeconds));
-			shutdownThreads.add(thread);
-			thread.start();
-		}
-		for (var thread: shutdownThreads) {
-			try {
-				thread.join();
-			} catch (InterruptedException ignored) {}
+	@SuppressWarnings("unchecked")
+	List<ContextTrackingExecutor> shutdownAndEnforceTerminationOfAllExecutors(
+			long timeout, TimeUnit unit) {
+		for (var executor: executors) executor.shutdownInternal();
+		try {
+			return Awaitable.awaitMultiple(
+					timeout,
+					unit,
+					ContextTrackingExecutor::awaitableOfEnforceTermination,
+					executors);
+		} catch (AwaitInterruptedException e) {
+			final List<ContextTrackingExecutor> unterminated =
+					(List<ContextTrackingExecutor>) e.getFailed();
+			unterminated.addAll((List<ContextTrackingExecutor>) e.getInterrupted());
+			return unterminated;
 		}
 	}
 }

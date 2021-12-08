@@ -8,12 +8,14 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.Session;
 
+import pl.morgwai.base.concurrent.Awaitable;
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
@@ -70,16 +72,55 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 
 
 
-	@Override
-	public Optional<List<Runnable>> tryShutdownGracefully(int timeoutSeconds) {
-		throw new RuntimeException(
-				"executors obtained from ServletModule are shutdown automatically at app shutdown");
+	public Awaitable.WithUnit awaitableOfAwaitTermination() {
+		return this::awaitTermination;
 	}
 
 
 
-	void shutdown(int timeoutSeconds) {
-		super.tryShutdownGracefully(timeoutSeconds);
+	/**
+	 * @deprecated This method will throw {@link RuntimeException}. Executors obtained from
+	 *     {@link ServletModule} are shutdown automatically at app shutdown.
+	 */
+	@Override @Deprecated
+	public void shutdown() {
+		throw new RuntimeException(
+				"executors obtained from ServletModule are shutdown automatically at app shutdown");
+	}
+
+	/**
+	 * @deprecated This method will throw {@link RuntimeException}. Executors obtained from
+	 *     {@link ServletModule} are shutdown automatically at app shutdown.
+	 */
+	@Override @Deprecated
+	public Optional<List<Runnable>> enforceTermination(long timeout, TimeUnit unit)
+			throws InterruptedException {
+		throw new RuntimeException(
+				"executors obtained from ServletModule are shutdown automatically at app shutdown");
+	}
+
+	/**
+	 * @deprecated This method will throw {@link RuntimeException}. Executors obtained from
+	 *     {@link ServletModule} are shutdown automatically at app shutdown.
+	 */
+	@Override @Deprecated
+	public List<Runnable> shutdownNow() {
+		throw new RuntimeException(
+				"executors obtained from ServletModule are shutdown automatically at app shutdown");
+	}
+
+	void shutdownInternal() {
+		super.shutdown();
+	}
+
+	List<Runnable> shutdownNowInternal() {
+		return super.shutdownNow();
+	}
+
+
+
+	Awaitable.WithUnit awaitableOfEnforceTermination() {
+		return (timeout, unit) -> super.enforceTermination(timeout, unit).isEmpty();
 	}
 
 
