@@ -34,11 +34,6 @@
 			<version>[1.7.32,)</version>
 			<scope>runtime</scope>
 		</dependency>
-		<dependency>
-			<groupId>net.bytebuddy</groupId>
-			<artifactId>byte-buddy</artifactId>
-			<version>[1.12.2,)</version>
-		</dependency>
 	</dependencies>
 
 	<profiles>
@@ -52,6 +47,7 @@
 					<groupId>pl.morgwai.base</groupId>
 					<artifactId>servlet-scopes</artifactId>
 					<version>${servlet.scopes.version}-javax</version>
+					<classifier>shaded</classifier>
 				</dependency>
 				<dependency>
 					<groupId>com.google.inject</groupId>
@@ -80,6 +76,7 @@
 					<groupId>pl.morgwai.base</groupId>
 					<artifactId>servlet-scopes</artifactId>
 					<version>${servlet.scopes.version}-jakarta</version>
+					<classifier>shaded</classifier>
 				</dependency>
 				<dependency>
 					<groupId>com.guicedee.services</groupId>

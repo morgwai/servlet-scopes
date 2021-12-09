@@ -62,7 +62,7 @@
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy</artifactId>
 			<version>[1.12.2,)</version>
-			<scope>provided</scope>
+			<optional>true</optional>
 		</dependency>
 
 		<dependency>
@@ -173,52 +173,6 @@
 				</dependency>
 			</dependencies>
 		</profile>
-		<profile>
-			<id>shadeddeps</id>
-			<!-- Releases must be built using this profile. Not activated by default, as dependent
-				apps would include 2nd copy of byte-buddy due to its scope being compile in this
-				profile. -->
-			<dependencies>
-				<dependency>
-					<groupId>net.bytebuddy</groupId>
-					<artifactId>byte-buddy</artifactId>
-					<version>[1.12.2,)</version>
-					<scope>compile</scope>
-				</dependency>
-			</dependencies>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-shade-plugin</artifactId>
-						<executions>
-							<execution>
-								<phase>package</phase>
-								<goals>
-									<goal>shade</goal>
-								</goals>
-								<configuration>
-									<artifactSet>
-										<includes>
-											<include>net.bytebuddy:byte-buddy</include>
-										</includes>
-									</artifactSet>
-									<relocations>
-										<relocation>
-											<pattern>net.bytebuddy</pattern>
-											<shadedPattern>pl.morgwai.base.servlet.scopes.net.bytebuddy</shadedPattern>
-										</relocation>
-									</relocations>
-									<shadedArtifactAttached>true</shadedArtifactAttached>
-									<shadedClassifierName>shadeddeps</shadedClassifierName>
-									<minimizeJar>true</minimizeJar>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
 	</profiles>
 
 	<distributionManagement>
@@ -234,6 +188,33 @@
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<artifactSet>
+								<includes>
+									<include>net.bytebuddy:byte-buddy</include>
+								</includes>
+							</artifactSet>
+							<relocations>
+								<relocation>
+									<pattern>net.bytebuddy</pattern>
+									<shadedPattern>pl.morgwai.base.servlet.scopes.net.bytebuddy</shadedPattern>
+								</relocation>
+							</relocations>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<minimizeJar>true</minimizeJar>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
