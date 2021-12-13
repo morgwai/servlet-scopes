@@ -112,7 +112,7 @@ When dispatching work to servlet container threads using any of `AsyncContext.di
 Dependencies of this jar on [guice](https://search.maven.org/artifact/com.google.inject/guice) and [slf4j-api](https://search.maven.org/artifact/org.slf4j/slf4j-api) are declared as optional, so that apps can use any versions of these deps with compatible API.
 
 There are 2 builds available:
-- build with `shaded` classifier includes relocated dependency on [byte-buddy](https://bytebuddy.net/). Most apps should use this build. To do so, add `<classifier>shaded</classifier>` to your dependency declaration.
+- build with `shadedbytebuddy` classifier includes relocated dependency on [byte-buddy](https://search.maven.org/artifact/net.bytebuddy/byte-buddy). Most apps should use this build. To do so, add `<classifier>shadedbytebuddy</classifier>` to your dependency declaration.
 - "default" build does not include any shaded dependencies and dependency on `byte-buddy` is marked as `optional`. This is useful for apps that also depend on `byte-buddy` and need to save space (`byte-buddy` is over 3MB in size). Note that the version provided by the app needs to be compatible with the version that `servlet-scopes` depends on (in regard to features used by `servlet-scopes`). If this is not the case, then `shaded` build should be used.
 
 
