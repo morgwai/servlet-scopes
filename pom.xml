@@ -43,7 +43,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<guice.scopes.version>5.0</guice.scopes.version>
 		<utils.version>1.9</utils.version>
-		<servlet.utils.version>1.2</servlet.utils.version>
+		<servlet.utils.version>1.3</servlet.utils.version>
 		<guice.version>5.0.1</guice.version>
 	</properties>
 
