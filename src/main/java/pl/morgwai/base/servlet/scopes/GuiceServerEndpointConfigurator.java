@@ -79,8 +79,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			final var injector = GuiceServletContextListener.getInjector();
 			final EndpointT endpoint = injector.getInstance(endpointClass);
 			@SuppressWarnings("unchecked")
-			final var proxyClass = (Class<? extends EndpointT>) proxyClasses.computeIfAbsent(
-					endpointClass, this::createProxyClass);
+			final var proxyClass = (Class<? extends EndpointT>)
+					proxyClasses.computeIfAbsent(endpointClass, this::createProxyClass);
 			final EndpointT endpointProxy = super.getEndpointInstance(proxyClass);
 			final var endpointDecorator = new EndpointDecorator(getAdditionalDecorator(endpoint));
 			injector.injectMembers(endpointDecorator);
@@ -102,22 +102,22 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 */
 	<EndpointT> Class<? extends EndpointT> createProxyClass(Class<EndpointT> endpointClass) {
 		DynamicType.Builder<EndpointT> proxyClassBuilder = new ByteBuddy()
-				.subclass(endpointClass)
-				.name(GuiceServerEndpointConfigurator.class.getPackageName() + ".ProxyFor_"
-						+ endpointClass.getName().replace('.', '_'))
-				.defineField(
-						PROXY_DECORATOR_FIELD_NAME,
-						EndpointDecorator.class,
-						Visibility.PACKAGE_PRIVATE)
-				.method(ElementMatchers.any())
-					.intercept(InvocationHandlerAdapter.toField(PROXY_DECORATOR_FIELD_NAME));
+			.subclass(endpointClass)
+			.name(GuiceServerEndpointConfigurator.class.getPackageName() + ".ProxyFor_"
+					+ endpointClass.getName().replace('.', '_'))
+			.defineField(
+					PROXY_DECORATOR_FIELD_NAME,
+					EndpointDecorator.class,
+					Visibility.PACKAGE_PRIVATE)
+			.method(ElementMatchers.any())
+				.intercept(InvocationHandlerAdapter.toField(PROXY_DECORATOR_FIELD_NAME));
 		final ServerEndpoint annotation = endpointClass.getAnnotation(ServerEndpoint.class);
 		if (annotation != null) proxyClassBuilder = proxyClassBuilder.annotateType(annotation);
 		return proxyClassBuilder
-				.make()
-				.load(GuiceServerEndpointConfigurator.class.getClassLoader(),
-						ClassLoadingStrategy.Default.INJECTION)
-				.getLoaded();
+			.make()
+			.load(GuiceServerEndpointConfigurator.class.getClassLoader(),
+					ClassLoadingStrategy.Default.INJECTION)
+			.getLoaded();
 	}
 
 
