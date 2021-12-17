@@ -15,6 +15,7 @@ import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig;
 
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
@@ -53,17 +54,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-	/**
-	 * Stores {@link HttpSession} in user properties.
-	 */
-	@Override
-	public void modifyHandshake(
-			ServerEndpointConfig config, HandshakeRequest request, HandshakeResponse response) {
-		final var httpSession = request.getHttpSession();
-		if (httpSession != null) {
-			config.getUserProperties().put(HttpSession.class.getName(), httpSession);
-		}
-	}
+	volatile Injector injector;
 
 
 
@@ -75,15 +66,22 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	@Override
 	public <EndpointT> EndpointT getEndpointInstance(Class<EndpointT> endpointClass)
 			throws InstantiationException {
+		if (injector == null) {
+			// not in constructor as annotated endpoints create configurator before injector
+			synchronized (this) {
+				if (injector == null) {
+					injector = GuiceServletContextListener.getInjector();
+					injector.injectMembers(this);
+				}
+			}
+		}
 		try {
-			final var injector = GuiceServletContextListener.getInjector();
 			final EndpointT endpoint = injector.getInstance(endpointClass);
 			@SuppressWarnings("unchecked")
 			final var proxyClass = (Class<? extends EndpointT>)
 					proxyClasses.computeIfAbsent(endpointClass, this::createProxyClass);
 			final EndpointT endpointProxy = super.getEndpointInstance(proxyClass);
-			final var endpointDecorator = new EndpointDecorator(getAdditionalDecorator(endpoint));
-			injector.injectMembers(endpointDecorator);
+			final var endpointDecorator = new EndpointDecorator(endpoint);
 			proxyClass.getDeclaredField(PROXY_DECORATOR_FIELD_NAME)
 					.set(endpointProxy, endpointDecorator);
 			return endpointProxy;
@@ -123,17 +121,37 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	/**
+	 * Stores {@link HttpSession} in user properties.
+	 */
+	@Override
+	public void modifyHandshake(
+			ServerEndpointConfig config, HandshakeRequest request, HandshakeResponse response) {
+		final var httpSession = request.getHttpSession();
+		if (httpSession != null) {
+			config.getUserProperties().put(HttpSession.class.getName(), httpSession);
+		}
+	}
+
+
+
+	@Inject ContextTracker<ContainerCallContext> eventCtxTracker;
+	@Inject ContextTracker<WebsocketConnectionContext> connectionCtxTracker;
+
+	/**
 	 * Decorates each call to the supplied endpoint instance with setting up
 	 * {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
 	 */
-	static class EndpointDecorator implements InvocationHandler {
+	class EndpointDecorator implements InvocationHandler {
 
 		final InvocationHandler additionalEndpointDecorator;
 		WebsocketConnectionContext connectionCtx;
 		HttpSession httpSession;
 
-		@Inject ContextTracker<ContainerCallContext> eventCtxTracker;
-		@Inject ContextTracker<WebsocketConnectionContext> connectionCtxTracker;
+
+
+		EndpointDecorator(Object endpoint) {
+			additionalEndpointDecorator = getAdditionalDecorator(endpoint);
+		}
 
 
 
@@ -184,12 +202,6 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					}
 				)
 			);
-		}
-
-
-
-		EndpointDecorator(InvocationHandler additionalEndpointDecorator) {
-			this.additionalEndpointDecorator = additionalEndpointDecorator;
 		}
 	}
 
