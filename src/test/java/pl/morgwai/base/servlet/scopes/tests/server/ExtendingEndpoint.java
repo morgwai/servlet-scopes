@@ -3,14 +3,13 @@ package pl.morgwai.base.servlet.scopes.tests.server;
 
 import javax.websocket.server.ServerEndpoint;
 
-import pl.morgwai.base.servlet.guiced.utils.PingingServletContextListener
-		.PingingEndpointConfigurator;
+import pl.morgwai.base.servlet.scopes.GuiceServerEndpointConfigurator;
 
 
 
 @ServerEndpoint(
 		value = ExtendingEndpoint.PATH,
-		configurator = PingingEndpointConfigurator.class)
+		configurator = GuiceServerEndpointConfigurator.class)
 public class ExtendingEndpoint extends ProgrammaticEndpoint {
 
 	public static final String TYPE = "extending";
