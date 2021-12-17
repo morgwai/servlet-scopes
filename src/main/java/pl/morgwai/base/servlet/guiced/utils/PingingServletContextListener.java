@@ -4,11 +4,12 @@ package pl.morgwai.base.servlet.guiced.utils;
 import java.lang.reflect.InvocationHandler;
 
 import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletException;
+import javax.websocket.server.ServerEndpointConfig.Configurator;
 
 import pl.morgwai.base.servlet.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.scopes.GuiceServletContextListener;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
+
 
 
 /**
@@ -50,11 +51,11 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 	/**
-	 * Adds an endpoint using a {@link PingingEndpointConfigurator}.
+	 * Creates a {@link PingingEndpointConfigurator}.
 	 */
 	@Override
-	protected void addEndpoint(Class<?> endpointClass, String path) throws ServletException {
-		super.addEndpoint(endpointClass, path, new PingingEndpointConfigurator());
+	protected Configurator createWebsocketConfigurator() {
+		return new PingingEndpointConfigurator();
 	}
 
 

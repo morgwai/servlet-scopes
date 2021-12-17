@@ -158,14 +158,34 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Adds an endpoint using {@link GuiceServerEndpointConfigurator} that injects the dependencies
-	 * and sets up contexts.&nbsp;
+	 * Stores the result of {@link #createWebsocketConfigurator()} to be used by
+	 * {@link #addEndpoint(Class, String)}.
+	 */
+	protected Configurator configurator;
+
+	/**
+	 * Creates configurator to be used by {@link #addEndpoint(Class, String)}.
+	 * By default {@link GuiceServerEndpointConfigurator} that injects endpoints' dependencies
+	 * and sets up contexts.
+	 * <p>
+	 * This method is called once in {@link #contextInitialized(ServletContextEvent)}, the result is
+	 * stored as {@link #configurator} and shared among all created endpoint instances.</p>
+	 * <p>
+	 * Can be overridden by subclasses if another configurator needs to be used.</p>
+	 */
+	protected Configurator createWebsocketConfigurator() {
+		return new GuiceServerEndpointConfigurator();
+	}
+
+	/**
+	 * Adds an endpoint using {@link #configurator} (created by
+	 * {@link #createWebsocketConfigurator()}).
 	 * For use in {@link #configureServletsFiltersEndpoints()}.
 	 * <p>
 	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.</p>
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path) throws ServletException {
-		addEndpoint(endpointClass, path, new GuiceServerEndpointConfigurator());
+		addEndpoint(endpointClass, path, configurator);
 	}
 
 	/**
@@ -207,6 +227,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			modules.add(servletModule);
 			injector = createInjector(modules);
 			log.info("Guice injector created successfully");
+			configurator = createWebsocketConfigurator();
 
 			addFilter(RequestContextFilter.class.getSimpleName(), RequestContextFilter.class)
 					.addMappingForUrlPatterns(
