@@ -22,6 +22,8 @@ import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.matcher.ElementMatchers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
@@ -86,6 +88,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					.set(endpointProxy, endpointDecorator);
 			return endpointProxy;
 		} catch (Exception e) {
+			log.error("endpoint instantiation failed", e);
 			throw new InstantiationException(e.toString());
 		}
 	}
@@ -219,4 +222,9 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	static final String NO_SESSION_PARAM_MESSAGE =
 			"method annotated with @OnOpen must have a javax.websocket.Session param";
+
+
+
+	protected static final Logger log =
+			LoggerFactory.getLogger(GuiceServerEndpointConfigurator.class.getName());
 }
