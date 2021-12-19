@@ -78,12 +78,12 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			}
 		}
 		try {
-			final EndpointT endpoint = injector.getInstance(endpointClass);
 			@SuppressWarnings("unchecked")
 			final var proxyClass = (Class<? extends EndpointT>)
 					proxyClasses.computeIfAbsent(endpointClass, this::createProxyClass);
 			final EndpointT endpointProxy = super.getEndpointInstance(proxyClass);
-			final var endpointDecorator = new EndpointDecorator(endpoint);
+			final var endpointDecorator =
+					new EndpointDecorator(injector.getInstance(endpointClass));
 			proxyClass.getDeclaredField(PROXY_DECORATOR_FIELD_NAME)
 					.set(endpointProxy, endpointDecorator);
 			return endpointProxy;
@@ -183,7 +183,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					// this is most commonly toString() call from a debugger
 					return additionalEndpointDecorator.invoke(proxy, method, args);
 				}
-				if (wrappedConnection == null) throw new RuntimeException(NO_SESSION_PARAM_MESSAGE);
+				if (wrappedConnection == null) {
+					throw new RuntimeException("method annotated with @OnOpen must have a"
+							+ " javax.websocket.Session param");
+				}
 				final var userProperties = wrappedConnection.getUserProperties();
 				httpSession = (HttpSession) userProperties.get(HttpSession.class.getName());
 				connectionCtx = new WebsocketConnectionContext(
@@ -217,11 +220,6 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	protected InvocationHandler getAdditionalDecorator(Object endpoint) {
 		return (proxy, method, args) -> method.invoke(endpoint, args);
 	}
-
-
-
-	static final String NO_SESSION_PARAM_MESSAGE =
-			"method annotated with @OnOpen must have a javax.websocket.Session param";
 
 
 
