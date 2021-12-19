@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import pl.morgwai.base.servlet.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.scopes.tests.server.AnnotatedEndpoint;
 import pl.morgwai.base.servlet.scopes.tests.server.AsyncServlet;
 import pl.morgwai.base.servlet.scopes.tests.server.DispatchingServlet;
@@ -292,6 +293,45 @@ public class IntegrationTest {
 				connectionScopedHashes.add(annotatedEndpointResponses.get(0)[4]));
 		assertTrue("connection scoped object hash should change",
 				connectionScopedHashes.add(annotatedEndpointResponses.get(2)[4]));
+	}
+
+
+
+	@Test
+	public void getProxyClassNameSinglethreadedLoadTest() throws InstantiationException {
+		final var configurator = new GuiceServerEndpointConfigurator();
+		for (int i = 0; i < 1_000_000; i++) {
+			logEndpoint(configurator.getEndpointInstance(AnnotatedEndpoint.class));
+			logEndpoint(configurator.getEndpointInstance(ExtendingEndpoint.class));
+			logEndpoint(configurator.getEndpointInstance(ProgrammaticEndpoint.class));
+		}
+	}
+
+	@Test
+	public void getProxyClassNameMultithreadedLoadTest() throws InterruptedException {
+		final var configurator = new GuiceServerEndpointConfigurator();
+		final var threads = new Thread[100];
+		final var latch = new CountDownLatch(threads.length);
+		for (int i = 0; i < threads.length; i++) {
+			threads[i] = new Thread(() -> {
+				for (int j = 0; j < 10_000; j++) {
+					try {
+						logEndpoint(configurator.getEndpointInstance(AnnotatedEndpoint.class));
+						logEndpoint(configurator.getEndpointInstance(ExtendingEndpoint.class));
+						logEndpoint(configurator.getEndpointInstance(ProgrammaticEndpoint.class));
+					} catch (InstantiationException ignored) {}
+				}
+				latch.countDown();
+			});
+		}
+		for (int i = 0; i < threads.length; i++) {
+			threads[i].start();
+		}
+		latch.await();
+	}
+
+	void logEndpoint(Object endpoint) {
+		if (log.isLoggable(Level.FINEST)) log.finest(endpoint.getClass().getName());
 	}
 
 
