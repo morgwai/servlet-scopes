@@ -3,8 +3,6 @@ package pl.morgwai.base.servlet.scopes;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import javax.servlet.http.HttpSession;
 import javax.websocket.HandshakeResponse;
@@ -99,11 +97,41 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	@SuppressWarnings("unchecked")
 	<EndpointT> Class<? extends EndpointT> getProxyClass(Class<EndpointT> endpointClass) {
-		return (Class<? extends EndpointT>)
-				proxyClasses.computeIfAbsent(endpointClass, this::createProxyClass);
+		try {
+			return (Class<? extends EndpointT>) Class.forName(getProxyClassName(endpointClass));
+		} catch (ClassNotFoundException e) {
+			try {
+				return createProxyClass(endpointClass);
+			} catch (Exception classAlreadyExistsException) {
+				// 2 requests were trying to create the same proxy class simultaneously
+				try {
+					return (Class<? extends EndpointT>)
+							Class.forName(getProxyClassName(endpointClass));
+				} catch (ClassNotFoundException e2) {
+					throw new RuntimeException(e2);  // dead code
+				}
+			}
+		}
 	}
 
-	static final ConcurrentMap<Class<?>, Class<?>> proxyClasses = new ConcurrentHashMap<>();
+
+
+	static String getProxyClassName(Class<?> endpointClass) {
+		final var endpointClassName = endpointClass.getName();
+		final var proxyClassName = new StringBuilder(
+				PROXY_CLASS_NAME_PREFIX_LENGTH + endpointClassName.length());
+		proxyClassName.append(PROXY_CLASS_NAME_PREFIX).append(endpointClassName);
+		int indexOfDot = proxyClassName.indexOf(".", PROXY_CLASS_NAME_PREFIX_LENGTH + 1);
+		while (indexOfDot != -1) {
+			proxyClassName.setCharAt(indexOfDot, '_');
+			indexOfDot = proxyClassName.indexOf(".", indexOfDot + 2);
+		}
+		return proxyClassName.toString();
+	}
+
+	static final String PROXY_CLASS_NAME_PREFIX =
+			GuiceServerEndpointConfigurator.class.getPackageName() + ".ProxyFor_";
+	static final int PROXY_CLASS_NAME_PREFIX_LENGTH = PROXY_CLASS_NAME_PREFIX.length();
 
 
 
@@ -113,8 +141,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	<EndpointT> Class<? extends EndpointT> createProxyClass(Class<EndpointT> endpointClass) {
 		DynamicType.Builder<EndpointT> proxyClassBuilder = new ByteBuddy()
 			.subclass(endpointClass)
-			.name(GuiceServerEndpointConfigurator.class.getPackageName() + ".ProxyFor_"
-					+ endpointClass.getName().replace('.', '_'))
+			.name(getProxyClassName(endpointClass))
 			.defineField(
 					PROXY_DECORATOR_FIELD_NAME,
 					EndpointDecorator.class,
