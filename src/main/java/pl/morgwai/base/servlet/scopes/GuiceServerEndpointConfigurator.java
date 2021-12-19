@@ -78,9 +78,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			}
 		}
 		try {
-			@SuppressWarnings("unchecked")
-			final var proxyClass = (Class<? extends EndpointT>)
-					proxyClasses.computeIfAbsent(endpointClass, this::createProxyClass);
+			final var proxyClass = getProxyClass(endpointClass);
 			final EndpointT endpointProxy = super.getEndpointInstance(proxyClass);
 			final var endpointDecorator =
 					new EndpointDecorator(injector.getInstance(endpointClass));
@@ -93,8 +91,19 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		}
 	}
 
-	static final ConcurrentMap<Class<?>, Class<?>> proxyClasses = new ConcurrentHashMap<>();
+
+
 	static final String PROXY_DECORATOR_FIELD_NAME = "pl_morgwai_decorator";
+
+
+
+	@SuppressWarnings("unchecked")
+	<EndpointT> Class<? extends EndpointT> getProxyClass(Class<EndpointT> endpointClass) {
+		return (Class<? extends EndpointT>)
+				proxyClasses.computeIfAbsent(endpointClass, this::createProxyClass);
+	}
+
+	static final ConcurrentMap<Class<?>, Class<?>> proxyClasses = new ConcurrentHashMap<>();
 
 
 
