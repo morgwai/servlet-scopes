@@ -53,7 +53,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 * Creates a {@link PingingEndpointConfigurator}.
 	 */
 	@Override
-	protected GuiceServerEndpointConfigurator createWebsocketConfigurator() {
+	protected GuiceServerEndpointConfigurator createEndpointConfigurator() {
 		return new PingingEndpointConfigurator();
 	}
 

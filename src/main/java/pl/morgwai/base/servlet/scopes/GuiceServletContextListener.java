@@ -85,7 +85,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	/**
 	 * For use in {@link #configureServletsFiltersEndpoints()}.
 	 */
-	protected ServerContainer websocketContainer;
+	protected ServerContainer endpointContainer;
 
 
 
@@ -158,10 +158,10 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Stores the result of {@link #createWebsocketConfigurator()} to be used by
+	 * Stores the result of {@link #createEndpointConfigurator()} to be used by
 	 * {@link #addEndpoint(Class, String)}.
 	 */
-	protected GuiceServerEndpointConfigurator configurator;
+	protected GuiceServerEndpointConfigurator endpointConfigurator;
 
 	/**
 	 * Creates configurator to be used by {@link #addEndpoint(Class, String)}.
@@ -169,17 +169,17 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * and sets up contexts.
 	 * <p>
 	 * This method is called once in {@link #contextInitialized(ServletContextEvent)}, the result is
-	 * stored as {@link #configurator} and shared among all created endpoint instances.</p>
+	 * stored as {@link #endpointConfigurator} and shared among all created endpoint instances.</p>
 	 * <p>
 	 * Can be overridden by subclasses if another configurator needs to be used.</p>
 	 */
-	protected GuiceServerEndpointConfigurator createWebsocketConfigurator() {
+	protected GuiceServerEndpointConfigurator createEndpointConfigurator() {
 		return new GuiceServerEndpointConfigurator();
 	}
 
 	/**
-	 * Adds an endpoint using {@link #configurator} (created by
-	 * {@link #createWebsocketConfigurator()}).
+	 * Adds an endpoint using {@link #endpointConfigurator} (created by
+	 * {@link #createEndpointConfigurator()}).
 	 * For use in {@link #configureServletsFiltersEndpoints()}.
 	 * <p>
 	 * Creates dynamic proxy class for {@code endpointClass} in advance.</p>
@@ -187,8 +187,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.</p>
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path) throws ServletException {
-		addEndpoint(endpointClass, path, configurator);
-		configurator.getProxyClass(endpointClass);
+		addEndpoint(endpointClass, path, endpointConfigurator);
+		endpointConfigurator.getProxyClass(endpointClass);
 	}
 
 	/**
@@ -199,7 +199,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	protected void addEndpoint(Class<?> endpointClass, String path, Configurator configurator)
 			throws ServletException {
 		try {
-			websocketContainer.addEndpoint(
+			endpointContainer.addEndpoint(
 				ServerEndpointConfig.Builder
 					.create(endpointClass, path)
 					.configurator(configurator)
@@ -222,7 +222,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	public final void contextInitialized(ServletContextEvent initializationEvent) {
 		try {
 			servletContainer = initializationEvent.getServletContext();
-			websocketContainer = ((ServerContainer) servletContainer.getAttribute(
+			endpointContainer = ((ServerContainer) servletContainer.getAttribute(
 					"javax.websocket.server.ServerContainer"));
 			servletContainer.addListener(new ContainerCallContext.SessionContextCreator());
 
@@ -230,12 +230,11 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			modules.add(servletModule);
 			injector = createInjector(modules);
 			log.info("Guice injector created successfully");
-			configurator = createWebsocketConfigurator();
 
 			addFilter(RequestContextFilter.class.getSimpleName(), RequestContextFilter.class)
 					.addMappingForUrlPatterns(
 							EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC), false, "/*");
-
+			endpointConfigurator = createEndpointConfigurator();
 			configureServletsFiltersEndpoints();
 		} catch (ServletException e) {
 			log.error("could not start the server", e);
