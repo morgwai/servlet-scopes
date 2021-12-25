@@ -5,19 +5,19 @@ import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.DispatcherType;
-import javax.servlet.Filter;
-import javax.servlet.FilterRegistration;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRegistration;
-import javax.servlet.http.HttpServlet;
-import javax.websocket.DeploymentException;
-import javax.websocket.server.ServerContainer;
-import javax.websocket.server.ServerEndpointConfig;
-import javax.websocket.server.ServerEndpointConfig.Configurator;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterRegistration;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRegistration;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.websocket.DeploymentException;
+import jakarta.websocket.server.ServerContainer;
+import jakarta.websocket.server.ServerEndpointConfig;
+import jakarta.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Creates and configures {@link #getInjector() app wide Guice injector} and {@link ServletModule}.
  * A single subclass of this class must be created and either annotated with
- * {@link javax.servlet.annotation.WebListener @WebListener} or enlisted in
+ * {@link jakarta.servlet.annotation.WebListener @WebListener} or enlisted in
  * <code>web.xml</code> file in <code>listener</code> element.
  */
 public abstract class GuiceServletContextListener implements ServletContextListener {
@@ -184,7 +184,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * <p>
 	 * Creates dynamic proxy class for {@code endpointClass} in advance.</p>
 	 * <p>
-	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.</p>
+	 * Useful mostly for unannotated endpoints extending {@link jakarta.websocket.Endpoint}.</p>
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path) throws ServletException {
 		addEndpoint(endpointClass, path, endpointConfigurator);
@@ -194,7 +194,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	/**
 	 * Adds an endpoint using custom {@code configurator}.
 	 * <p>
-	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.</p>
+	 * Useful mostly for unannotated endpoints extending {@link jakarta.websocket.Endpoint}.</p>
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path, Configurator configurator)
 			throws ServletException {
@@ -223,7 +223,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		try {
 			servletContainer = initializationEvent.getServletContext();
 			endpointContainer = ((ServerContainer) servletContainer.getAttribute(
-					"javax.websocket.server.ServerContainer"));
+					"jakarta.websocket.server.ServerContainer"));
 			servletContainer.addListener(new ContainerCallContext.SessionContextCreator());
 
 			final var modules = configureInjections();

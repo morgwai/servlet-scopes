@@ -3,7 +3,7 @@ package pl.morgwai.base.servlet.guiced.utils;
 
 import java.lang.reflect.InvocationHandler;
 
-import javax.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextEvent;
 
 import pl.morgwai.base.servlet.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.scopes.GuiceServletContextListener;

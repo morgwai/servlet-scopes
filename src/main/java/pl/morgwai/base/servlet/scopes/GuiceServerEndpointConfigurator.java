@@ -6,13 +6,13 @@ import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import javax.servlet.http.HttpSession;
-import javax.websocket.HandshakeResponse;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
-import javax.websocket.server.HandshakeRequest;
-import javax.websocket.server.ServerEndpoint;
-import javax.websocket.server.ServerEndpointConfig;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.HandshakeResponse;
+import jakarta.websocket.OnOpen;
+import jakarta.websocket.Session;
+import jakarta.websocket.server.HandshakeRequest;
+import jakarta.websocket.server.ServerEndpoint;
+import jakarta.websocket.server.ServerEndpointConfig;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -194,7 +194,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				}
 				if (wrappedConnection == null) {
 					throw new RuntimeException("method annotated with @OnOpen must have a"
-							+ " javax.websocket.Session param");
+							+ " jakarta.websocket.Session param");
 				}
 				final var userProperties = wrappedConnection.getUserProperties();
 				httpSession = (HttpSession) userProperties.get(HttpSession.class.getName());
