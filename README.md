@@ -78,7 +78,7 @@ public class ServletContextListener extends GuiceServletContextListener {  // ..
 	configurator = GuiceServerEndpointConfigurator.class)  // ...or PingingEndpointConfigurator
 public class MyEndpoint {
 
-	@Inject Service service;
+	@Inject Provider<MyService> myServiceProvider;
 
 	// endpoint implementation here...
 }
