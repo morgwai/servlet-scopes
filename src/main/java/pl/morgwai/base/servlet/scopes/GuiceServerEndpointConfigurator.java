@@ -91,11 +91,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		}
 	}
 
-
-
 	static final String PROXY_DECORATOR_FIELD_NAME = "pl_morgwai_decorator";
-
-
 
 	@SuppressWarnings("unchecked")
 	<EndpointT> Class<? extends EndpointT> getProxyClass(Class<EndpointT> endpointClass) {
@@ -104,8 +100,6 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	}
 
 	static final ConcurrentMap<Class<?>, Class<?>> proxyClasses = new ConcurrentHashMap<>();
-
-
 
 	/**
 	 * Creates dynamic proxy class that delegates calls to the associated {@link EndpointDecorator}.
