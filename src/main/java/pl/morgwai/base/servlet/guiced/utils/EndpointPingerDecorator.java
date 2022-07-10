@@ -18,6 +18,7 @@ import static pl.morgwai.base.servlet.utils.EndpointUtils.*;
  * For use with {@link
  * pl.morgwai.base.servlet.scopes.GuiceServerEndpointConfigurator#getAdditionalDecorator(Object)}.
  *
+ * @see PingingEndpointConfigurator
  * @see PingingServletContextListener
  */
 public class EndpointPingerDecorator implements InvocationHandler {

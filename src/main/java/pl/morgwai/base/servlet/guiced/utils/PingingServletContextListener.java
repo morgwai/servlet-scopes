@@ -1,8 +1,6 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guiced.utils;
 
-import java.lang.reflect.InvocationHandler;
-
 import javax.servlet.ServletContextEvent;
 
 import pl.morgwai.base.servlet.scopes.GuiceServerEndpointConfigurator;
@@ -38,13 +36,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 
-	/**
-	 * Stops the associated {@link WebsocketPingerService}.
-	 */
-	@Override
-	public void contextDestroyed(ServletContextEvent destructionEvent) {
-		pingerService.stop();
-		super.contextDestroyed(destructionEvent);
+	public PingingServletContextListener() {
+		PingingEndpointConfigurator.setPingerService(pingerService);
 	}
 
 
@@ -60,22 +53,11 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 	/**
-	 * Automatically registers and deregisters created endpoints to the
-	 * {@link WebsocketPingerService} of the {@link PingingServletContextListener}.
+	 * Stops the associated {@link WebsocketPingerService}.
 	 */
-	public static class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator {
-
-		@Override
-		protected InvocationHandler getAdditionalDecorator(Object endpoint) {
-			return new EndpointPingerDecorator(endpoint, staticPingerService);
-		}
+	@Override
+	public void contextDestroyed(ServletContextEvent destructionEvent) {
+		pingerService.stop();
+		super.contextDestroyed(destructionEvent);
 	}
-
-	public PingingServletContextListener() {
-		// ugly hack as PingingEndpointConfigurator must be static in order to be usable as
-		// configurator class in @ServerEndpoint.
-		staticPingerService = pingerService;
-	}
-
-	static WebsocketPingerService staticPingerService;
 }
