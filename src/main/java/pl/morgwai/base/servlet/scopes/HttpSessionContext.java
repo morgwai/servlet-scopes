@@ -3,14 +3,14 @@ package pl.morgwai.base.servlet.scopes;
 
 import javax.servlet.http.HttpSession;
 
-import pl.morgwai.base.guice.scopes.ServerSideContext;
+import pl.morgwai.base.guice.scopes.InjectionContext;
 
 
 
 /**
  * Context of a {@link HttpSession}.
  */
-public class HttpSessionContext extends ServerSideContext {
+public class HttpSessionContext extends InjectionContext {
 
 
 
