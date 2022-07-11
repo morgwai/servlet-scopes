@@ -20,20 +20,9 @@ import javax.websocket.WebSocketContainer;
 
 import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
 import org.eclipse.jetty.websocket.javax.common.JavaxWebSocketContainer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
-import pl.morgwai.base.servlet.scopes.tests.server.AnnotatedEndpoint;
-import pl.morgwai.base.servlet.scopes.tests.server.AsyncServlet;
-import pl.morgwai.base.servlet.scopes.tests.server.DispatchingServlet;
-import pl.morgwai.base.servlet.scopes.tests.server.EchoEndpoint;
-import pl.morgwai.base.servlet.scopes.tests.server.ExtendingEndpoint;
-import pl.morgwai.base.servlet.scopes.tests.server.ProgrammaticEndpoint;
-import pl.morgwai.base.servlet.scopes.tests.server.ServletContextListener;
-import pl.morgwai.base.servlet.scopes.tests.server.TestServer;
-import pl.morgwai.base.servlet.scopes.tests.server.TestServlet;
+import pl.morgwai.base.servlet.scopes.tests.server.*;
 
 import static org.junit.Assert.*;
 import static pl.morgwai.base.servlet.scopes.tests.server.AsyncServlet.*;
