@@ -28,7 +28,7 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 	/**
 	 * Sets the {@link WebsocketPingerService} to be used. Must be called in {@link
 	 * javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)}
-	 * or in listener's constructor. This is static for this configurator to be usable in
+	 * or in listener's constructor. This must be static for this configurator to be usable in
 	 * {@link javax.websocket.server.ServerEndpoint ServerEndpoint} annotations.
 	 */
 	public static void setPingerService(WebsocketPingerService pingerService) {

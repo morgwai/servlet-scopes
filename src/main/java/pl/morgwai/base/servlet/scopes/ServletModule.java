@@ -15,8 +15,8 @@ import pl.morgwai.base.guice.scopes.*;
 
 
 /**
- * Servlet and websocket Guice {@link Scope}s, {@link ContextTracker}s and some helper methods.
- * A single app-wide instance is created at app startup:
+ * Contains servlet and websocket Guice {@link Scope}s, {@link ContextTracker}s and some helper
+ * methods. A single app-wide instance is created at app startup:
  * {@link GuiceServletContextListener#servletModule}.
  */
 public class ServletModule implements Module {

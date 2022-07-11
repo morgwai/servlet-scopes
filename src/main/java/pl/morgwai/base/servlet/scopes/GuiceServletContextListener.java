@@ -21,8 +21,8 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * Creates and configures {@link #getInjector() app wide Guice injector} and {@link ServletModule}.
- * A single subclass of this class must be created and either annotated with
+ * Creates and configures {@link #getInjector() app wide Guice injector} and a
+ * {@link ServletModule}. A single subclass of this class must be created and either annotated with
  * {@link javax.servlet.annotation.WebListener @WebListener} or enlisted in
  * <code>web.xml</code> file in <code>listener</code> element.
  */

@@ -28,11 +28,12 @@ import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnOpen;
 
 
 /**
- * Automatically sets up {@link WebsocketConnectionContext} &amp; {@link ContainerCallContext} and
- * injects dependencies of endpoint instances.
+ * Automatically injects dependencies of endpoint instances and ensures that lifecycle methods of
+ * the created endpoints are executed within {@link WebsocketConnectionContext} and
+ * {@link ContainerCallContext}.
  * <p>
- * For endpoints annotated with @{@link ServerEndpoint} add this class as
- * {@link ServerEndpoint#configurator() configurator} param:</p>
+ * For endpoints annotated with @{@link ServerEndpoint}, this class must be used as
+ * {@link ServerEndpoint#configurator() configurator} param of the annotation:</p>
  * <pre>
  * &commat;ServerEndpoint(
  *     value = "/websocket/mySocket",
@@ -41,8 +42,9 @@ import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnOpen;
  * <p>
  * <b>NOTE:</b> methods annotated with @{@link OnOpen} <b>must</b> have a {@link Session} param.</p>
  * <p>
- * For endpoints added programmatically, build a {@link ServerEndpointConfig} similar to the below:
- * </p><pre>
+ * For endpoints added programmatically, a {@link ServerEndpointConfig} similar to the below should
+ * be used:</p>
+ * <pre>
  * websocketContainer.addEndpoint(ServerEndpointConfig.Builder
  *         .create(MyEndpoint.class, "/websocket/mySocket")
  *         .configurator(new GuiceServerEndpointConfigurator())
@@ -57,9 +59,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	/**
-	 * Creates an {@code endpointClass} instance and a proxy for it.
-	 * @return proxy that sets up {@link ContainerCallContext} and
-	 * {@link WebsocketConnectionContext} for a new underlying instance of {@code endpointClass}.
+	 * Creates a new {@code endpointClass} instance and a proxy for it. Injects dependencies of
+	 * the newly created endpoint. The proxy ensures that endpoint's lifecycle methods are
+	 * executed within {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
+	 * @return a proxy for a new {@code endpointClass} instance.
 	 */
 	@Override
 	public <EndpointT> EndpointT getEndpointInstance(Class<EndpointT> endpointClass)
@@ -98,7 +101,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	static final ConcurrentMap<Class<?>, Class<?>> proxyClasses = new ConcurrentHashMap<>();
 
 	/**
-	 * Creates dynamic proxy class that delegates calls to the associated {@link EndpointDecorator}.
+	 * Creates a dynamic proxy class that delegates calls to the associated
+	 * {@link EndpointDecorator}.
 	 */
 	<EndpointT> Class<? extends EndpointT> createProxyClass(Class<EndpointT> endpointClass) {
 		DynamicType.Builder<EndpointT> proxyClassBuilder = new ByteBuddy()
@@ -123,7 +127,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	/**
-	 * Stores {@link HttpSession} in user properties.
+	 * Stores into the user properties the {@link HttpSession} associated with the {@code request}.
 	 */
 	@Override
 	public void modifyHandshake(
@@ -140,7 +144,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	@Inject ContextTracker<WebsocketConnectionContext> connectionCtxTracker;
 
 	/**
-	 * Decorates each call to the supplied endpoint instance with setting up
+	 * Executes each call to the supplied endpoint instance within
 	 * {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
 	 */
 	class EndpointDecorator implements InvocationHandler {
@@ -193,7 +197,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				userProperties.put(WebsocketConnectionContext.class.getName(), connectionCtx);
 			}
 
-			// run original endpoint method within both contexts
+			// execute the original endpoint method within both contexts
 			return connectionCtx.executeWithinSelf(
 				() -> new WebsocketEventContext(httpSession, eventCtxTracker).executeWithinSelf(
 					() -> {
