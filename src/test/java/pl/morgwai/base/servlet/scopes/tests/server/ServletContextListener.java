@@ -26,7 +26,8 @@ public class ServletContextListener extends PingingServletContextListener {
 	public static final String WEBSOCKET_CONNECTION = "wsConnection";
 	public static final String HTTP_SESSION = "httpSession";
 
-	ContextTrackingExecutor executor = servletModule.newContextTrackingExecutor("testExecutor", 2);
+	final ContextTrackingExecutor executor =
+			servletModule.newContextTrackingExecutor("testExecutor", 2);
 
 
 
@@ -60,8 +61,8 @@ public class ServletContextListener extends PingingServletContextListener {
 				DispatchingServlet.class.getSimpleName(),
 				DispatchingServlet.class,
 				DispatchingServlet.PATH);
-		addServlet("IndexPageServlet", ResouceServlet.class, "", "/index.html")
-				.setInitParameter(ResouceServlet.RESOURCE_PATH_PARAM, "/index.html");
+		addServlet("IndexPageServlet", ResourceServlet.class, "", "/index.html")
+				.setInitParameter(ResourceServlet.RESOURCE_PATH_PARAM, "/index.html");
 		addServlet(
 				WebsocketPageServlet.class.getSimpleName(),
 				WebsocketPageServlet.class,

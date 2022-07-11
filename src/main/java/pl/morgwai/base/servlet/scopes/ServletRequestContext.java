@@ -11,7 +11,7 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 /**
  * Context of a {@link HttpServletRequest}.
  * <p>
- * Note: this context is transfered automatically when
+ * Note: this context is transferred automatically when
  * {@link javax.servlet.AsyncContext#dispatch(String) dispatching from AsyncContext}.</p>
  *
  * @see ContainerCallContext super class for more info

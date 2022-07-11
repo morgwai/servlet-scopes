@@ -10,12 +10,12 @@ import javax.servlet.http.*;
 
 
 @SuppressWarnings("serial")
-public class ResouceServlet extends HttpServlet {
+public class ResourceServlet extends HttpServlet {
 
 
 
 	public static final String RESOURCE_PATH_PARAM =
-			ResouceServlet.class.getName() + ".resourcePath";
+			ResourceServlet.class.getName() + ".resourcePath";
 
 
 
@@ -42,7 +42,7 @@ public class ResouceServlet extends HttpServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+			throws IOException {
 		try (
 			final var output = response.getOutputStream();
 		) {

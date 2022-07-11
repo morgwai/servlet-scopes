@@ -104,7 +104,7 @@ class WebsocketConnectionWrapper implements Session {
 
 	static abstract class MessageHandlerWrapper implements MessageHandler {
 
-		MessageHandler wrapped;
+		final MessageHandler wrapped;
 
 		@Override
 		public boolean equals(Object other) {
@@ -125,7 +125,7 @@ class WebsocketConnectionWrapper implements Session {
 	class WholeMessageHandlerWrapper<T>
 			extends MessageHandlerWrapper implements MessageHandler.Whole<T> {
 
-		MessageHandler.Whole<T> wrapped;
+		final MessageHandler.Whole<T> wrapped;
 
 		@Override
 		public void onMessage(T message) {
@@ -145,7 +145,7 @@ class WebsocketConnectionWrapper implements Session {
 	class PartialMessageHandlerWrapper<T>
 			extends MessageHandlerWrapper implements MessageHandler.Partial<T> {
 
-		MessageHandler.Partial<T> wrapped;
+		final MessageHandler.Partial<T> wrapped;
 
 		@Override
 		public void onMessage(T message, boolean last) {

@@ -21,10 +21,6 @@ class ClientEndpoint extends Endpoint {
 
 
 
-	public ClientEndpoint(Whole<String> messageHandler) {
-		this(messageHandler, null);
-	}
-
 	public ClientEndpoint(Whole<String> messageHandler, BiConsumer<Session, Throwable> errorHandler)
 	{
 		this.messageHandler = messageHandler;

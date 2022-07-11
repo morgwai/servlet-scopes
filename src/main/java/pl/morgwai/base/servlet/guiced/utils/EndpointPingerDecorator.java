@@ -25,8 +25,8 @@ public class EndpointPingerDecorator implements InvocationHandler {
 
 
 
-	Object endpoint;
-	WebsocketPingerService pingerService;
+	final Object endpoint;
+	final WebsocketPingerService pingerService;
 
 	public EndpointPingerDecorator(Object endpoint, WebsocketPingerService pingerService) {
 		this.endpoint = endpoint;

@@ -4,14 +4,13 @@ package pl.morgwai.base.servlet.scopes.tests.server;
 import java.io.IOException;
 
 import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 
 
 @SuppressWarnings("serial")
-public class WebsocketPageServlet extends ResouceServlet {
+public class WebsocketPageServlet extends ResourceServlet {
 
 
 
@@ -24,7 +23,7 @@ public class WebsocketPageServlet extends ResouceServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+			throws IOException {
 		final var type = request.getParameter(TYPE_PARAM);
 		if (type == null) {
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "type param missing");

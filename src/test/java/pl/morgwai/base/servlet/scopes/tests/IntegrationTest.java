@@ -166,7 +166,7 @@ public class IntegrationTest {
 				messages.get(0)[3], messages.get(1)[3]);
 		assertEquals("connection scoped object hash should remain the same",
 				messages.get(0)[4], messages.get(1)[4]);
-		assertNotEquals("evemt scoped object hash should change",
+		assertNotEquals("event scoped object hash should change",
 				messages.get(0)[2], messages.get(1)[2]);
 		return messages;
 	}
