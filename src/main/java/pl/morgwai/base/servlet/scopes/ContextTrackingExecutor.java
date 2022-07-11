@@ -89,8 +89,7 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 	 *     {@link ServletModule} are shutdown automatically at app shutdown.
 	 */
 	@Override @Deprecated
-	public Optional<List<Runnable>> enforceTermination(long timeout, TimeUnit unit)
-			throws InterruptedException {
+	public Optional<List<Runnable>> enforceTermination(long timeout, TimeUnit unit) {
 		throw new RuntimeException(
 				"executors obtained from ServletModule are shutdown automatically at app shutdown");
 	}
@@ -107,10 +106,6 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 
 	void shutdownInternal() {
 		super.shutdown();
-	}
-
-	List<Runnable> shutdownNowInternal() {
-		return super.shutdownNow();
 	}
 
 

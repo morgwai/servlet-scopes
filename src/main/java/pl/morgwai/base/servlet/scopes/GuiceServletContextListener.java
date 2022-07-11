@@ -3,7 +3,7 @@ package pl.morgwai.base.servlet.scopes;
 
 import java.util.EnumSet;
 import java.util.LinkedList;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServlet;
@@ -249,8 +249,9 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	@Override
 	public void contextDestroyed(ServletContextEvent destructionEvent) {
-		servletModule.shutdownAndEnforceTerminationOfAllExecutors(
-				getExecutorsShutdownTimeoutSeconds(), TimeUnit.SECONDS);
+		var uncleanlyTerminated = servletModule.shutdownAndEnforceTerminationOfAllExecutors(
+				getExecutorsShutdownTimeoutSeconds());
+		handleUncleanExecutorTerminations(uncleanlyTerminated);
 	}
 
 	/**
@@ -258,6 +259,12 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * By default 5 seconds.
 	 */
 	protected int getExecutorsShutdownTimeoutSeconds() { return 5; }
+
+	/**
+	 * Subclasses may override this method to examine the executors that failed to shutdown cleanly.
+	 * By default does nothing.
+	 */
+	protected void handleUncleanExecutorTerminations(List<ContextTrackingExecutor> executors) {}
 
 
 

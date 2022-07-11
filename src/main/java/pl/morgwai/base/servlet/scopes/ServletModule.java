@@ -203,12 +203,12 @@ public class ServletModule implements Module {
 
 	@SuppressWarnings("unchecked")
 	List<ContextTrackingExecutor> shutdownAndEnforceTerminationOfAllExecutors(
-			long timeout, TimeUnit unit) {
+			int timeoutSeconds) {
 		for (var executor: executors) executor.shutdownInternal();
 		try {
 			return Awaitable.awaitMultiple(
-					timeout,
-					unit,
+					timeoutSeconds,
+					TimeUnit.SECONDS,
 					ContextTrackingExecutor::awaitableOfEnforceTermination,
 					executors);
 		} catch (AwaitInterruptedException e) {
