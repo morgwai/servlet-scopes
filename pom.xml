@@ -10,7 +10,7 @@
 
 	<groupId>pl.morgwai.base</groupId>
 	<artifactId>servlet-scopes</artifactId>
-	<version>8.0-javax</version><!--jakarta-->
+	<version>8.0-jakarta</version>
 
 	<name>Servlet and Websocket Guice Scopes</name>
 	<description>Servlet and websocket Guice scopes, that are automatically transferred when dispatching work to other threads</description>
@@ -90,7 +90,7 @@
 		<profile>
 			<id>javax</id>
 			<activation>
-				<activeByDefault>true</activeByDefault><!--jakarta:<activeByDefault>false</activeByDefault>-->
+				<activeByDefault>false</activeByDefault>
 			</activation>
 			<dependencies>
 				<dependency>
@@ -133,7 +133,7 @@
 		<profile>
 			<id>jakarta</id>
 			<activation>
-				<activeByDefault>false</activeByDefault><!--jakarta:<activeByDefault>true</activeByDefault>-->
+				<activeByDefault>true</activeByDefault>
 			</activation>
 			<dependencies>
 				<dependency>
@@ -237,7 +237,7 @@
 					<links>
 						<link>https://javadoc.io/doc/pl.morgwai.base/guice-context-scopes/${guice.scopes.version}</link>
 						<link>https://javadoc.io/doc/pl.morgwai.base/java-utils/${utils.version}</link>
-						<link>https://javadoc.io/doc/pl.morgwai.base/servlet-utils/${servlet.utils.version}-javax</link><!--jakarta-->
+						<link>https://javadoc.io/doc/pl.morgwai.base/servlet-utils/${servlet.utils.version}-jakarta</link>
 						<link>https://google.github.io/guice/api-docs/${guice.version}/javadoc</link>
 						<link>https://javadoc.io/doc/javax.websocket/javax.websocket-api/1.1</link>
 						<link>https://javadoc.io/doc/jakarta.websocket/jakarta.websocket-api/2.0.0</link>
@@ -255,8 +255,8 @@
 							<location>${settings.localRepository}/pl/morgwai/base/java-utils/${utils.version}</location>
 						</offlineLink>
 						<offlineLink>
-							<url>https://javadoc.io/doc/pl.morgwai.base/servlet-utils/${servlet.utils.version}-javax</url><!--jakarta-->
-							<location>${settings.localRepository}/pl/morgwai/base/servlet-utils/${servlet.utils.version}-javax</location><!--jakarta-->
+							<url>https://javadoc.io/doc/pl.morgwai.base/servlet-utils/${servlet.utils.version}-jakarta</url>
+							<location>${settings.localRepository}/pl/morgwai/base/servlet-utils/${servlet.utils.version}-jakarta</location>
 						</offlineLink>
 						<offlineLink>
 							<url>https://google.github.io/guice/api-docs/${guice.version}/javadoc</url>
