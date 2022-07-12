@@ -44,7 +44,7 @@
 		<guice.scopes.version>6.0</guice.scopes.version>
 		<utils.version>1.9</utils.version>
 		<servlet.utils.version>1.4</servlet.utils.version>
-		<guice.version>5.0.1</guice.version>
+		<guice.version>5.1.0</guice.version>
 	</properties>
 
 	<dependencies>
@@ -144,7 +144,7 @@
 				<dependency>
 					<groupId>com.guicedee.services</groupId>
 					<artifactId>guice</artifactId>
-					<version>1.1.1.7</version>
+					<version>1.2.2.1</version>
 					<optional>true</optional>
 				</dependency>
 				<dependency>
