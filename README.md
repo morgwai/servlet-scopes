@@ -52,35 +52,35 @@ Subclass of `GuiceServletContextListener` that additionally automatically regist
 @WebListener
 public class ServletContextListener extends GuiceServletContextListener {  // ...or PingingServletContextListener
 
-	@Override
-	protected LinkedList<Module> configureInjections() {
-		LinkedList<Module> modules = new LinkedList<Module>();
-		modules.add((binder) -> {
-			binder.bind(MyService.class).in(servletModule.containerCallScope);
-				// @Inject Provider<MyService> myServiceProvider;
-				// will now work both in servlets and endpoints
-			// more bindings here...
-		});
-		return modules;
-	}
+    @Override
+    protected LinkedList<Module> configureInjections() {
+        LinkedList<Module> modules = new LinkedList<Module>();
+        modules.add((binder) -> {
+            binder.bind(MyService.class).in(servletModule.containerCallScope);
+                // @Inject Provider<MyService> myServiceProvider;
+                // will now work both in servlets and endpoints
+            // more bindings here...
+        });
+        return modules;
+    }
 
-	@Override
-	protected void configureServletsFiltersEndpoints() throws ServletException {
-		addServlet("myServlet", MyServlet.class, "/myServlet");  // will have its fields injected
-		// more servlets / filters / unannotated endpoints here...
-	}
+    @Override
+    protected void configureServletsFiltersEndpoints() throws ServletException {
+        addServlet("myServlet", MyServlet.class, "/myServlet");  // will have its fields injected
+        // more servlets / filters / unannotated endpoints here...
+    }
 }
 ```
 
 ```java
 @ServerEndpoint(
-	value = "/websocket/mySocket",
-	configurator = GuiceServerEndpointConfigurator.class)  // ...or PingingEndpointConfigurator
+    value = "/websocket/mySocket",
+    configurator = GuiceServerEndpointConfigurator.class)  // ...or PingingEndpointConfigurator
 public class MyEndpoint {
 
-	@Inject Provider<MyService> myServiceProvider;
+    @Inject Provider<MyService> myServiceProvider;
 
-	// endpoint implementation here...
+    // endpoint implementation here...
 }
 // MyEndpoint will have its fields injected. Methods onOpen, onClose, onError and registered
 // MessageHandlers will run within containerCallScope, websocketConnectionScope and httpSessionScope
