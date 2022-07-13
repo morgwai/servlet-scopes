@@ -67,12 +67,19 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	@Override
 	public <EndpointT> EndpointT getEndpointInstance(Class<EndpointT> endpointClass)
 			throws InstantiationException {
+		var injector = this.injector;
 		if (injector == null) {
-			// not in constructor as annotated endpoints create configurator before injector
+			// injector initialization cannot be done in constructor as annotated endpoints may
+			// create configurator before injector is created in contextInitialized(...).
+			// getEndpointInstance(...) however is never called before contextInitialized(...).
+			// getEndpointInstance(...) may be called by a big number of concurrent threads and
+			// injector.injectMembers(this) may be slow, so double-checked locking is used.
 			synchronized (this) {
+				injector = this.injector;
 				if (injector == null) {
 					injector = GuiceServletContextListener.getInjector();
 					injector.injectMembers(this);
+					this.injector = injector; //must be the last statement in the synchronized block
 				}
 			}
 		}
