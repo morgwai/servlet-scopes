@@ -50,7 +50,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 	/**
-	 * Creates a {@link PingingEndpointConfigurator}.
+	 * Overrides default configurator used by {@link #addEndpoint(Class, String)} to be a
+	 * {@link PingingEndpointConfigurator}.
 	 */
 	@Override
 	protected GuiceServerEndpointConfigurator createEndpointConfigurator() {
