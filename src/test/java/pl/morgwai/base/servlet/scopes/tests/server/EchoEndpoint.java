@@ -1,9 +1,9 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.scopes.tests.server;
 
-import javax.websocket.EndpointConfig;
-import javax.websocket.RemoteEndpoint.Async;
-import javax.websocket.Session;
+import jakarta.websocket.EndpointConfig;
+import jakarta.websocket.RemoteEndpoint.Async;
+import jakarta.websocket.Session;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
