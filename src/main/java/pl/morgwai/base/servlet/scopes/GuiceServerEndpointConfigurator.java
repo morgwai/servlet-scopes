@@ -72,8 +72,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			// injector initialization cannot be done in constructor as annotated endpoints may
 			// create configurator before injector is created in contextInitialized(...).
 			// getEndpointInstance(...) however is never called before contextInitialized(...).
-			// getEndpointInstance(...) may be called by a big number of concurrent threads and
-			// injector.injectMembers(this) may be slow, so double-checked locking is used.
+			// this method may be called by a big number of concurrent threads (for example when all
+			// clients reconnect after a network glitch), so double-checked locking is used.
 			synchronized (this) {
 				injector = this.injector;
 				if (injector == null) {
@@ -224,8 +224,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	/**
-	 * Subclasses may override this method to further customize endpoints. By default it returns a
-	 * handler that simply invokes a given method on <code>endpoint</code>.
+	 * Subclasses may override this method to further customize endpoints.
+	 * {@link InvocationHandler#invoke(Object, Method, Object[])} method of the returned handler
+	 * will be executed within {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
+	 * By default it returns a handler that simply invokes a given method on {@code endpoint}.
 	 */
 	protected InvocationHandler getAdditionalDecorator(Object endpoint) {
 		return (proxy, method, args) -> method.invoke(endpoint, args);
