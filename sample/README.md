@@ -13,7 +13,7 @@ Few trivial servlets and websockets to test basic functionality of `servlet-scop
 ### Build and run
 1. build the project with `./mvnw package`
 1. start either stand-alone or embedded Jetty:
-    - embedded: `java -server -jar target/servlet-scopes-sample-1.0-SNAPSHOT-jar-withependencies.jar`
+    - embedded: `java -server -jar target/servlet-scopes-sample-1.0-SNAPSHOT-jar-with-dependencies.jar`
     - stand-alone: `cd src/main/jetty/ && java -server -jar ${JETTY_HOME}/start.jar ; cd -`
 1. point your browser to [http://localhost:8080/test](http://localhost:8080/test) to use the apps
 1. when done, you can stop the server by pressing `CTRL+C` on its console or sending it `SIGINT` other way
