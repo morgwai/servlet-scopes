@@ -20,26 +20,31 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 	final WebsocketPingerService pingerService = new WebsocketPingerService(
-			getPingIntervalSeconds(), getMaxMalformedPongCount(), shouldSynchronizePingSending());
+		getPingIntervalSeconds(),
+		getPingFailureLimit(),
+		getPingSize(),
+		shouldSynchronizePingSending()
+	);
 
 	/**
 	 * Allows subclasses to override ping interval.
 	 */
-	protected int getPingIntervalSeconds() { return WebsocketPingerService.DEFAULT_PING_INTERVAL; }
+	protected int getPingIntervalSeconds() { return WebsocketPingerService.DEFAULT_INTERVAL; }
 
 	/**
-	 * Allows subclasses to override maximum allowed malformed pongs.
+	 * Allows subclasses to override ping failure limit.
 	 */
-	protected int getMaxMalformedPongCount() {
-		return WebsocketPingerService.DEFAULT_MAX_MALFORMED_PONG_COUNT;
-	}
+	protected int getPingFailureLimit() { return WebsocketPingerService.DEFAULT_FAILURE_LIMIT; }
 
 	/**
-	 * Allows subclasses to override <code>synchronizePingSending</code> flag.
+	 * Allows subclasses to override ping data size.
 	 */
-	protected boolean shouldSynchronizePingSending() {
-		return false;
-	}
+	protected int getPingSize() { return WebsocketPingerService.DEFAULT_PING_SIZE; }
+
+	/**
+	 * Allows subclasses to override <code>synchronizeSending</code> flag.
+	 */
+	protected boolean shouldSynchronizePingSending() { return false; }
 
 
 
