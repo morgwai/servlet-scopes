@@ -1,9 +1,11 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.scopes.tests.server;
 
-import javax.websocket.EndpointConfig;
+import java.io.IOException;
+
+import javax.websocket.*;
+import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.RemoteEndpoint.Async;
-import javax.websocket.Session;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -18,6 +20,7 @@ public class EchoEndpoint {
 
 
 	public static final String WELCOME_MESSAGE = "welcome :)";
+	public static final String CLOSE_MESSAGE = "close";
 
 
 
@@ -46,9 +49,17 @@ public class EchoEndpoint {
 
 
 	public void onMessage(String message) {
-		StringBuilder formattedMessageBuilder = new StringBuilder(message.length() + 10);
-		appendFiltered(message, formattedMessageBuilder);
-		send(formattedMessageBuilder.toString());
+		if (message.equals(CLOSE_MESSAGE)) {
+			try {
+				connection.close(new CloseReason(CloseCodes.NORMAL_CLOSURE, "bye"));
+			} catch (IOException e) {
+				log.info("exception while closing websocket " + connection.getId(), e);
+			}
+		} else {
+			StringBuilder formattedMessageBuilder = new StringBuilder(message.length() + 10);
+			appendFiltered(message, formattedMessageBuilder);
+			send(formattedMessageBuilder.toString());
+		}
 	}
 
 
