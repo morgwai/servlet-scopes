@@ -38,4 +38,11 @@ public class AnnotatedEndpoint extends EchoEndpoint {
 	public void onError(Session connection, Throwable error) {
 		super.onError(connection, error);
 	}
+
+
+
+	@OnClose @Override
+	public void onClose(CloseReason closeReason) {
+		super.onClose(closeReason);
+	}
 }

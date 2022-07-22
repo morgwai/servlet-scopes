@@ -1,8 +1,10 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.scopes;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -112,6 +114,9 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * {@link EndpointDecorator}.
 	 */
 	<EndpointT> Class<? extends EndpointT> createProxyClass(Class<EndpointT> endpointClass) {
+		if ( ! Endpoint.class.isAssignableFrom(endpointClass)) {
+			checkIfRequiredEndpointMethodsPresent(endpointClass);
+		}
 		DynamicType.Builder<EndpointT> proxyClassBuilder = new ByteBuddy()
 			.subclass(endpointClass)
 			.name(GuiceServerEndpointConfigurator.class.getPackageName() + ".ProxyFor_"
@@ -121,7 +126,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					EndpointDecorator.class,
 					Visibility.PACKAGE_PRIVATE)
 			.method(ElementMatchers.any())
-				.intercept(InvocationHandlerAdapter.toField(PROXY_DECORATOR_FIELD_NAME));
+					.intercept(InvocationHandlerAdapter.toField(PROXY_DECORATOR_FIELD_NAME));
 		final ServerEndpoint annotation = endpointClass.getAnnotation(ServerEndpoint.class);
 		if (annotation != null) proxyClassBuilder = proxyClassBuilder.annotateType(annotation);
 		return proxyClassBuilder
@@ -129,6 +134,33 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			.load(GuiceServerEndpointConfigurator.class.getClassLoader(),
 					ClassLoadingStrategy.Default.INJECTION)
 			.getLoaded();
+	}
+
+	private void checkIfRequiredEndpointMethodsPresent(Class<?> endpointClass) {
+		var annotatedMethodPresent = new HashMap<Class<? extends Annotation>, Boolean>();
+		var annotationTypes = getRequiredEndpointMethodAnnotationTypes();
+		for (var annotationType: annotationTypes) annotatedMethodPresent.put(annotationType, false);
+		for (var method: endpointClass.getDeclaredMethods()) {
+			for (var annotationType: annotationTypes) {
+				if (method.isAnnotationPresent(annotationType)) {
+					annotatedMethodPresent.put(annotationType, true);
+				}
+			}
+		}
+		for (var entry: annotatedMethodPresent.entrySet()) {
+			if ( ! entry.getValue()) {
+				throw new RuntimeException("Endpoint must have a method annotated with "
+						+ entry.getKey().getSimpleName());
+			}
+		}
+	}
+
+	/**
+	 * Returns a list of annotations of endpoint lifecycle methods that are required to be present.
+	 * By default a singleton of {@link OnOpen}. Subclasses may override this method if needed.
+	 */
+	protected List<Class<? extends Annotation>> getRequiredEndpointMethodAnnotationTypes() {
+		return Collections.singletonList(OnOpen.class);
 	}
 
 

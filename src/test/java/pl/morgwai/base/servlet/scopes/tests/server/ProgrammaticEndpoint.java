@@ -32,4 +32,11 @@ public class ProgrammaticEndpoint extends Endpoint {
 	public void onError(Session connection, Throwable error) {
 		echoEndpoint.onError(connection, error);
 	}
+
+
+
+	@Override
+	public void onClose(Session session, CloseReason closeReason) {
+		echoEndpoint.onClose(closeReason);
+	}
 }

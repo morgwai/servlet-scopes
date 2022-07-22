@@ -4,10 +4,12 @@ package pl.morgwai.base.servlet.guiced.utils;
 import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnClose;
 import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnOpen;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.List;
 
-import javax.websocket.Session;
+import javax.websocket.*;
 
 import pl.morgwai.base.servlet.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
@@ -44,6 +46,13 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 	@Override
 	protected InvocationHandler getAdditionalDecorator(Object endpoint) {
 		return new EndpointDecorator(endpoint);
+	}
+
+
+
+	@Override
+	protected List<Class<? extends Annotation>> getRequiredEndpointMethodAnnotationTypes() {
+		return List.of(OnOpen.class, OnClose.class);
 	}
 
 

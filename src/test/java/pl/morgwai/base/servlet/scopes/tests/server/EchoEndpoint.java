@@ -90,6 +90,13 @@ public class EchoEndpoint {
 
 
 
+	public void onClose(CloseReason closeReason) {
+		log.info("closing " + connection.getId() + ", code: " + closeReason.getCloseCode() +
+				", reason: " + closeReason.getReasonPhrase());
+	}
+
+
+
 	// Adapted from
 	// github.com/apache/tomcat/blob/trunk/webapps/examples/WEB-INF/classes/util/HTMLFilter.java
 	public static void appendFiltered(String message, StringBuilder target) {
