@@ -2,11 +2,11 @@
 
 Servlet and websocket Guice scopes, that are automatically transferred when dispatching work to other threads.<br/>
 <br/>
-**latest release: 8.2**<br/>
-[javax flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/8.2-javax/jar)
-([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/8.2-javax))<br/>
-[jakarta flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/8.2-jakarta/jar) (experimental: see [notes](#notes-on-jakarta-support))
-([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/8.2-jakarta))
+**latest release: 9.0**<br/>
+[javax flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/9.0-javax/jar)
+([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/9.0-javax))<br/>
+[jakarta flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/9.0-jakarta/jar) (experimental: see [notes](#notes-on-jakarta-support))
+([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/9.0-jakarta))
 
 
 
