@@ -26,13 +26,21 @@ public class WebsocketEventContext extends ContainerCallContext {
 
 
 
-	final HttpSession httpSession;
+	public WebsocketConnectionContext getConnectionContext() { return connectionContext; }
+	final WebsocketConnectionContext connectionContext;
+
 	@Override public HttpSession getHttpSession() { return httpSession; }
+	final HttpSession httpSession;
 
 
 
-	WebsocketEventContext(HttpSession httpSession, ContextTracker<ContainerCallContext> tracker) {
+	WebsocketEventContext(
+		WebsocketConnectionContext connectionContext,
+		HttpSession httpSession,
+		ContextTracker<ContainerCallContext> tracker
+	) {
 		super(tracker);
+		this.connectionContext = connectionContext;
 		this.httpSession = httpSession;
 	}
 }

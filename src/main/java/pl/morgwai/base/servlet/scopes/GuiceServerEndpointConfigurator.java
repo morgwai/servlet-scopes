@@ -180,7 +180,6 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	@Inject ContextTracker<ContainerCallContext> eventCtxTracker;
-	@Inject ContextTracker<WebsocketConnectionContext> connectionCtxTracker;
 
 	/**
 	 * Executes each call to the supplied endpoint instance within
@@ -231,24 +230,22 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				}
 				final var userProperties = wrappedConnection.getUserProperties();
 				httpSession = (HttpSession) userProperties.get(HttpSession.class.getName());
-				connectionCtx = new WebsocketConnectionContext(
-						wrappedConnection, connectionCtxTracker);
+				connectionCtx = new WebsocketConnectionContext(wrappedConnection);
 				userProperties.put(WebsocketConnectionContext.class.getName(), connectionCtx);
 			}
 
-			// execute the original endpoint method within both contexts
-			return connectionCtx.executeWithinSelf(
-				() -> new WebsocketEventContext(httpSession, eventCtxTracker).executeWithinSelf(
-					() -> {
-						try {
-							return additionalEndpointDecorator.invoke(proxy, method, args);
-						} catch (Error | Exception e) {
-							throw e;
-						} catch (Throwable e) {
-							throw new Exception(e);  // dead code
-						}
+			// execute the original endpoint method within contexts
+			var eventCtx = new WebsocketEventContext(connectionCtx, httpSession, eventCtxTracker);
+			return eventCtx.executeWithinSelf(
+				() -> {
+					try {
+						return additionalEndpointDecorator.invoke(proxy, method, args);
+					} catch (Error | Exception e) {
+						throw e;
+					} catch (Throwable e) {
+						throw new Exception(e);  // dead code
 					}
-				)
+				}
 			);
 		}
 	}

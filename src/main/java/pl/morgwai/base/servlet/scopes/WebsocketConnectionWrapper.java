@@ -31,7 +31,7 @@ class WebsocketConnectionWrapper implements Session {
 
 	/**
 	 * Set by {@link WebsocketConnectionContext#WebsocketConnectionContext(
-	 * WebsocketConnectionWrapper, ContextTracker) WebsocketConnectionContext's constructor}.
+	 * WebsocketConnectionWrapper) WebsocketConnectionContext's constructor}.
 	 */
 	void setConnectionCtx(WebsocketConnectionContext ctx) { this.connectionCtx = ctx; }
 	WebsocketConnectionContext connectionCtx;
@@ -129,9 +129,8 @@ class WebsocketConnectionWrapper implements Session {
 
 		@Override
 		public void onMessage(T message) {
-			connectionCtx.executeWithinSelf(
-					() -> new WebsocketEventContext(httpSession, eventCtxTracker).executeWithinSelf(
-							() -> wrapped.onMessage(message)));
+			new WebsocketEventContext(connectionCtx, httpSession, eventCtxTracker)
+					.executeWithinSelf(() -> wrapped.onMessage(message));
 		}
 
 		WholeMessageHandlerWrapper(MessageHandler.Whole<T> handler) {
@@ -149,9 +148,8 @@ class WebsocketConnectionWrapper implements Session {
 
 		@Override
 		public void onMessage(T message, boolean last) {
-			connectionCtx.executeWithinSelf(
-					() -> new WebsocketEventContext(httpSession, eventCtxTracker).executeWithinSelf(
-							() -> wrapped.onMessage(message, last)));
+			new WebsocketEventContext(connectionCtx, httpSession, eventCtxTracker)
+					.executeWithinSelf(() -> wrapped.onMessage(message, last));
 		}
 
 		PartialMessageHandlerWrapper(MessageHandler.Partial<T> handler) {
