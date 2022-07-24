@@ -1,5 +1,10 @@
 #!/bin/bash
 # Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
+if [[ -n "$(git status --porcelain)" ]]; then
+	echo "repository not clean, exiting..." >&2;
+	exit 1;
+fi;
+
 sed -E -e 's#(\t*).*<!--jakarta:(.*)-->#\1\2#' \
 	-e 's#(.*)javax(.*)<!--jakarta-->#\1jakarta\2#' \
 	<pom.xml >pom.jakarta.xml &&
