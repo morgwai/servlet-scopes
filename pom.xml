@@ -9,7 +9,7 @@
 	<version>9.1-SNAPSHOT-javax</version><!--jakarta-->
 
 	<name>Servlet and Websocket Guice Scopes</name>
-	<description>Servlet and websocket Guice scopes, that are automatically transferred when dispatching work to other threads</description>
+	<description>containerCallScope (either a HttpServletRequest or a websocket endpoint event), websocketConnectionScope (javax.websocket.Session) and httpSessionScope</description>
 	<url>https://github.com/morgwai/servlet-scopes</url>
 
 	<licenses>

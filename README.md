@@ -1,6 +1,6 @@
 # Servlet and Websocket Guice Scopes
 
-Servlet and websocket Guice scopes, that are automatically transferred when dispatching work to other threads.<br/>
+`containerCallScope` (either a `HttpServletRequest` or a websocket endpoint event), `websocketConnectionScope` (`javax.websocket.Session`) and `httpSessionScope`.<br/>
 <br/>
 **latest release: 9.0**<br/>
 [javax flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/9.0-javax/jar)
@@ -42,8 +42,11 @@ A websocket endpoint `Configurator` that automatically injects dependencies of n
 ### [GuiceServletContextListener](src/main/java/pl/morgwai/base/servlet/scopes/GuiceServletContextListener.java)
 Base class for app's `ServletContextListener`. Creates and configures apps Guice `Injector` and the above `ServletModule`. Provides also some helper methods.
 
+### [PingingEndpointConfigurator](src/main/java/pl/morgwai/base/servlet/guiced/utils/PingingEndpointConfigurator.java)
+Subclass of `GuiceServerEndpointConfigurator` that additionally automatically registers/deregisters created endpoint instances to a [WebsocketPingerService](https://github.com/morgwai/servlet-utils#main-user-classes).
+
 ### [PingingServletContextListener](src/main/java/pl/morgwai/base/servlet/guiced/utils/PingingServletContextListener.java)
-Subclass of `GuiceServletContextListener` that additionally automatically registers/deregisters created endpoint instances to a [WebsocketPingerService](https://github.com/morgwai/servlet-utils#main-user-classes).
+Subclass of `GuiceServletContextListener` that uses `PingingEndpointConfigurator`.
 
 
 ## USAGE
