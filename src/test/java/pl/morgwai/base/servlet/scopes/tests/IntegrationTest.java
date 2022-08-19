@@ -153,9 +153,9 @@ public class IntegrationTest {
 		);
 		final var connection = clientWebsocketContainer.connectToServer(endpoint, null, url);
 		connection.getAsyncRemote().sendText(testMessage);
-		if ( ! latch.await(2l, TimeUnit.SECONDS)) fail("timeout");
+		if ( ! latch.await(2L, TimeUnit.SECONDS)) fail("timeout");
 		connection.close();
-		if ( ! endpoint.awaitClosure(2l, TimeUnit.SECONDS)) fail("timeout");
+		if ( ! endpoint.awaitClosure(2L, TimeUnit.SECONDS)) fail("timeout");
 		assertEquals("message should have 5 lines", 5, messages.get(0).length);
 		assertEquals("message should have 5 lines", 5, messages.get(1).length);
 		assertEquals("onOpen message should be a welcome",

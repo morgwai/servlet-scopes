@@ -41,7 +41,7 @@ public class AsyncServlet extends TestServlet {
 		final var asyncCtx = MODE_WRAPPED.equals(request.getParameter(MODE_PARAM))
 				? request.startAsync(request, response)
 				: request.startAsync();
-		asyncCtx.setTimeout(0l);
+		asyncCtx.setTimeout(0L);
 		executor.execute(response, () -> {
 			try {
 				try {

@@ -41,7 +41,7 @@ public class EchoEndpoint {
 
 	public void onOpen(Session connection, EndpointConfig config) {
 		this.connection = connection;
-		connection.setMaxIdleTimeout(5l * 60l * 1000l);
+		connection.setMaxIdleTimeout(5L * 60L * 1000L);
 		sender = connection.getAsyncRemote();
 		send(WELCOME_MESSAGE);
 	}
