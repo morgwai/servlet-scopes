@@ -3,9 +3,9 @@ package pl.morgwai.base.servlet.scopes.tests.server;
 
 import java.io.IOException;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.*;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.*;
 
 
 

@@ -1,7 +1,7 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.scopes.tests.server;
 
-import javax.websocket.server.ServerEndpoint;
+import jakarta.websocket.server.ServerEndpoint;
 
 import pl.morgwai.base.servlet.scopes.GuiceServerEndpointConfigurator;
 
