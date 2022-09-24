@@ -114,7 +114,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * {@link EndpointDecorator}.
 	 */
 	<EndpointT> Class<? extends EndpointT> createProxyClass(Class<EndpointT> endpointClass) {
-		if ( ! Endpoint.class.isAssignableFrom(endpointClass)) {
+		if ( !Endpoint.class.isAssignableFrom(endpointClass)) {
 			checkIfRequiredEndpointMethodsPresent(endpointClass);
 		}
 		DynamicType.Builder<EndpointT> proxyClassBuilder = new ByteBuddy()
@@ -148,7 +148,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			}
 		}
 		for (var entry: annotatedMethodPresent.entrySet()) {
-			if ( ! entry.getValue()) {
+			if ( !entry.getValue()) {
 				throw new RuntimeException("Endpoint must have a method annotated with "
 						+ entry.getKey().getSimpleName());
 			}
@@ -220,7 +220,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 			// onOpen: create connectionCtx, retrieve HttpSession
 			if (connectionCtx == null) {
-				if ( ! isOnOpen(method)) {
+				if ( !isOnOpen(method)) {
 					// this is most commonly toString() call from a debugger
 					return additionalEndpointDecorator.invoke(proxy, method, args);
 				}

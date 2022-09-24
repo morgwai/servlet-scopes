@@ -40,7 +40,7 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 			execute(task);
 		} catch (RejectedExecutionException e) {
 			try {
-				if ( ! response.isCommitted()) {
+				if ( !response.isCommitted()) {
 					response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
 				}
 			} catch (IOException ignored) {}  // broken connection
