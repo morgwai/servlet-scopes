@@ -2,11 +2,11 @@
 
 `containerCallScope` (either a `HttpServletRequest` or a websocket endpoint event), `websocketConnectionScope` (`javax.websocket.Session`) and `httpSessionScope`.<br/>
 <br/>
-**latest release: 9.3**<br/>
-[javax flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/9.3-javax/jar)
-([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/9.3-javax))<br/>
-[jakarta flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/9.3-jakarta/jar) (experimental: see [notes](#notes-on-jakarta-support))
-([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/9.3-jakarta))
+**latest release: 9.4**<br/>
+[javax flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/9.4-javax/jar)
+([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/9.4-javax))<br/>
+[jakarta flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/9.4-jakarta/jar) (experimental: see [notes](#notes-on-jakarta-support))
+([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/9.4-jakarta))
 
 
 
