@@ -5,8 +5,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.*;
 
-import com.google.inject.*;
 import com.google.inject.Module;
+import com.google.inject.*;
 
 import pl.morgwai.base.concurrent.Awaitable;
 import pl.morgwai.base.concurrent.Awaitable.AwaitInterruptedException;
