@@ -102,6 +102,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	static final String PROXY_DECORATOR_FIELD_NAME = "pl_morgwai_decorator";
 
+	/**
+	 * Exposed for proxy class pre-building in
+	 * {@link GuiceServletContextListener#addEndpoint(Class, String)}.
+	 */
 	@SuppressWarnings("unchecked")
 	<EndpointT> Class<? extends EndpointT> getProxyClass(Class<EndpointT> endpointClass) {
 		return (Class<? extends EndpointT>)

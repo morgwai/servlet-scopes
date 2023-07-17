@@ -178,7 +178,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path) throws ServletException {
 		addEndpoint(endpointClass, path, endpointConfigurator);
-		endpointConfigurator.getProxyClass(endpointClass);
+		endpointConfigurator.getProxyClass(endpointClass);  // pre-build dynamic proxy class
 	}
 
 	/**
