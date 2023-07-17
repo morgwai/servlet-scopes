@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.inject.Inject;
 
-import pl.morgwai.base.servlet.scopes.ContextTrackingExecutor;
+import pl.morgwai.base.servlet.scopes.ServletContextTrackingExecutor;
 
 
 
@@ -25,7 +25,7 @@ public class AsyncServlet extends TestServlet {
 	public static final String MODE_TARGETED = "targeted";
 
 	@Inject
-	ContextTrackingExecutor executor;
+	ServletContextTrackingExecutor executor;
 
 
 

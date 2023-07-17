@@ -73,7 +73,7 @@ public class ServletModule implements Module {
 
 	/**
 	 * Contains all trackers. {@link #configure(Binder)} binds {@code List<ContextTracker<?>>} to it
-	 * for use with {@link ContextTrackingExecutor#getActiveContexts(List)}.
+	 * for use with {@link ServletContextTrackingExecutor#getActiveContexts(List)}.
 	 */
 	public final List<ContextTracker<?>> allTrackers = List.of(containerCallContextTracker);
 
@@ -82,7 +82,7 @@ public class ServletModule implements Module {
 	/**
 	 * Binds {@link #containerCallContextTracker} and all contexts for injection.
 	 * Binds {@code List<ContextTracker<?>>} to {@link #allTrackers} that contains all trackers for
-	 * use with {@link ContextTrackingExecutor#getActiveContexts(List)}.
+	 * use with {@link ServletContextTrackingExecutor#getActiveContexts(List)}.
 	 */
 	@Override
 	public void configure(Binder binder) {
@@ -106,7 +106,7 @@ public class ServletModule implements Module {
 
 
 
-	final List<ContextTrackingExecutor> executors = new LinkedList<>();
+	final List<ServletContextTrackingExecutor> executors = new LinkedList<>();
 
 
 
@@ -117,8 +117,8 @@ public class ServletModule implements Module {
 	 * To avoid {@link OutOfMemoryError}s, an external mechanism that limits maximum number of tasks
 	 * (such as a load balancer or a frontend proxy) should be used.</p>
 	 */
-	public ContextTrackingExecutor newContextTrackingExecutor(String name, int poolSize) {
-		var executor = new ContextTrackingExecutor(name, poolSize, allTrackers);
+	public ServletContextTrackingExecutor newContextTrackingExecutor(String name, int poolSize) {
+		var executor = new ServletContextTrackingExecutor(name, poolSize, allTrackers);
 		executors.add(executor);
 		return executor;
 	}
@@ -135,12 +135,12 @@ public class ServletModule implements Module {
 	 * shutting down. It should usually be handled by sending
 	 * {@link HttpServletResponse#SC_SERVICE_UNAVAILABLE} to the client.</p>
 	 */
-	public ContextTrackingExecutor newContextTrackingExecutor(
+	public ServletContextTrackingExecutor newContextTrackingExecutor(
 		String name,
 		int poolSize,
 		BlockingQueue<Runnable> workQueue
 	) {
-		var executor = new ContextTrackingExecutor(name, poolSize, allTrackers, workQueue);
+		var executor = new ServletContextTrackingExecutor(name, poolSize, allTrackers, workQueue);
 		executors.add(executor);
 		return executor;
 	}
@@ -153,19 +153,20 @@ public class ServletModule implements Module {
 	 * this executor.
 	 * <p>
 	 * The first param of {@code rejectionHandler} is a rejected task: either {@link Runnable} or
-	 * {@link Callable} depending whether {@link ContextTrackingExecutor#execute(Runnable)} or
-	 * {@link ContextTrackingExecutor#execute(Callable)} was used.</p>
+	 * {@link Callable} depending whether {@link ServletContextTrackingExecutor#execute(Runnable)}
+	 * or {@link ServletContextTrackingExecutor#execute(Callable)} was used.</p>
 	 * <p>
-	 * In order for {@link ContextTrackingExecutor#execute(HttpServletResponse, Runnable)} to work
-	 * properly, the {@code rejectionHandler} must throw a {@link RejectedExecutionException}.</p>
+	 * In order for {@link ServletContextTrackingExecutor#execute(HttpServletResponse, Runnable)} to
+	 * work properly, the {@code rejectionHandler} must throw a {@link RejectedExecutionException}.
+	 * </p>
 	 */
-	public ContextTrackingExecutor newContextTrackingExecutor(
+	public ServletContextTrackingExecutor newContextTrackingExecutor(
 		String name,
 		int poolSize,
 		BlockingQueue<Runnable> workQueue,
-		BiConsumer<Object, ? super ContextTrackingExecutor> rejectionHandler
+		BiConsumer<Object, ? super ServletContextTrackingExecutor> rejectionHandler
 	) {
-		var executor = new ContextTrackingExecutor(
+		var executor = new ServletContextTrackingExecutor(
 				name, poolSize, allTrackers, workQueue, rejectionHandler);
 		executors.add(executor);
 		return executor;
@@ -178,14 +179,14 @@ public class ServletModule implements Module {
 	 * {@code workQueue}, {@code rejectionHandler} and {@code threadFactory}.
 	 * @see #newContextTrackingExecutor(String, int, BlockingQueue, BiConsumer)
 	 */
-	public ContextTrackingExecutor newContextTrackingExecutor(
+	public ServletContextTrackingExecutor newContextTrackingExecutor(
 		String name,
 		int poolSize,
 		BlockingQueue<Runnable> workQueue,
-		BiConsumer<Object, ContextTrackingExecutor> rejectionHandler,
+		BiConsumer<Object, ServletContextTrackingExecutor> rejectionHandler,
 		ThreadFactory threadFactory
 	) {
-		var executor = new ContextTrackingExecutor(
+		var executor = new ServletContextTrackingExecutor(
 				name, poolSize, allTrackers, workQueue, rejectionHandler, threadFactory);
 		executors.add(executor);
 		return executor;
@@ -203,36 +204,38 @@ public class ServletModule implements Module {
 	 *     {@link pl.morgwai.base.guice.scopes.ContextTrackingExecutor#getPoolSize()}.
 	 * @see #newContextTrackingExecutor(String, int, BlockingQueue, BiConsumer)
 	 */
-	public ContextTrackingExecutor newContextTrackingExecutor(
+	public ServletContextTrackingExecutor newContextTrackingExecutor(
 		String name,
 		int poolSize,
 		ExecutorService backingExecutor
 	) {
 		final var executor =
-				new ContextTrackingExecutor(name, poolSize, allTrackers, backingExecutor);
+				new ServletContextTrackingExecutor(name, poolSize, allTrackers, backingExecutor);
 		executors.add(executor);
 		return executor;
 	}
 
 
 
-	List<ContextTrackingExecutor> shutdownAndEnforceTerminationOfAllExecutors(int timeoutSeconds) {
+	List<ServletContextTrackingExecutor> shutdownAndEnforceTerminationOfAllExecutors(
+		int timeoutSeconds
+	) {
 		for (var executor: executors) executor.packageProtectedShutdown();
 		try {
 			return Awaitable.awaitMultiple(
 				timeoutSeconds,
 				TimeUnit.SECONDS,
-				ContextTrackingExecutor::toAwaitableOfEnforceTermination,
+				ServletContextTrackingExecutor::toAwaitableOfEnforceTermination,
 				executors
 			);
 		} catch (AwaitInterruptedException e) {
-			final var unterminated = new ArrayList<ContextTrackingExecutor>(
+			final var unterminated = new ArrayList<ServletContextTrackingExecutor>(
 					e.getFailed().size() + e.getInterrupted().size());
 			@SuppressWarnings("unchecked")
-			final var failed = (List<ContextTrackingExecutor>) e.getFailed();
+			final var failed = (List<ServletContextTrackingExecutor>) e.getFailed();
 			unterminated.addAll(failed);
 			@SuppressWarnings("unchecked")
-			final var interrupted = (List<ContextTrackingExecutor>) e.getInterrupted();
+			final var interrupted = (List<ServletContextTrackingExecutor>) e.getInterrupted();
 			unterminated.addAll(interrupted);
 			return unterminated;
 		}

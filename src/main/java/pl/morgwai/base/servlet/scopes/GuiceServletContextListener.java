@@ -261,7 +261,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * Subclasses may override this method to examine the executors that failed to shutdown cleanly.
 	 * By default does nothing.
 	 */
-	protected void handleUncleanExecutorTerminations(List<ContextTrackingExecutor> executors) {}
+	protected void handleUncleanExecutorTerminations(List<ServletContextTrackingExecutor> executors)
+	{}
 
 
 

@@ -13,6 +13,7 @@ import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.Session;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
+import pl.morgwai.base.guice.scopes.ContextTrackingExecutor;
 import pl.morgwai.base.util.concurrent.Awaitable;
 
 
@@ -28,7 +29,7 @@ import pl.morgwai.base.util.concurrent.Awaitable;
  * Instances can be created using {@link ServletModule#newContextTrackingExecutor(String, int)
  * ServletModule.newContextTrackingExecutor(...)} helper methods family.</p>
  */
-public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.ContextTrackingExecutor {
+public class ServletContextTrackingExecutor extends ContextTrackingExecutor {
 
 
 
@@ -109,11 +110,11 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 
 
 
-	ContextTrackingExecutor(String name, int poolSize, List<ContextTracker<?>> trackers) {
+	ServletContextTrackingExecutor(String name, int poolSize, List<ContextTracker<?>> trackers) {
 		super(name, poolSize, trackers);
 	}
 
-	ContextTrackingExecutor(
+	ServletContextTrackingExecutor(
 		String name,
 		int poolSize,
 		List<ContextTracker<?>> trackers,
@@ -122,28 +123,29 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 		super(name, poolSize, trackers, workQueue);
 	}
 
-	ContextTrackingExecutor(
+	ServletContextTrackingExecutor(
 		String name,
 		int poolSize,
 		List<ContextTracker<?>> trackers,
 		BlockingQueue<Runnable> workQueue,
-		BiConsumer<Object, ? super ContextTrackingExecutor> rejectionHandler
+		BiConsumer<Object, ? super ServletContextTrackingExecutor> rejectionHandler
 	) {
 		super(
 			name,
 			poolSize,
 			trackers,
 			workQueue,
-			(task, executor) -> rejectionHandler.accept(task, (ContextTrackingExecutor) executor)
+			(task, executor) ->
+					rejectionHandler.accept(task, (ServletContextTrackingExecutor) executor)
 		);
 	}
 
-	ContextTrackingExecutor(
+	ServletContextTrackingExecutor(
 		String name,
 		int poolSize,
 		List<ContextTracker<?>> trackers,
 		BlockingQueue<Runnable> workQueue,
-		BiConsumer<Object, ? super ContextTrackingExecutor> rejectionHandler,
+		BiConsumer<Object, ? super ServletContextTrackingExecutor> rejectionHandler,
 		ThreadFactory threadFactory
 	) {
 		super(
@@ -151,12 +153,13 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 			poolSize,
 			trackers,
 			workQueue,
-			(task, executor) -> rejectionHandler.accept(task, (ContextTrackingExecutor) executor),
+			(task, executor) ->
+					rejectionHandler.accept(task, (ServletContextTrackingExecutor) executor),
 			threadFactory
 		);
 	}
 
-	ContextTrackingExecutor(
+	ServletContextTrackingExecutor(
 		String name,
 		int poolSize,
 		List<ContextTracker<?>> trackers,

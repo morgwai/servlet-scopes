@@ -11,7 +11,7 @@ import com.google.inject.Module;
 import com.google.inject.name.Names;
 
 import pl.morgwai.base.servlet.guiced.utils.PingingServletContextListener;
-import pl.morgwai.base.servlet.scopes.ContextTrackingExecutor;
+import pl.morgwai.base.servlet.scopes.ServletContextTrackingExecutor;
 
 
 
@@ -26,7 +26,7 @@ public class ServletContextListener extends PingingServletContextListener {
 	public static final String WEBSOCKET_CONNECTION = "wsConnection";
 	public static final String HTTP_SESSION = "httpSession";
 
-	final ContextTrackingExecutor executor =
+	final ServletContextTrackingExecutor executor =
 			servletModule.newContextTrackingExecutor("testExecutor", 2);
 
 
@@ -41,7 +41,7 @@ public class ServletContextListener extends PingingServletContextListener {
 					.to(Service.class).in(servletModule.websocketConnectionScope);
 			binder.bind(Service.class).annotatedWith(Names.named(HTTP_SESSION))
 					.to(Service.class).in(servletModule.httpSessionScope);
-			binder.bind(ContextTrackingExecutor.class).toInstance(executor);
+			binder.bind(ServletContextTrackingExecutor.class).toInstance(executor);
 		});
 		return modules;
 	}
