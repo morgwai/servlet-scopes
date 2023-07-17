@@ -26,10 +26,11 @@ public class ResourceServlet extends HttpServlet {
 	@Override
 	public void init(ServletConfig config) throws ServletException {
 		super.init(config);
-		try {
-			resource = new String(
-					getClass().getResourceAsStream(getResourcePath(config)).readAllBytes());
-		} catch (IOException e) {
+		try (
+			final var resourceStream = getClass().getResourceAsStream(getResourcePath(config));
+		) {
+			resource = new String(resourceStream.readAllBytes());
+		} catch (IOException | NullPointerException e) {
 			throw new ServletException(e);
 		}
 	}
