@@ -52,6 +52,27 @@ public class ServletContextTrackingExecutor extends ContextTrackingExecutor {
 
 
 	/**
+	 * Calls {@link #execute(Runnable) execute(task)} and if it's rejected, sends
+	 * {@link HttpServletResponse#SC_SERVICE_UNAVAILABLE} to {@code response} and returns
+	 * {@link CompletableFuture#failedFuture(Throwable)} with the {@link RejectedExecutionException}
+	 * as the argument.
+	 */
+	public <T> CompletableFuture<T> execute(HttpServletResponse response, Callable<T> task) {
+		try {
+			return execute(task);
+		} catch (RejectedExecutionException e) {
+			try {
+				if ( !response.isCommitted()) {
+					response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+				}
+			} catch (IOException ignored) {}  // broken connection
+			return CompletableFuture.failedFuture(e);
+		}
+	}
+
+
+
+	/**
 	 * Calls {@link #execute(Runnable) execute(task)} and if it's rejected, closes
 	 * {@code connection} with {@link CloseCodes#TRY_AGAIN_LATER}.
 	 */
@@ -65,6 +86,28 @@ public class ServletContextTrackingExecutor extends ContextTrackingExecutor {
 							CloseCodes.TRY_AGAIN_LATER, "service overloaded or restarting"));
 				}
 			} catch (IOException ignored) {}  // broken connection
+		}
+	}
+
+
+
+	/**
+	 * Calls {@link #execute(Runnable) execute(task)} and if it's rejected, closes
+	 * {@code connection} with {@link CloseCodes#TRY_AGAIN_LATER} and returns
+	 * {@link CompletableFuture#failedFuture(Throwable)} with the {@link RejectedExecutionException}
+	 * as the argument.
+	 */
+	public <T> CompletableFuture<T> execute(Session connection, Callable<T> task) {
+		try {
+			return execute(task);
+		} catch (RejectedExecutionException e) {
+			try {
+				if (connection.isOpen()) {
+					connection.close(new CloseReason(
+							CloseCodes.TRY_AGAIN_LATER, "service overloaded or restarting"));
+				}
+			} catch (IOException ignored) {}  // broken connection
+			return CompletableFuture.failedFuture(e);
 		}
 	}
 
