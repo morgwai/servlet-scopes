@@ -1,6 +1,7 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.scopes;
 
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -129,11 +130,31 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					.intercept(InvocationHandlerAdapter.toField(PROXY_DECORATOR_FIELD_NAME));
 		final ServerEndpoint annotation = endpointClass.getAnnotation(ServerEndpoint.class);
 		if (annotation != null) proxyClassBuilder = proxyClassBuilder.annotateType(annotation);
-		return proxyClassBuilder
-			.make()
-			.load(GuiceServerEndpointConfigurator.class.getClassLoader(),
-					ClassLoadingStrategy.Default.INJECTION)
-			.getLoaded();
+/*
+// swap after https://github.com/raphw/byte-buddy/pull/1485 is merged
+		try (
+			final var unloadedClass = proxyClassBuilder.make()
+		) {
+			return unloadedClass
+				.load(GuiceServerEndpointConfigurator.class.getClassLoader(),
+						ClassLoadingStrategy.Default.INJECTION)
+				.getLoaded();
+		}
+/*/
+		final var unloadedClass = proxyClassBuilder.make();
+		try {
+			return unloadedClass
+				.load(GuiceServerEndpointConfigurator.class.getClassLoader(),
+						ClassLoadingStrategy.Default.INJECTION)
+				.getLoaded();
+		} finally {
+			try {
+				unloadedClass.close();
+			} catch (IOException e) {
+				log.warn("exception while closing unloaded dynamic class", e);
+			}
+		}
+//*/
 	}
 
 	private void checkIfRequiredEndpointMethodsPresent(Class<?> endpointClass) {
