@@ -94,7 +94,7 @@
 						<configuration>
 							<archive>
 								<manifest>
-									<mainClass>pl.morgwai.base.servlet.scopes.tests.server.TestServer</mainClass>
+									<mainClass>pl.morgwai.base.servlet.guice.scopes.tests.server.TestServer</mainClass>
 								</manifest>
 							</archive>
 							<descriptorRefs>

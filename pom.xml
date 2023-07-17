@@ -184,7 +184,7 @@
 							<relocations>
 								<relocation>
 									<pattern>net.bytebuddy</pattern>
-									<shadedPattern>pl.morgwai.base.servlet.scopes.net.bytebuddy</shadedPattern>
+									<shadedPattern>pl.morgwai.base.servlet.guice.scopes.net.bytebuddy</shadedPattern>
 								</relocation>
 							</relocations>
 							<shadedArtifactAttached>true</shadedArtifactAttached>
