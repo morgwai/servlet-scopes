@@ -9,8 +9,7 @@ import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
 
 
 @ServerEndpoint(
-		value = AnnotatedEndpoint.PATH,
-		configurator = PingingEndpointConfigurator.class)
+		value = AnnotatedEndpoint.PATH, configurator = PingingEndpointConfigurator.class)
 public class AnnotatedEndpoint extends EchoEndpoint {
 
 

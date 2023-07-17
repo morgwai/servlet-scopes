@@ -114,15 +114,17 @@ public class IntegrationTest {
 	@Test
 	public void testWrappedAsyncCtxDispatch() throws Exception {
 		testAsyncCtxDispatch(
-				dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED,
-				AsyncServlet.class);
+			dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED,
+			AsyncServlet.class
+		);
 	}
 
 	@Test
 	public void testTargetedAsyncCtxDispatch() throws Exception {
 		testAsyncCtxDispatch(
-				dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_TARGETED,
-				AsyncServlet.class);
+			dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_TARGETED,
+			AsyncServlet.class
+		);
 	}
 
 
@@ -208,15 +210,17 @@ public class IntegrationTest {
 		final var connectionScopedHashes = new HashSet<>();
 
 		final var unwrappedAsyncCtxResponses = testAsyncCtxDispatch(
-				dispatchingServletUrl,
-				DispatchingServlet.class);
+			dispatchingServletUrl,
+			DispatchingServlet.class
+		);
 		final var sessionScopedHash = unwrappedAsyncCtxResponses.get(0)[3];
 		requestScopedHashes.add(unwrappedAsyncCtxResponses.get(0)[2]);
 		requestScopedHashes.add(unwrappedAsyncCtxResponses.get(1)[2]);
 
 		final var wrappedAsyncCtxResponses = testAsyncCtxDispatch(
-				dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED,
-				AsyncServlet.class);
+			dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED,
+			AsyncServlet.class
+		);
 		assertEquals("session scoped object hash should remain the same",
 				sessionScopedHash, wrappedAsyncCtxResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
@@ -225,8 +229,9 @@ public class IntegrationTest {
 				requestScopedHashes.add(wrappedAsyncCtxResponses.get(1)[2]));
 
 		final var targetedAsyncCtxResponses = testAsyncCtxDispatch(
-				dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_TARGETED,
-				AsyncServlet.class);
+			dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_TARGETED,
+			AsyncServlet.class
+		);
 		assertEquals("session scoped object hash should remain the same",
 				sessionScopedHash, targetedAsyncCtxResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",

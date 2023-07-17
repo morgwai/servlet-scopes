@@ -53,9 +53,10 @@ public class ServletModule implements Module {
 	 * {@link javax.servlet.Filter} targeting URL patterns of websockets can be used).</p>
 	 */
 	public final Scope httpSessionScope = new InducedContextScope<>(
-			"HTTP_SESSION_SCOPE",
-			containerCallContextTracker,
-			ContainerCallContext::getHttpSessionContext);
+		"HTTP_SESSION_SCOPE",
+		containerCallContextTracker,
+		ContainerCallContext::getHttpSessionContext
+	);
 
 
 

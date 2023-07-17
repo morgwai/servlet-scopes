@@ -195,7 +195,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 */
 	@Override
 	public void modifyHandshake(
-			ServerEndpointConfig config, HandshakeRequest request, HandshakeResponse response) {
+		ServerEndpointConfig config,
+		HandshakeRequest request,
+		HandshakeResponse response
+	) {
 		final var httpSession = request.getHttpSession();
 		if (httpSession != null) {
 			config.getUserProperties().put(HttpSession.class.getName(), httpSession);

@@ -85,8 +85,10 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
 	 */
 	protected ServletRegistration.Dynamic addServlet(
-			String name, Class<? extends HttpServlet> servletClass, String... urlPatterns)
-			throws ServletException {
+		String name,
+		Class<? extends HttpServlet> servletClass,
+		String... urlPatterns
+	) throws ServletException {
 		final var servlet = servletContainer.createServlet(servletClass);
 		injector.injectMembers(servlet);
 		final var registration = servletContainer.addServlet(name, servlet);
@@ -123,11 +125,11 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
 	 */
 	protected FilterRegistration.Dynamic addFilter(
-			String name,
-			Class<? extends Filter> filterClass,
-			EnumSet<DispatcherType> dispatcherTypes,
-			String... urlPatterns)
-			throws ServletException {
+		String name,
+		Class<? extends Filter> filterClass,
+		EnumSet<DispatcherType> dispatcherTypes,
+		String... urlPatterns
+	) throws ServletException {
 		final var registration = addFilter(name, filterClass);
 		registration.addMappingForUrlPatterns(dispatcherTypes, true, urlPatterns);
 		return registration;
@@ -140,8 +142,10 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
 	 */
 	protected FilterRegistration.Dynamic addFilter(
-			String name, Class<? extends Filter> filterClass, String... urlPatterns)
-			throws ServletException {
+		String name,
+		Class<? extends Filter> filterClass,
+		String... urlPatterns
+	) throws ServletException {
 		return addFilter(name, filterClass, null, urlPatterns);
 	}
 
@@ -193,7 +197,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 				ServerEndpointConfig.Builder
 					.create(endpointClass, path)
 					.configurator(configurator)
-					.build());
+					.build()
+			);
 			log.info("registered endpoint " + endpointClass.getSimpleName());
 		} catch (DeploymentException e) {
 			throw new ServletException(e);

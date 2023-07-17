@@ -58,14 +58,16 @@ public class ServletContextListener extends PingingServletContextListener {
 		addServlet(
 				AsyncServlet.class.getSimpleName(), AsyncServlet.class, AsyncServlet.PATH);
 		addServlet(
-				DispatchingServlet.class.getSimpleName(),
-				DispatchingServlet.class,
-				DispatchingServlet.PATH);
+			DispatchingServlet.class.getSimpleName(),
+			DispatchingServlet.class,
+			DispatchingServlet.PATH
+		);
 		addServlet("IndexPageServlet", ResourceServlet.class, "", "/index.html")
 				.setInitParameter(ResourceServlet.RESOURCE_PATH_PARAM, "/index.html");
 		addServlet(
-				WebsocketPageServlet.class.getSimpleName(),
-				WebsocketPageServlet.class,
-				WebsocketPageServlet.PATH);
+			WebsocketPageServlet.class.getSimpleName(),
+			WebsocketPageServlet.class,
+			WebsocketPageServlet.PATH
+		);
 	}
 }

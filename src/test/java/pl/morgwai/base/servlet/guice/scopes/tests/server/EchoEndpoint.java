@@ -75,11 +75,12 @@ public class EchoEndpoint {
 	 */
 	void send(String message) {
 		sender.sendText(String.format(
-				TestServlet.RESPONSE_FORMAT + "\nconnection=%d",
-				message.replace('\n', ' '),
-				eventScopedProvider.get().hashCode(),
-				httpSessionScopedProvider.get().hashCode(),
-				connectionScopedProvider.get().hashCode()));
+			TestServlet.RESPONSE_FORMAT + "\nconnection=%d",
+			message.replace('\n', ' '),
+			eventScopedProvider.get().hashCode(),
+			httpSessionScopedProvider.get().hashCode(),
+			connectionScopedProvider.get().hashCode()
+		));
 	}
 
 

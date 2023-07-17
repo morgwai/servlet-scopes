@@ -8,8 +8,7 @@ import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 
 
 @ServerEndpoint(
-		value = ExtendingEndpoint.PATH,
-		configurator = GuiceServerEndpointConfigurator.class)
+		value = ExtendingEndpoint.PATH, configurator = GuiceServerEndpointConfigurator.class)
 public class ExtendingEndpoint extends ProgrammaticEndpoint {
 
 	public static final String TYPE = "extending";

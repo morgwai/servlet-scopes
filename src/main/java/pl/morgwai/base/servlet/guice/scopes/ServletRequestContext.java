@@ -33,7 +33,9 @@ public class ServletRequestContext extends ContainerCallContext {
 
 
 	ServletRequestContext(
-			HttpServletRequest request, ContextTracker<ContainerCallContext> tracker) {
+		HttpServletRequest request,
+		ContextTracker<ContainerCallContext> tracker
+	) {
 		super(tracker);
 		this.request = request;
 		request.setAttribute(ServletRequestContext.class.getName(), this);

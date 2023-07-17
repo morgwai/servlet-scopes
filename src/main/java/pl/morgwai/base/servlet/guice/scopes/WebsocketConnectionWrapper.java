@@ -53,8 +53,9 @@ class WebsocketConnectionWrapper implements Session {
 	@Override
 	public <T> void addMessageHandler(Class<T> messageClass, MessageHandler.Whole<T> handler) {
 		wrappedConnection.addMessageHandler(
-				messageClass,
-				new WebsocketConnectionWrapper.WholeMessageHandlerWrapper<>(handler));
+			messageClass,
+			new WebsocketConnectionWrapper.WholeMessageHandlerWrapper<>(handler)
+		);
 	}
 
 
@@ -62,8 +63,9 @@ class WebsocketConnectionWrapper implements Session {
 	@Override
 	public <T> void addMessageHandler(Class<T> messageClass, MessageHandler.Partial<T> handler) {
 		wrappedConnection.addMessageHandler(
-				messageClass,
-				new WebsocketConnectionWrapper.PartialMessageHandlerWrapper<>(handler));
+			messageClass,
+			new WebsocketConnectionWrapper.PartialMessageHandlerWrapper<>(handler)
+		);
 	}
 
 
@@ -88,12 +90,17 @@ class WebsocketConnectionWrapper implements Session {
 		return wrappedConnection == ((WebsocketConnectionWrapper) other).wrappedConnection;
 	}
 
-	@Override public int hashCode() { return wrappedConnection.hashCode(); }
+	@Override
+	public int hashCode() {
+		return wrappedConnection.hashCode();
+	}
 
 
 
 	WebsocketConnectionWrapper(
-			Session connection, ContextTracker<ContainerCallContext> eventCtxTracker) {
+		Session connection,
+		ContextTracker<ContainerCallContext> eventCtxTracker
+	) {
 		this.wrappedConnection = connection;
 		this.eventCtxTracker = eventCtxTracker;
 		this.httpSession = (HttpSession)
@@ -106,8 +113,7 @@ class WebsocketConnectionWrapper implements Session {
 
 		final MessageHandler wrapped;
 
-		@Override
-		public boolean equals(Object other) {
+		@Override public boolean equals(Object other) {
 			if (other instanceof WebsocketConnectionWrapper.MessageHandlerWrapper) {
 				return wrapped.equals(
 						((WebsocketConnectionWrapper.MessageHandlerWrapper) other).wrapped);
@@ -115,9 +121,13 @@ class WebsocketConnectionWrapper implements Session {
 			return wrapped.equals(other);
 		}
 
-		@Override public int hashCode() { return wrapped.hashCode(); }
+		@Override public int hashCode() {
+			return wrapped.hashCode();
+		}
 
-		MessageHandlerWrapper(MessageHandler handler) { this.wrapped = handler; }
+		MessageHandlerWrapper(MessageHandler handler) {
+			this.wrapped = handler;
+		}
 	}
 
 
@@ -127,8 +137,7 @@ class WebsocketConnectionWrapper implements Session {
 
 		final MessageHandler.Whole<T> wrapped;
 
-		@Override
-		public void onMessage(T message) {
+		@Override public void onMessage(T message) {
 			new WebsocketEventContext(connectionCtx, httpSession, eventCtxTracker)
 					.executeWithinSelf(() -> wrapped.onMessage(message));
 		}
@@ -146,8 +155,7 @@ class WebsocketConnectionWrapper implements Session {
 
 		final MessageHandler.Partial<T> wrapped;
 
-		@Override
-		public void onMessage(T message, boolean last) {
+		@Override public void onMessage(T message, boolean last) {
 			new WebsocketEventContext(connectionCtx, httpSession, eventCtxTracker)
 					.executeWithinSelf(() -> wrapped.onMessage(message, last));
 		}
