@@ -1,16 +1,20 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.scopes;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.BiConsumer;
+
+import javax.servlet.http.HttpServletResponse;
 
 import com.google.inject.Module;
 import com.google.inject.*;
 
-import pl.morgwai.base.concurrent.Awaitable;
-import pl.morgwai.base.concurrent.Awaitable.AwaitInterruptedException;
 import pl.morgwai.base.guice.scopes.*;
+import pl.morgwai.base.guice.scopes.ContextTrackingExecutor.DetailedRejectedExecutionException;
+import pl.morgwai.base.guice.scopes.ContextTrackingExecutor.NamedThreadFactory;
+import pl.morgwai.base.util.concurrent.Awaitable;
+import pl.morgwai.base.util.concurrent.Awaitable.AwaitInterruptedException;
 
 
 
@@ -107,15 +111,11 @@ public class ServletModule implements Module {
 
 
 	/**
-	 * Constructs an executor backed by a new fixed size
-	 * {@link java.util.concurrent.ThreadPoolExecutor} that uses a
-	 * {@link ContextTrackingExecutor.NamedThreadFactory NamedThreadFactory} and an unbound
-	 * {@link java.util.concurrent.LinkedBlockingQueue}.
+	 * Constructs an instance backed by a new fixed size {@link ThreadPoolExecutor} that uses an
+	 * unbound {@link LinkedBlockingQueue} and a new {@link NamedThreadFactory}.
 	 * <p>
 	 * To avoid {@link OutOfMemoryError}s, an external mechanism that limits maximum number of tasks
-	 * (such as a load balancer or frontend) should be used.</p>
-	 * <p>
-	 * Returned executor will be shutdown automatically at app shutdown.</p>
+	 * (such as a load balancer or a frontend proxy) should be used.</p>
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(String name, int poolSize) {
 		var executor = new ContextTrackingExecutor(name, poolSize, allTrackers);
@@ -126,22 +126,21 @@ public class ServletModule implements Module {
 
 
 	/**
-	 * Constructs an executor backed by a new fixed size
-	 * {@link java.util.concurrent.ThreadPoolExecutor} that uses a
-	 * {@link ContextTrackingExecutor.NamedThreadFactory NamedThreadFactory}.
+	 * Constructs an instance backed by a new fixed size {@link ThreadPoolExecutor} that uses
+	 * {@code workQueue}, the default {@link RejectedExecutionHandler} and a new
+	 * {@link NamedThreadFactory} named after this executor.
 	 * <p>
-	 * {@link ContextTrackingExecutor#execute(Runnable)} throws a
-	 * {@link java.util.concurrent.RejectedExecutionException} if {@code workQueue} is full. It
-	 * should usually be handled by sending
-	 * {@link javax.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} to the client.</p>
-	 * <p>
-	 * Returned executor will be shutdown automatically at app shutdown.</p>
+	 * The default {@link RejectedExecutionHandler} throws a
+	 * {@link DetailedRejectedExecutionException} if {@code workQueue} is full or the executor is
+	 * shutting down. It should usually be handled by sending
+	 * {@link HttpServletResponse#SC_SERVICE_UNAVAILABLE} to the client.</p>
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(
-			String name,
-			int poolSize,
-			BlockingQueue<Runnable> workQueue) {
-		var executor = new ContextTrackingExecutor(name, poolSize, workQueue, allTrackers);
+		String name,
+		int poolSize,
+		BlockingQueue<Runnable> workQueue
+	) {
+		var executor = new ContextTrackingExecutor(name, poolSize, allTrackers, workQueue);
 		executors.add(executor);
 		return executor;
 	}
@@ -149,23 +148,25 @@ public class ServletModule implements Module {
 
 
 	/**
-	 * Constructs an executor backed by a new fixed size
-	 * {@link java.util.concurrent.ThreadPoolExecutor}.
+	 * Constructs an instance backed by a new fixed size {@link ThreadPoolExecutor} that uses
+	 * {@code workQueue}, {@code rejectionHandler} and a new {@link NamedThreadFactory} named after
+	 * this executor.
 	 * <p>
-	 * {@link ContextTrackingExecutor#execute(Runnable)} throws a
-	 * {@link java.util.concurrent.RejectedExecutionException} if {@code workQueue} is full. It
-	 * should usually be handled by sending
-	 * {@link javax.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} to the client.</p>
+	 * The first param of {@code rejectionHandler} is a rejected task: either {@link Runnable} or
+	 * {@link Callable} depending whether {@link ContextTrackingExecutor#execute(Runnable)} or
+	 * {@link ContextTrackingExecutor#execute(Callable)} was used.</p>
 	 * <p>
-	 * Returned executor will be shutdown automatically at app shutdown.</p>
+	 * In order for {@link ContextTrackingExecutor#execute(HttpServletResponse, Runnable)} to work
+	 * properly, the {@code rejectionHandler} must throw a {@link RejectedExecutionException}.</p>
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(
-			String name,
-			int poolSize,
-			BlockingQueue<Runnable> workQueue,
-			ThreadFactory threadFactory) {
-		var executor =
-				new ContextTrackingExecutor(name, poolSize, workQueue, threadFactory, allTrackers);
+		String name,
+		int poolSize,
+		BlockingQueue<Runnable> workQueue,
+		BiConsumer<Object, ? super ContextTrackingExecutor> rejectionHandler
+	) {
+		var executor = new ContextTrackingExecutor(
+				name, poolSize, allTrackers, workQueue, rejectionHandler);
 		executors.add(executor);
 		return executor;
 	}
@@ -173,43 +174,66 @@ public class ServletModule implements Module {
 
 
 	/**
-	 * Constructs an executor backed by {@code backingExecutor}.
-	 * <p>
-	 * <b>NOTE:</b> {@code backingExecutor.execute(task)} must throw
-	 * {@link java.util.concurrent.RejectedExecutionException} in case of rejection for
-	 * {@link ContextTrackingExecutor#execute(javax.servlet.http.HttpServletResponse, Runnable)
-	 * execute(httpResponse, task)} to work properly.</p>
-	 * <p>
-	 * {@code poolSize} is informative only, to be returned by
-	 * {@link ContextTrackingExecutor#getPoolSize()}.</p>
-	 * <p>
-	 * Returned executor will be shutdown automatically at app shutdown.</p>
+	 * Constructs an instance backed by a new fixed size {@link ThreadPoolExecutor} that uses
+	 * {@code workQueue}, {@code rejectionHandler} and {@code threadFactory}.
+	 * @see #newContextTrackingExecutor(String, int, BlockingQueue, BiConsumer)
 	 */
 	public ContextTrackingExecutor newContextTrackingExecutor(
-			String name,
-			ExecutorService backingExecutor,
-			int poolSize) {
-		var executor = new ContextTrackingExecutor(name, backingExecutor, poolSize, allTrackers);
+		String name,
+		int poolSize,
+		BlockingQueue<Runnable> workQueue,
+		BiConsumer<Object, ContextTrackingExecutor> rejectionHandler,
+		ThreadFactory threadFactory
+	) {
+		var executor = new ContextTrackingExecutor(
+				name, poolSize, allTrackers, workQueue, rejectionHandler, threadFactory);
 		executors.add(executor);
 		return executor;
 	}
 
 
 
-	@SuppressWarnings("unchecked")
-	List<ContextTrackingExecutor> shutdownAndEnforceTerminationOfAllExecutors(
-			int timeoutSeconds) {
-		for (var executor: executors) executor.shutdownInternal();
+	/**
+	 * Constructs an instance backed by {@code backingExecutor}. A {@link RejectedExecutionHandler}
+	 * of the {@code backingExecutor} will receive a {@link Runnable} that consists of several
+	 * layers of wrappers around the original task, use
+	 * {@link pl.morgwai.base.guice.scopes.ContextTrackingExecutor#unwrapRejectedTask(Runnable)} to
+	 * obtain the original task.
+	 * @param poolSize informative only: to be returned by
+	 *     {@link pl.morgwai.base.guice.scopes.ContextTrackingExecutor#getPoolSize()}.
+	 * @see #newContextTrackingExecutor(String, int, BlockingQueue, BiConsumer)
+	 */
+	public ContextTrackingExecutor newContextTrackingExecutor(
+		String name,
+		int poolSize,
+		ExecutorService backingExecutor
+	) {
+		final var executor =
+				new ContextTrackingExecutor(name, poolSize, allTrackers, backingExecutor);
+		executors.add(executor);
+		return executor;
+	}
+
+
+
+	List<ContextTrackingExecutor> shutdownAndEnforceTerminationOfAllExecutors(int timeoutSeconds) {
+		for (var executor: executors) executor.packageProtectedShutdown();
 		try {
 			return Awaitable.awaitMultiple(
-					timeoutSeconds,
-					TimeUnit.SECONDS,
-					ContextTrackingExecutor::awaitableOfEnforceTermination,
-					executors);
+				timeoutSeconds,
+				TimeUnit.SECONDS,
+				ContextTrackingExecutor::toAwaitableOfEnforceTermination,
+				executors
+			);
 		} catch (AwaitInterruptedException e) {
-			final List<ContextTrackingExecutor> unterminated =
-					(List<ContextTrackingExecutor>) e.getFailed();
-			unterminated.addAll((List<ContextTrackingExecutor>) e.getInterrupted());
+			final var unterminated = new ArrayList<ContextTrackingExecutor>(
+					e.getFailed().size() + e.getInterrupted().size());
+			@SuppressWarnings("unchecked")
+			final var failed = (List<ContextTrackingExecutor>) e.getFailed();
+			unterminated.addAll(failed);
+			@SuppressWarnings("unchecked")
+			final var interrupted = (List<ContextTrackingExecutor>) e.getInterrupted();
+			unterminated.addAll(interrupted);
 			return unterminated;
 		}
 	}

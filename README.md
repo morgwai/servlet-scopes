@@ -5,7 +5,7 @@
 **latest release: 9.4**<br/>
 [javax flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/9.4-javax/jar)
 ([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/9.4-javax))<br/>
-[jakarta flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/9.4-jakarta/jar) (experimental: see [notes](#notes-on-jakarta-support))
+[jakarta flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/9.4-jakarta/jar)
 ([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/9.4-jakarta))
 
 
@@ -135,9 +135,3 @@ There are 2 builds available:
 **Why do I have to myself create a filter that automatically creates HTTP session for websockets? Can't this lib do it for me?**
 
 Always enforcing a session creation is not acceptable in many cases, so this would limit applicability of this lib. Reasons may be technical (cookies disabled, non-browser clients that don't even follow redirections), legal (user explicitly refusing any data storage) and probably others. It's a sad trade-off between applicability and API safety.
-
-
-## NOTES ON JAKARTA SUPPORT
-
-Jakarta flavor is currently based on [repackaged version of Guice](https://github.com/GedMarc/GuicedEE-Services) from [GuicedEE project](https://guicedee.com/), that has some [unresolved](https://github.com/GedMarc/GuicedEE-Services/issues/16) [issues](https://github.com/GedMarc/GuicedEE-Services/issues/17). It seems to work ok for simple cases, but more testing is needed.<br/>
-`servlet-scopes` should however work properly with any other jakarta-repackaged build of Guice with compatible API provided at assemble or runtime. "Compatible API" means the only difference from the upstream API is an exact renaming of all `javax` references to `jakarta`.

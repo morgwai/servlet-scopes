@@ -16,7 +16,7 @@
 		<maven.compiler.target>11</maven.compiler.target>
 		<maven.compiler.release>11</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<servlet.scopes.version>9.5-SNAPSHOT</servlet.scopes.version>
+		<servlet.scopes.version>10.0-SNAPSHOT</servlet.scopes.version>
 	</properties>
 
 	<dependencies>
@@ -49,7 +49,7 @@
 				<dependency>
 					<groupId>com.google.inject</groupId>
 					<artifactId>guice</artifactId>
-					<version>5.1.0</version>
+					<version>6.0.0</version>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
@@ -76,9 +76,9 @@
 					<classifier>shadedbytebuddy</classifier>
 				</dependency>
 				<dependency>
-					<groupId>com.guicedee.services</groupId>
+					<groupId>com.google.inject</groupId>
 					<artifactId>guice</artifactId>
-					<version>1.2.2.1</version>
+					<version>7.0.0</version>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>

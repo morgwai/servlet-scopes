@@ -5,14 +5,15 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
+import java.util.function.BiConsumer;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.Session;
 
-import pl.morgwai.base.concurrent.Awaitable;
 import pl.morgwai.base.guice.scopes.ContextTracker;
+import pl.morgwai.base.util.concurrent.Awaitable;
 
 
 
@@ -68,12 +69,6 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 
 
 
-	public Awaitable.WithUnit awaitableOfAwaitTermination() {
-		return this::awaitTermination;
-	}
-
-
-
 	/**
 	 * @deprecated This method will throw {@link RuntimeException}. Executors obtained from
 	 *     {@link ServletModule} are shutdown automatically at app shutdown.
@@ -104,13 +99,11 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 				"executors obtained from ServletModule are shutdown automatically at app shutdown");
 	}
 
-	void shutdownInternal() {
+	void packageProtectedShutdown() {
 		super.shutdown();
 	}
 
-
-
-	Awaitable.WithUnit awaitableOfEnforceTermination() {
+	Awaitable.WithUnit toAwaitableOfEnforceTermination() {
 		return (timeout, unit) -> super.enforceTermination(timeout, unit).isEmpty();
 	}
 
@@ -120,34 +113,55 @@ public class ContextTrackingExecutor extends pl.morgwai.base.guice.scopes.Contex
 		super(name, poolSize, trackers);
 	}
 
-
-
 	ContextTrackingExecutor(
-			String name,
-			int poolSize,
-			BlockingQueue<Runnable> workQueue,
-			List<ContextTracker<?>> trackers) {
-		super(name, poolSize, workQueue, trackers);
+		String name,
+		int poolSize,
+		List<ContextTracker<?>> trackers,
+		BlockingQueue<Runnable> workQueue
+	) {
+		super(name, poolSize, trackers, workQueue);
 	}
 
-
-
 	ContextTrackingExecutor(
-			String name,
-			int poolSize,
-			BlockingQueue<Runnable> workQueue,
-			ThreadFactory threadFactory,
-			List<ContextTracker<?>> trackers) {
-		super(name, poolSize, workQueue, threadFactory, trackers);
+		String name,
+		int poolSize,
+		List<ContextTracker<?>> trackers,
+		BlockingQueue<Runnable> workQueue,
+		BiConsumer<Object, ? super ContextTrackingExecutor> rejectionHandler
+	) {
+		super(
+			name,
+			poolSize,
+			trackers,
+			workQueue,
+			(task, executor) -> rejectionHandler.accept(task, (ContextTrackingExecutor) executor)
+		);
 	}
 
-
+	ContextTrackingExecutor(
+		String name,
+		int poolSize,
+		List<ContextTracker<?>> trackers,
+		BlockingQueue<Runnable> workQueue,
+		BiConsumer<Object, ? super ContextTrackingExecutor> rejectionHandler,
+		ThreadFactory threadFactory
+	) {
+		super(
+			name,
+			poolSize,
+			trackers,
+			workQueue,
+			(task, executor) -> rejectionHandler.accept(task, (ContextTrackingExecutor) executor),
+			threadFactory
+		);
+	}
 
 	ContextTrackingExecutor(
-			String name,
-			ExecutorService backingExecutor,
-			int poolSize,
-			List<ContextTracker<?>> trackers) {
-		super(name, backingExecutor, poolSize, trackers);
+		String name,
+		int poolSize,
+		List<ContextTracker<?>> trackers,
+		ExecutorService backingExecutor
+	) {
+		super(name, poolSize, trackers, backingExecutor);
 	}
 }
