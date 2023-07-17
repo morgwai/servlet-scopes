@@ -40,7 +40,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<guice.scopes.version>7.0</guice.scopes.version>
 		<utils.version>2.1</utils.version>
-		<servlet.utils.version>2.0</servlet.utils.version>
+		<servlet.utils.version>2.1</servlet.utils.version>
 		<guice.version>6.0.0</guice.version><!--jakarta:<guice.version>7.0.0</guice.version>-->
 	</properties>
 
@@ -69,22 +69,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<version>[1.7.32,)</version>
-			<optional>true</optional>
-		</dependency>
-
-		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>[4.13.2,4.999.0]</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-jdk14</artifactId>
-			<version>[1.7.32,)</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

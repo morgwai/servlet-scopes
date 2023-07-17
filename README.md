@@ -112,7 +112,7 @@ class MyClass {
 When dispatching work to servlet container threads using any of `AsyncContext.dispatch()` methods, the context is transferred automatically.
 
 ### Dependency management
-Dependencies of this jar on [guice](https://search.maven.org/artifact/com.google.inject/guice) and [slf4j-api](https://search.maven.org/artifact/org.slf4j/slf4j-api) are declared as optional, so that apps can use any versions of these deps with compatible API.
+Dependencies of this jar on [guice](https://search.maven.org/artifact/com.google.inject/guice) is declared as optional, so that apps can use any version with compatible API.
 
 There are 2 builds available:
 - build with `shadedbytebuddy` classifier includes relocated dependency on [byte-buddy](https://search.maven.org/artifact/net.bytebuddy/byte-buddy). Most apps should use this build. To do so, add `<classifier>shadedbytebuddy</classifier>` to your dependency declaration.

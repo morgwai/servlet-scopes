@@ -8,6 +8,8 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpSession;
 import javax.websocket.*;
@@ -21,8 +23,6 @@ import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.matcher.ElementMatchers;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
@@ -95,7 +95,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					.set(endpointProxy, endpointDecorator);
 			return endpointProxy;
 		} catch (Exception e) {
-			log.error("endpoint instantiation failed", e);
+			log.log(Level.SEVERE, "endpoint instantiation failed", e);
 			throw new InstantiationException(e.toString());
 		}
 	}
@@ -155,7 +155,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			try {
 				unloadedClass.close();
 			} catch (IOException e) {
-				log.warn("exception while closing unloaded dynamic class", e);
+				log.log(Level.WARNING, "exception while closing unloaded dynamic class", e);
 			}
 		}
 //*/
@@ -290,5 +290,5 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	protected static final Logger log =
-			LoggerFactory.getLogger(GuiceServerEndpointConfigurator.class.getName());
+			Logger.getLogger(GuiceServerEndpointConfigurator.class.getName());
 }
