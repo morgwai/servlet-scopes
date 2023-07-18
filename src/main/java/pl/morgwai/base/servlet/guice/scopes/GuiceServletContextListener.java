@@ -233,6 +233,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			configureServletsFiltersEndpoints();
 		} catch (ServletException e) {
 			log.log(Level.SEVERE, "could not start the server", e);
+			e.printStackTrace();
 			System.exit(1);
 		}
 	}
