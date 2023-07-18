@@ -252,9 +252,11 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	@Override
 	public void contextDestroyed(ServletContextEvent destructionEvent) {
-		var uncleanlyTerminated = servletModule.shutdownAndEnforceTerminationOfAllExecutors(
-				getExecutorsShutdownTimeoutSeconds());
-		handleUncleanExecutorTerminations(uncleanlyTerminated);
+		handleUncleanExecutorTerminations(
+			servletModule.shutdownAndEnforceTerminationOfAllExecutors(
+				getExecutorsShutdownTimeoutSeconds()
+			)
+		);
 	}
 
 	/**
@@ -267,8 +269,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * Subclasses may override this method to examine the executors that failed to shutdown cleanly.
 	 * By default does nothing.
 	 */
-	protected void handleUncleanExecutorTerminations(List<ServletContextTrackingExecutor> executors)
-	{}
+	protected void handleUncleanExecutorTerminations(
+			List<ServletContextTrackingExecutor> notCleanlyShutdownExecutors) {}
 
 
 
