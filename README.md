@@ -29,35 +29,40 @@ Scopes bindings to a given `HttpSession`. Available both to servlets and websock
 
 ## MAIN USER CLASSES
 
-### [ServletModule](src/main/java/pl/morgwai/base/servlet/scopes/ServletModule.java)
+### [ServletModule](src/main/java/pl/morgwai/base/servlet/guice/scopes/ServletModule.java)
 Contains the above `Scope`s, `ContextTracker`s and some helper methods.
 
-### [ContextTrackingExecutor](src/main/java/pl/morgwai/base/servlet/scopes/ContextTrackingExecutor.java)
-An `Executor` (backed by a fixed size `ThreadPoolExecutor` by default) that upon dispatching automatically updates which thread runs within which `Context` (`ServletRequest`/`WebsocketEvent`, `WebsocketConnection`, `HttpSession`).<br/>
+### [ServletContextTrackingExecutor](src/main/java/pl/morgwai/base/servlet/guice/scopes/ServletContextTrackingExecutor.java)
+A `ThreadPoolExecutor` that upon dispatching a task, automatically transfers all the current `Context`s to the worker thread.<br/>
 Instances should usually be created using helper methods from the above `ServletModule` and configured for named instance injection in user modules.
 
-### [GuiceServerEndpointConfigurator](src/main/java/pl/morgwai/base/servlet/scopes/GuiceServerEndpointConfigurator.java)
+### [GuiceServerEndpointConfigurator](src/main/java/pl/morgwai/base/servlet/guice/scopes/GuiceServerEndpointConfigurator.java)
 A websocket endpoint `Configurator` that automatically injects dependencies of newly created endpoint instances and decorates their methods to automatically create context for websocket connections and events.
 
-### [GuiceServletContextListener](src/main/java/pl/morgwai/base/servlet/scopes/GuiceServletContextListener.java)
+### [GuiceServletContextListener](src/main/java/pl/morgwai/base/servlet/guice/scopes/GuiceServletContextListener.java)
 Base class for app's `ServletContextListener`. Creates and configures apps Guice `Injector` and the above `ServletModule`. Provides also some helper methods.
 
-### [PingingEndpointConfigurator](src/main/java/pl/morgwai/base/servlet/guiced/utils/PingingEndpointConfigurator.java)
+### [PingingEndpointConfigurator](src/main/java/pl/morgwai/base/servlet/guice/utils/PingingEndpointConfigurator.java)
 Subclass of `GuiceServerEndpointConfigurator` that additionally automatically registers/deregisters created endpoint instances to a [WebsocketPingerService](https://github.com/morgwai/servlet-utils#main-user-classes).
 
-### [PingingServletContextListener](src/main/java/pl/morgwai/base/servlet/guiced/utils/PingingServletContextListener.java)
+### [PingingServletContextListener](src/main/java/pl/morgwai/base/servlet/guice/utils/PingingServletContextListener.java)
 Subclass of `GuiceServletContextListener` that uses `PingingEndpointConfigurator`.
+
+### [ContextBinder](https://github.com/morgwai/guice-context-scopes/blob/master/src/main/java/pl/morgwai/base/guice/scopes/ContextBinder.java)
+Binds tasks and callbacks (`Runnable`s, `Consumer`s and `BiConsumer`s) to contexts that were active at the time of binding. This can be used to transfer `Context`s **almost** fully automatically when it's not possible to use `GrpcContextTrackingExecutor` when switching threads (for example when providing callbacks as arguments to async functions). See a usage sample below.
 
 
 ## USAGE
 
+### Adding Guice `Modules` and programmatic `Servlet`s and `Endpoint`s in `ServletContextListener`
 ```java
 @WebListener
-public class ServletContextListener extends GuiceServletContextListener {  // ...or PingingServletContextListener
+public class ServletContextListener extends GuiceServletContextListener {
+                          // ...or `extends PingingServletContextListener {`
 
     @Override
     protected LinkedList<Module> configureInjections() {
-        LinkedList<Module> modules = new LinkedList<Module>();
+        final var modules = new LinkedList<Module>();
         modules.add((binder) -> {
             binder.bind(MyService.class).in(servletModule.containerCallScope);
                 // @Inject Provider<MyService> myServiceProvider;
@@ -75,6 +80,8 @@ public class ServletContextListener extends GuiceServletContextListener {  // ..
 }
 ```
 
+### Using annotated `Endpoints`
+Note: for `GuiceServerEndpointConfigurator` to work, app's `ServletContextListener` still needs to extend either `GuiceServletContextListener` or `PingingServletContextListener` as in the example above, even if there are no programmatic `Servlet`s nor `Endpoint`s.
 ```java
 @ServerEndpoint(
     value = "/websocket/mySocket",
@@ -89,27 +96,21 @@ public class MyEndpoint {
 // MessageHandlers will run within containerCallScope, websocketConnectionScope and httpSessionScope
 ```
 
-In cases when it's not possible to avoid thread switching without the use of `ContextTrackingExecutor` (for example when passing callbacks to some async calls), static helper methods `getActiveContexts(List<ContextTracker<?>>)` and `executeWithinAll(List<TrackableContext>, Runnable)` defined in `ContextTrackingExecutor` can be used to transfer context manually:
-
+### Transferring contexts to callbacks with `ContextBinder`
 ```java
-class MyClass {
+class MyComponent {
 
-    @Inject List<ContextTracker<?>> allTrackers;
+    @Inject ContextBinder ctxBinder;
 
-    void myMethod(Object param) {
-        // myMethod code
-        var activeCtxList = ContextTrackingExecutor.getActiveContexts(allTrackers);
-        someAsyncMethod(
-            param,
-            (callbackParam) -> ContextTrackingExecutor.executeWithinAll(activeCtxList, () -> {
-                // callback code
-            })
-        );
+    void methodThatCallsSomeAsyncMethod(/* ... */) {
+        // other code here...
+        someAsyncMethod(arg1, /* ... */ argN, ctxBinder.bindToContext((callbackParam) -> {
+            // callback code here...
+        }));
     }
 }
 ```
-
-When dispatching work to servlet container threads using any of `AsyncContext.dispatch()` methods, the context is transferred automatically.
+**NOTE:** when dispatching work to servlet container threads using any of `AsyncContext.dispatch()` methods, the context is transferred **automatically**.
 
 ### Dependency management
 Dependencies of this jar on [guice](https://search.maven.org/artifact/com.google.inject/guice) is declared as optional, so that apps can use any version with compatible API.
@@ -127,7 +128,6 @@ There are 2 builds available:
 ## FAQ
 
 **Why isn't this built on top of [official servlet scopes lib](https://github.com/google/guice/wiki/Servlets)?**
-* it would not be possible to reuse `ContextTrackingExecutor` and it would need to be rewritten.
 * in order to extend the official Guice-servlet lib to support websockets, the code would need to pretend that everything is an `HttpServletRequest` (websocket events and websocket connections would need to be wrapped in some fake `HttpSevletRequest` wrappers), which seems awkward.
 * `guice-context-scopes` is thread-safe: a single request can be handled by multiple threads (as long as accessed scoped objects are thread-safe or properly synchronized).
 * `guice-context-scopes` allows to remove objects from scopes.

@@ -2,8 +2,10 @@
 package pl.morgwai.base.servlet.guice.scopes;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServlet;
@@ -252,25 +254,34 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	@Override
 	public void contextDestroyed(ServletContextEvent destructionEvent) {
-		handleUncleanExecutorTerminations(
-			servletModule.shutdownAndEnforceTerminationOfAllExecutors(
-				getExecutorsShutdownTimeoutSeconds()
-			)
-		);
+		servletModule.shutdownAllExecutors();
+		List<ServletContextTrackingExecutor> unterminatedExecutors;
+		try {
+			unterminatedExecutors = servletModule.awaitTerminationOfAllExecutors(
+					getExecutorsShutdownTimeoutSeconds(), TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			unterminatedExecutors = servletModule.getExecutors().stream()
+				.filter((executor) -> !executor.isTerminated())
+				.collect(Collectors.toList());
+		}
+		handleUnterminatedExecutors(unterminatedExecutors);
 	}
 
 	/**
 	 * Returns the timeout for shutdown of executors obtained from {@link #servletModule}.
-	 * By default 5 seconds.
+	 * By default {@code 5} seconds.
 	 */
 	protected int getExecutorsShutdownTimeoutSeconds() { return 5; }
 
 	/**
-	 * Subclasses may override this method to examine the executors that failed to shutdown cleanly.
-	 * By default does nothing.
+	 * Subclasses may override this method to examine the executors that failed to terminate.
+	 * By default calls {@link java.util.concurrent.ExecutorService#shutdownNow() shutdownNow()} for
+	 * each executor and hopes for the best...
 	 */
-	protected void handleUncleanExecutorTerminations(
-			List<ServletContextTrackingExecutor> notCleanlyShutdownExecutors) {}
+	protected void handleUnterminatedExecutors(
+			List<ServletContextTrackingExecutor> unterminatedExecutors) {
+		for (var executor: unterminatedExecutors) executor.shutdownNow();
+	}
 
 
 

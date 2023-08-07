@@ -3,18 +3,11 @@ package pl.morgwai.base.servlet.guice.scopes;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.BiConsumer;
-
-import javax.servlet.http.HttpServletResponse;
 
 import com.google.inject.Module;
 import com.google.inject.*;
-
 import pl.morgwai.base.guice.scopes.*;
-import pl.morgwai.base.guice.scopes.ContextTrackingExecutor.DetailedRejectedExecutionException;
-import pl.morgwai.base.guice.scopes.ContextTrackingExecutor.NamedThreadFactory;
-import pl.morgwai.base.util.concurrent.Awaitable;
-import pl.morgwai.base.util.concurrent.Awaitable.AwaitInterruptedException;
+import pl.morgwai.base.utils.concurrent.Awaitable;
 
 
 
@@ -74,16 +67,19 @@ public class ServletModule implements Module {
 
 	/**
 	 * Contains all trackers. {@link #configure(Binder)} binds {@code List<ContextTracker<?>>} to it
-	 * for use with {@link ServletContextTrackingExecutor#getActiveContexts(List)}.
+	 * for use with {@link ContextTracker#getActiveContexts(List)}.
 	 */
 	public final List<ContextTracker<?>> allTrackers = List.of(containerCallContextTracker);
 
 
 
 	/**
-	 * Binds {@link #containerCallContextTracker} and all contexts for injection.
-	 * Binds {@code List<ContextTracker<?>>} to {@link #allTrackers} that contains all trackers for
-	 * use with {@link ServletContextTrackingExecutor#getActiveContexts(List)}.
+	 * Creates infrastructure bindings. Binds the following:
+	 * <ul>
+	 *   <li>Their respective types to {@link #containerCallContextTracker} and all 3 contexts</li>
+	 *   <li>{@code List<ContextTracker<?>>} to {@link #allTrackers}</li>
+	 *   <li>{@link ContextBinder} to {@code new ContextBinder(allTrackers)}</li>
+	 * </ul>
 	 */
 	@Override
 	public void configure(Binder binder) {
@@ -100,145 +96,178 @@ public class ServletModule implements Module {
 						.getConnectionContext()
 			)
 		);
-
 		TypeLiteral<List<ContextTracker<?>>> trackersType = new TypeLiteral<>() {};
 		binder.bind(trackersType).toInstance(allTrackers);
+		binder.bind(ContextBinder.class).toInstance(new ContextBinder(allTrackers));
 	}
 
 
+
+	/** List of all executors created by this module. */
+	public List<ServletContextTrackingExecutor> getExecutors() {
+		return Collections.unmodifiableList(executors);
+	}
 
 	final List<ServletContextTrackingExecutor> executors = new LinkedList<>();
 
 
 
 	/**
-	 * Constructs an instance backed by a new fixed size {@link ThreadPoolExecutor} that uses an
-	 * unbound {@link LinkedBlockingQueue} and a new {@link NamedThreadFactory}.
+	 * Constructs a fixed size, context tracking executor that uses an unbound
+	 * {@link LinkedBlockingQueue} and a new
+	 * {@link pl.morgwai.base.utils.concurrent.NamingThreadFactory} named after this executor.
 	 * <p>
 	 * To avoid {@link OutOfMemoryError}s, an external mechanism that limits maximum number of tasks
 	 * (such as a load balancer or a frontend proxy) should be used.</p>
 	 */
 	public ServletContextTrackingExecutor newContextTrackingExecutor(String name, int poolSize) {
-		var executor = new ServletContextTrackingExecutor(name, poolSize, allTrackers);
+		final var executor = new ServletContextTrackingExecutor(name, allTrackers, poolSize);
 		executors.add(executor);
 		return executor;
 	}
 
-
-
 	/**
-	 * Constructs an instance backed by a new fixed size {@link ThreadPoolExecutor} that uses
-	 * {@code workQueue}, the default {@link RejectedExecutionHandler} and a new
-	 * {@link NamedThreadFactory} named after this executor.
+	 * Constructs a fixed size, context tracking executor that uses a {@link LinkedBlockingQueue} of
+	 * size {@code queueSize}, the default {@link RejectedExecutionHandler} and a new
+	 * {@link pl.morgwai.base.utils.concurrent.NamingThreadFactory} named after this executor.
 	 * <p>
-	 * The default {@link RejectedExecutionHandler} throws a
-	 * {@link DetailedRejectedExecutionException} if {@code workQueue} is full or the executor is
-	 * shutting down. It should usually be handled by sending
-	 * {@link HttpServletResponse#SC_SERVICE_UNAVAILABLE} to the client.</p>
+	 * The default {@link RejectedExecutionHandler} throws a {@link RejectedExecutionException} if
+	 * the queue is full or the executor is shutting down. It should usually be handled by
+	 * sending {@link javax.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} /
+	 * {@link javax.websocket.CloseReason.CloseCodes#TRY_AGAIN_LATER} to the client.</p>
 	 */
 	public ServletContextTrackingExecutor newContextTrackingExecutor(
 		String name,
 		int poolSize,
-		BlockingQueue<Runnable> workQueue
-	) {
-		var executor = new ServletContextTrackingExecutor(name, poolSize, allTrackers, workQueue);
-		executors.add(executor);
-		return executor;
-	}
-
-
-
-	/**
-	 * Constructs an instance backed by a new fixed size {@link ThreadPoolExecutor} that uses
-	 * {@code workQueue}, {@code rejectionHandler} and a new {@link NamedThreadFactory} named after
-	 * this executor.
-	 * <p>
-	 * The first param of {@code rejectionHandler} is a rejected task: either {@link Runnable} or
-	 * {@link Callable} depending whether {@link ServletContextTrackingExecutor#execute(Runnable)}
-	 * or {@link ServletContextTrackingExecutor#execute(Callable)} was used.</p>
-	 * <p>
-	 * In order for {@link ServletContextTrackingExecutor#execute(HttpServletResponse, Runnable)} to
-	 * work properly, the {@code rejectionHandler} must throw a {@link RejectedExecutionException}.
-	 * </p>
-	 */
-	public ServletContextTrackingExecutor newContextTrackingExecutor(
-		String name,
-		int poolSize,
-		BlockingQueue<Runnable> workQueue,
-		BiConsumer<Object, ? super ServletContextTrackingExecutor> rejectionHandler
-	) {
-		var executor = new ServletContextTrackingExecutor(
-				name, poolSize, allTrackers, workQueue, rejectionHandler);
-		executors.add(executor);
-		return executor;
-	}
-
-
-
-	/**
-	 * Constructs an instance backed by a new fixed size {@link ThreadPoolExecutor} that uses
-	 * {@code workQueue}, {@code rejectionHandler} and {@code threadFactory}.
-	 * @see #newContextTrackingExecutor(String, int, BlockingQueue, BiConsumer)
-	 */
-	public ServletContextTrackingExecutor newContextTrackingExecutor(
-		String name,
-		int poolSize,
-		BlockingQueue<Runnable> workQueue,
-		BiConsumer<Object, ServletContextTrackingExecutor> rejectionHandler,
-		ThreadFactory threadFactory
-	) {
-		var executor = new ServletContextTrackingExecutor(
-				name, poolSize, allTrackers, workQueue, rejectionHandler, threadFactory);
-		executors.add(executor);
-		return executor;
-	}
-
-
-
-	/**
-	 * Constructs an instance backed by {@code backingExecutor}. A {@link RejectedExecutionHandler}
-	 * of the {@code backingExecutor} will receive a {@link Runnable} that consists of several
-	 * layers of wrappers around the original task, use
-	 * {@link pl.morgwai.base.guice.scopes.ContextTrackingExecutor#unwrapRejectedTask(Runnable)} to
-	 * obtain the original task.
-	 * @param poolSize informative only: to be returned by
-	 *     {@link pl.morgwai.base.guice.scopes.ContextTrackingExecutor#getPoolSize()}.
-	 * @see #newContextTrackingExecutor(String, int, BlockingQueue, BiConsumer)
-	 */
-	public ServletContextTrackingExecutor newContextTrackingExecutor(
-		String name,
-		int poolSize,
-		ExecutorService backingExecutor
+		int queueSize
 	) {
 		final var executor =
-				new ServletContextTrackingExecutor(name, poolSize, allTrackers, backingExecutor);
+				new ServletContextTrackingExecutor(name, allTrackers, poolSize, queueSize);
+		executors.add(executor);
+		return executor;
+	}
+
+	/**
+	 * Constructs a fixed size, context tracking executor that uses {@code workQueue},
+	 * {@code rejectionHandler} and a new
+	 * {@link pl.morgwai.base.utils.concurrent.NamingThreadFactory} named after this executor.
+	 * <p>
+	 * {@code rejectionHandler} will receive a task wrapped with a {@link ContextBoundRunnable}.</p>
+	 * <p>
+	 * In order for {@link ServletContextTrackingExecutor#execute(
+	 * javax.servlet.http.HttpServletResponse, Runnable)} and
+	 * {@link ServletContextTrackingExecutor#execute(javax.websocket.Session, Runnable)} to work
+	 * properly, the {@code rejectionHandler} must throw a {@link RejectedExecutionException}.</p>
+	 */
+	public ServletContextTrackingExecutor newContextTrackingExecutor(
+		String name,
+		int poolSize,
+		BlockingQueue<Runnable> workQueue,
+		RejectedExecutionHandler rejectionHandler
+	) {
+		final var executor = new ServletContextTrackingExecutor(
+				name, allTrackers, poolSize, workQueue, rejectionHandler);
+		executors.add(executor);
+		return executor;
+	}
+
+	/**
+	 * Constructs a context tracking executor.
+	 * @see ThreadPoolExecutor#ThreadPoolExecutor(int, int, long, TimeUnit, BlockingQueue,
+	 *     ThreadFactory, RejectedExecutionHandler) ThreadPoolExecutor constructor docs for param
+	 *     details
+	 * @see #newContextTrackingExecutor(String, int, BlockingQueue, RejectedExecutionHandler)
+	 *     notes on <code>rejectionHandler</code>
+	 */
+	public ServletContextTrackingExecutor newContextTrackingExecutor(
+		String name,
+		int corePoolSize,
+		int maxPoolSize,
+		long keepAliveTime,
+		TimeUnit unit,
+		BlockingQueue<Runnable> workQueue,
+		ThreadFactory threadFactory,
+		RejectedExecutionHandler handler
+	) {
+		final var executor = new ServletContextTrackingExecutor(
+			name,
+			allTrackers,
+			corePoolSize,
+			maxPoolSize,
+			keepAliveTime,
+			unit,
+			workQueue,
+			threadFactory,
+			handler
+		);
 		executors.add(executor);
 		return executor;
 	}
 
 
 
-	List<ServletContextTrackingExecutor> shutdownAndEnforceTerminationOfAllExecutors(
-		int timeoutSeconds
-	) {
-		for (var executor: executors) executor.packageProtectedShutdown();
-		try {
-			return Awaitable.awaitMultiple(
-				timeoutSeconds,
-				TimeUnit.SECONDS,
-				ServletContextTrackingExecutor::toAwaitableOfEnforceTermination,
-				executors
-			);
-		} catch (AwaitInterruptedException e) {
-			final var unterminated = new ArrayList<ServletContextTrackingExecutor>(
-					e.getFailed().size() + e.getInterrupted().size());
-			@SuppressWarnings("unchecked")
-			final var failed = (List<ServletContextTrackingExecutor>) e.getFailed();
-			unterminated.addAll(failed);
-			@SuppressWarnings("unchecked")
-			final var interrupted = (List<ServletContextTrackingExecutor>) e.getInterrupted();
-			unterminated.addAll(interrupted);
-			return unterminated;
-		}
+	/** Shutdowns all executors obtained from this module. */
+	public void shutdownAllExecutors() {
+		for (var executor: executors) executor.shutdown();
+	}
+
+	/**
+	 * {@link ServletContextTrackingExecutor#toAwaitableOfEnforcedTermination() Enforces
+	 * termination} of all executors obtained from this module.
+	 * @return an empty list if all executors were terminated, list of unterminated otherwise.
+	 */
+	public List<ServletContextTrackingExecutor> enforceTerminationOfAllExecutors(
+		long timeout,
+		TimeUnit unit
+	) throws InterruptedException {
+		return Awaitable.awaitMultiple(
+			timeout,
+			unit,
+			ServletContextTrackingExecutor::toAwaitableOfEnforcedTermination,
+			executors
+		);
+	}
+
+	/**
+	 * {@link ServletContextTrackingExecutor#toAwaitableOfTermination() Awaits for termination} of
+	 * all executors obtained from this module.
+	 * @return an empty list if all executors were terminated, list of unterminated otherwise.
+	 */
+	public List<ServletContextTrackingExecutor> awaitTerminationOfAllExecutors(
+		long timeout,
+		TimeUnit unit
+	) throws InterruptedException {
+		return Awaitable.awaitMultiple(
+			timeout,
+			unit,
+			ServletContextTrackingExecutor::toAwaitableOfTermination,
+			executors
+		);
+	}
+
+	/**
+	 * {@link ServletContextTrackingExecutor#awaitTermination() Awaits for termination} of all
+	 * executors obtained from this module.
+	 */
+	public void awaitTerminationOfAllExecutors() throws InterruptedException {
+		for (var executor: executors) executor.awaitTermination();
+	}
+
+	/**
+	 * Creates {@link Awaitable.WithUnit} of
+	 * {@link #enforceTerminationOfAllExecutors(long, TimeUnit)}.
+	 */
+	public Awaitable.WithUnit toAwaitableOfEnforcedTerminationOfAllExecutors() {
+		shutdownAllExecutors();
+		return (timeout, unit) -> enforceTerminationOfAllExecutors(timeout, unit).isEmpty();
+	}
+
+	/**
+	 * Creates {@link Awaitable.WithUnit} of
+	 * {@link #awaitTerminationOfAllExecutors(long, TimeUnit)}.
+	 */
+	public Awaitable.WithUnit toAwaitableOfTerminationOfAllExecutors() {
+		shutdownAllExecutors();
+		return (timeout, unit) -> awaitTerminationOfAllExecutors(timeout, unit).isEmpty();
 	}
 }

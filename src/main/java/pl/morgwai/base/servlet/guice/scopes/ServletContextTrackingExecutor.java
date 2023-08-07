@@ -3,33 +3,50 @@ package pl.morgwai.base.servlet.guice.scopes;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.*;
-import java.util.function.BiConsumer;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.Session;
 
+import pl.morgwai.base.guice.scopes.ContextBoundRunnable;
 import pl.morgwai.base.guice.scopes.ContextTracker;
-import pl.morgwai.base.guice.scopes.ContextTrackingExecutor;
-import pl.morgwai.base.util.concurrent.Awaitable;
+import pl.morgwai.base.utils.concurrent.NamingThreadFactory;
+import pl.morgwai.base.utils.concurrent.TaskTrackingThreadPoolExecutor;
 
 
 
 /**
- * A {@link pl.morgwai.base.guice.scopes.ContextTrackingExecutor} with additional
- * {@link #execute(HttpServletResponse, Runnable) execute(httpResponse, task)} and
- * {@link #execute(Session, Runnable) execute(wsConnection, task)} methods
- * that send {@link HttpServletResponse#SC_SERVICE_UNAVAILABLE 503} /
- * {@link CloseCodes#TRY_AGAIN_LATER TRY_AGAIN_LATER} if the task is rejected.
- * This can happen due to an overload or a shutdown.
+ * A {@link TaskTrackingThreadPoolExecutor} that wraps tasks with {@link ContextBoundRunnable}
+ * decorator to automatically transfer contexts.
  * <p>
- * Instances can be created using {@link ServletModule#newContextTrackingExecutor(String, int)
+ * Instances should usually be created using
+ * {@link ServletModule#newContextTrackingExecutor(String, int)
  * ServletModule.newContextTrackingExecutor(...)} helper methods family.</p>
  */
-public class ServletContextTrackingExecutor extends ContextTrackingExecutor {
+public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecutor {
+
+
+
+	public String getName() { return name; }
+	final String name;
+
+	final List<ContextTracker<?>> trackers;
+
+
+
+	public ServletContextTrackingExecutor(
+			String name, List<ContextTracker<?>> trackers, int poolSize) {
+		this(name, trackers, poolSize, new LinkedBlockingQueue<>());
+	}
+
+
+
+	@Override
+	public void execute(Runnable task) {
+		super.execute(new ContextBoundRunnable(ContextTracker.getActiveContexts(trackers), task));
+	}
 
 
 
@@ -46,27 +63,6 @@ public class ServletContextTrackingExecutor extends ContextTrackingExecutor {
 					response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
 				}
 			} catch (IOException ignored) {}  // broken connection
-		}
-	}
-
-
-
-	/**
-	 * Calls {@link #execute(Runnable) execute(task)} and if it's rejected, sends
-	 * {@link HttpServletResponse#SC_SERVICE_UNAVAILABLE} to {@code response} and returns
-	 * {@link CompletableFuture#failedFuture(Throwable)} with the {@link RejectedExecutionException}
-	 * as the argument.
-	 */
-	public <T> CompletableFuture<T> execute(HttpServletResponse response, Callable<T> task) {
-		try {
-			return execute(task);
-		} catch (RejectedExecutionException e) {
-			try {
-				if ( !response.isCommitted()) {
-					response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-				}
-			} catch (IOException ignored) {}  // broken connection
-			return CompletableFuture.failedFuture(e);
 		}
 	}
 
@@ -91,123 +87,76 @@ public class ServletContextTrackingExecutor extends ContextTrackingExecutor {
 
 
 
-	/**
-	 * Calls {@link #execute(Runnable) execute(task)} and if it's rejected, closes
-	 * {@code connection} with {@link CloseCodes#TRY_AGAIN_LATER} and returns
-	 * {@link CompletableFuture#failedFuture(Throwable)} with the {@link RejectedExecutionException}
-	 * as the argument.
-	 */
-	public <T> CompletableFuture<T> execute(Session connection, Callable<T> task) {
-		try {
-			return execute(task);
-		} catch (RejectedExecutionException e) {
-			try {
-				if (connection.isOpen()) {
-					connection.close(new CloseReason(
-							CloseCodes.TRY_AGAIN_LATER, "service overloaded or restarting"));
-				}
-			} catch (IOException ignored) {}  // broken connection
-			return CompletableFuture.failedFuture(e);
-		}
+	@Override
+	public String toString() {
+		return "ServletContextTrackingExecutor { name=\"" + name + "\" }";
 	}
 
 
 
-	/**
-	 * @deprecated This method will throw {@link RuntimeException}. Executors obtained from
-	 *     {@link ServletModule} are shutdown automatically at app shutdown.
-	 */
-	@Override @Deprecated
-	public void shutdown() {
-		throw new RuntimeException(
-				"executors obtained from ServletModule are shutdown automatically at app shutdown");
-	}
-
-	/**
-	 * @deprecated This method will throw {@link RuntimeException}. Executors obtained from
-	 *     {@link ServletModule} are shutdown automatically at app shutdown.
-	 */
-	@Override @Deprecated
-	public Optional<List<Runnable>> enforceTermination(long timeout, TimeUnit unit) {
-		throw new RuntimeException(
-				"executors obtained from ServletModule are shutdown automatically at app shutdown");
-	}
-
-	/**
-	 * @deprecated This method will throw {@link RuntimeException}. Executors obtained from
-	 *     {@link ServletModule} are shutdown automatically at app shutdown.
-	 */
-	@Override @Deprecated
-	public List<Runnable> shutdownNow() {
-		throw new RuntimeException(
-				"executors obtained from ServletModule are shutdown automatically at app shutdown");
-	}
-
-	void packageProtectedShutdown() {
-		super.shutdown();
-	}
-
-	Awaitable.WithUnit toAwaitableOfEnforceTermination() {
-		return (timeout, unit) -> super.enforceTermination(timeout, unit).isEmpty();
-	}
-
-
-
-	ServletContextTrackingExecutor(String name, int poolSize, List<ContextTracker<?>> trackers) {
-		super(name, poolSize, trackers);
-	}
-
-	ServletContextTrackingExecutor(
+	/** See {@link ServletModule#newContextTrackingExecutor(String, int, int)}. */
+	public ServletContextTrackingExecutor(
 		String name,
-		int poolSize,
 		List<ContextTracker<?>> trackers,
+		int poolSize,
+		int queueSize
+	) {
+		this(name, trackers, poolSize, new LinkedBlockingQueue<>(queueSize));
+	}
+
+	public ServletContextTrackingExecutor(
+		String name,
+		List<ContextTracker<?>> trackers,
+		int poolSize,
 		BlockingQueue<Runnable> workQueue
 	) {
-		super(name, poolSize, trackers, workQueue);
+		super(poolSize, poolSize, 0L, TimeUnit.DAYS, workQueue, new NamingThreadFactory(name));
+		this.name = name;
+		this.trackers = trackers;
 	}
 
-	ServletContextTrackingExecutor(
+	/**
+	 * See {@link ServletModule#newContextTrackingExecutor(String, int, BlockingQueue,
+	 * RejectedExecutionHandler)}.
+	 */
+	public ServletContextTrackingExecutor(
 		String name,
-		int poolSize,
 		List<ContextTracker<?>> trackers,
+		int poolSize,
 		BlockingQueue<Runnable> workQueue,
-		BiConsumer<Object, ? super ServletContextTrackingExecutor> rejectionHandler
+		RejectedExecutionHandler rejectionHandler
 	) {
-		super(
+		this(
 			name,
-			poolSize,
 			trackers,
+			poolSize,
+			poolSize,
+			0L,
+			TimeUnit.SECONDS,
 			workQueue,
-			(task, executor) ->
-					rejectionHandler.accept(task, (ServletContextTrackingExecutor) executor)
+			new NamingThreadFactory(name),
+			rejectionHandler
 		);
 	}
 
-	ServletContextTrackingExecutor(
+	/**
+	 * See {@link ServletModule#newContextTrackingExecutor(String, int, int, long, TimeUnit,
+	 * BlockingQueue, ThreadFactory, RejectedExecutionHandler)}.
+	 */
+	public ServletContextTrackingExecutor(
 		String name,
-		int poolSize,
 		List<ContextTracker<?>> trackers,
+		int corePoolSize,
+		int maxPoolSize,
+		long keepAliveTime,
+		TimeUnit unit,
 		BlockingQueue<Runnable> workQueue,
-		BiConsumer<Object, ? super ServletContextTrackingExecutor> rejectionHandler,
-		ThreadFactory threadFactory
+		ThreadFactory threadFactory,
+		RejectedExecutionHandler handler
 	) {
-		super(
-			name,
-			poolSize,
-			trackers,
-			workQueue,
-			(task, executor) ->
-					rejectionHandler.accept(task, (ServletContextTrackingExecutor) executor),
-			threadFactory
-		);
+		super(corePoolSize, maxPoolSize, keepAliveTime, unit, workQueue, threadFactory, handler);
+		this.name = name;
+		this.trackers = trackers;
 	}
 
-	ServletContextTrackingExecutor(
-		String name,
-		int poolSize,
-		List<ContextTracker<?>> trackers,
-		ExecutorService backingExecutor
-	) {
-		super(name, poolSize, trackers, backingExecutor);
-	}
 }
