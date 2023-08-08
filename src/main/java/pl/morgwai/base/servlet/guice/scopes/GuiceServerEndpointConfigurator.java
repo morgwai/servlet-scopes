@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 import javax.servlet.http.HttpSession;
 import javax.websocket.*;
 import javax.websocket.server.*;
+import javax.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -35,18 +36,19 @@ import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnOpen;
  * the created endpoints are executed within {@link WebsocketConnectionContext} and
  * {@link ContainerCallContext}.
  * <p>
- * For endpoints annotated with @{@link ServerEndpoint}, this class must be used as
+ * For endpoints annotated with @{@link ServerEndpoint}, this class should be used as
  * {@link ServerEndpoint#configurator() configurator} param of the annotation:</p>
  * <pre>
- * &commat;ServerEndpoint(
+ * &#64;ServerEndpoint(
  *     value = "/websocket/mySocket",
  *     configurator = GuiceServerEndpointConfigurator.class)
  * public class MyEndpoint {...}</pre>
  * <p>
  * <b>NOTE:</b> methods annotated with @{@link OnOpen} <b>must</b> have a {@link Session} param.</p>
  * <p>
- * For endpoints added programmatically, a {@link ServerEndpointConfig} similar to the below should
- * be used:</p>
+ * For endpoints added programmatically, an instance of this configurator should by supplied as an
+ * argument to {@link ServerEndpointConfig.Builder#configurator(Configurator)} method similar to the
+ * below:</p>
  * <pre>
  * websocketContainer.addEndpoint(ServerEndpointConfig.Builder
  *         .create(MyEndpoint.class, "/websocket/mySocket")
@@ -62,7 +64,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	/**
-	 * Creates a new {@code endpointClass} instance and a proxy for it. Injects dependencies of
+	 * Creates a new {@code endpointClass} instance and a proxy for it. Injects the dependencies of
 	 * the newly created endpoint. The proxy ensures that endpoint's lifecycle methods are
 	 * executed within {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
 	 * @return a proxy for a new {@code endpointClass} instance.
@@ -86,6 +88,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				}
 			}
 		}
+
 		try {
 			final var proxyClass = getProxyClass(endpointClass);
 			final EndpointT endpointProxy = super.getEndpointInstance(proxyClass);
@@ -100,23 +103,26 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		}
 	}
 
-	static final String PROXY_DECORATOR_FIELD_NAME = "pl_morgwai_decorator";
+	static final String PROXY_DECORATOR_FIELD_NAME =
+			GuiceServerEndpointConfigurator.class.getPackageName().replace('.', '_')
+					+ "_endpoint_decorator";
 
 	/**
 	 * Exposed for proxy class pre-building in
 	 * {@link GuiceServletContextListener#addEndpoint(Class, String)}.
 	 */
-	@SuppressWarnings("unchecked")
 	<EndpointT> Class<? extends EndpointT> getProxyClass(Class<EndpointT> endpointClass) {
-		return (Class<? extends EndpointT>)
+		@SuppressWarnings("unchecked")
+		final Class<? extends EndpointT> proxyClass = (Class<? extends EndpointT>)
 				proxyClasses.computeIfAbsent(endpointClass, this::createProxyClass);
+		return proxyClass;
 	}
 
 	static final ConcurrentMap<Class<?>, Class<?>> proxyClasses = new ConcurrentHashMap<>();
 
 	/**
 	 * Creates a dynamic proxy class that delegates calls to the associated
-	 * {@link EndpointDecorator}.
+	 * {@link EndpointDecorator} instance.
 	 */
 	<EndpointT> Class<? extends EndpointT> createProxyClass(Class<EndpointT> endpointClass) {
 		if ( !Endpoint.class.isAssignableFrom(endpointClass)) {
@@ -134,10 +140,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					.intercept(InvocationHandlerAdapter.toField(PROXY_DECORATOR_FIELD_NAME));
 		final ServerEndpoint annotation = endpointClass.getAnnotation(ServerEndpoint.class);
 		if (annotation != null) proxyClassBuilder = proxyClassBuilder.annotateType(annotation);
+// todo: swap the below after https://github.com/raphw/byte-buddy/pull/1485 is merged and released
 /*
-// swap after https://github.com/raphw/byte-buddy/pull/1485 is merged
 		try (
-			final var unloadedClass = proxyClassBuilder.make()
+			final var unloadedClass = proxyClassBuilder.make();
 		) {
 			return unloadedClass
 				.load(GuiceServerEndpointConfigurator.class.getClassLoader(),
@@ -161,37 +167,46 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 //*/
 	}
 
+	/**
+	 * Checks if {@code endpointClass} has all the required methods with appropriate endpoint
+	 * lifecycle annotations as specified by {@link #getRequiredEndpointMethodAnnotationTypes()}.
+	 * @throws RuntimeException if the check fails.
+	 */
 	private void checkIfRequiredEndpointMethodsPresent(Class<?> endpointClass) {
-		var annotatedMethodPresent = new HashMap<Class<? extends Annotation>, Boolean>();
-		var annotationTypes = getRequiredEndpointMethodAnnotationTypes();
-		for (var annotationType: annotationTypes) annotatedMethodPresent.put(annotationType, false);
-		for (var method: endpointClass.getDeclaredMethods()) {
-			for (var annotationType: annotationTypes) {
-				if (method.isAnnotationPresent(annotationType)) {
-					annotatedMethodPresent.put(annotationType, true);
+		final var fugitiveMethodAnnotationTypes = getRequiredEndpointMethodAnnotationTypes();
+		final var fugitiveMethodAnnotationTypesIterator = fugitiveMethodAnnotationTypes.iterator();
+		while (fugitiveMethodAnnotationTypesIterator.hasNext()) {
+			final var fugitiveAnnotationType = fugitiveMethodAnnotationTypesIterator.next();
+			for (var method: endpointClass.getDeclaredMethods()) {
+				if (method.isAnnotationPresent(fugitiveAnnotationType)) {
+					fugitiveMethodAnnotationTypesIterator.remove();
+					break;
 				}
 			}
 		}
-		for (var entry: annotatedMethodPresent.entrySet()) {
-			if ( !entry.getValue()) {
-				throw new RuntimeException("Endpoint must have a method annotated with "
-						+ entry.getKey().getSimpleName());
-			}
+		if ( !fugitiveMethodAnnotationTypes.isEmpty()) {
+			throw new RuntimeException("endpoint class must have a method annotated with @"
+					+ fugitiveMethodAnnotationTypes.iterator().next().getSimpleName());
 		}
 	}
 
 	/**
-	 * Returns a list of annotations of endpoint lifecycle methods that are required to be present.
-	 * By default a singleton of {@link OnOpen}. Subclasses may override this method if needed.
+	 * Returns a set of annotations of endpoint lifecycle methods that are required to be present
+	 * in endpoint classes using this configurator. By default a singleton of {@link OnOpen}.
+	 * Subclasses may override this method if needed by calling {@code super} and adding their
+	 * required annotations to the obtained set before returning it.
 	 */
-	protected List<Class<? extends Annotation>> getRequiredEndpointMethodAnnotationTypes() {
-		return Collections.singletonList(OnOpen.class);
+	protected HashSet<Class<? extends Annotation>> getRequiredEndpointMethodAnnotationTypes() {
+		final var result = new HashSet<Class<? extends Annotation>>(5);
+		result.add(OnOpen.class);
+		return result;
 	}
 
 
 
 	/**
-	 * Stores into the user properties the {@link HttpSession} associated with the {@code request}.
+	 * Stores into {@link ServerEndpointConfig#getUserProperties() user properties} the
+	 * {@link HttpSession} associated with {@code request}.
 	 */
 	@Override
 	public void modifyHandshake(
@@ -210,7 +225,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	@Inject ContextTracker<ContainerCallContext> eventCtxTracker;
 
 	/**
-	 * Executes each call to the supplied endpoint instance within
+	 * Executes each call to the wrapped endpoint instance within the current
 	 * {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
 	 */
 	class EndpointDecorator implements InvocationHandler {
@@ -230,15 +245,18 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		@Override
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
-			// replace wsConnection arg with a wrapper
-			WebsocketConnectionWrapper wrappedConnection = null;
+			// replace wsConnection (Session) arg with a wrapper
+			WebsocketConnectionDecorator decoratedConnection = null;
 			if (args != null) {
 				for (int i = 0; i < args.length; i++) {
 					if (args[i] instanceof Session) {
 						if (connectionCtx == null) {
-							args[i] = wrappedConnection = new WebsocketConnectionWrapper(
-								(Session) args[i], eventCtxTracker);
+							// the first call to this endpoint instance (most commonly onOpen(...)),
+							// wrap the intercepted connection and store it for further processing
+							args[i] = decoratedConnection = new WebsocketConnectionDecorator(
+									(Session) args[i], eventCtxTracker);
 						} else {
+							// subsequent call: replace the connection arg with the wrapper
 							args[i] = connectionCtx.getConnection();
 						}
 						break;
@@ -246,24 +264,28 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				}
 			}
 
-			// onOpen: create connectionCtx, retrieve HttpSession
+			// the first call to this endpoint, usually onOpen()
 			if (connectionCtx == null) {
 				if ( !isOnOpen(method)) {
-					// this is most commonly toString() call from a debugger
+					// this is usually a call from a debugger, most usually toString().
+					// Session has not been intercepted yet, so contexts cannot be created: just
+					// call the bare method outside of contexts and hope for the best...
 					return additionalEndpointDecorator.invoke(proxy, method, args);
 				}
-				if (wrappedConnection == null) {
+				// create connectionCtx, retrieve HttpSession
+				if (decoratedConnection == null) {
 					throw new RuntimeException("method annotated with @OnOpen must have a"
 							+ " javax.websocket.Session param");
 				}
-				final var userProperties = wrappedConnection.getUserProperties();
+				final var userProperties = decoratedConnection.getUserProperties();
 				httpSession = (HttpSession) userProperties.get(HttpSession.class.getName());
-				connectionCtx = new WebsocketConnectionContext(wrappedConnection);
+				connectionCtx = new WebsocketConnectionContext(decoratedConnection);
 				userProperties.put(WebsocketConnectionContext.class.getName(), connectionCtx);
 			}
 
 			// execute the original endpoint method within contexts
-			var eventCtx = new WebsocketEventContext(connectionCtx, httpSession, eventCtxTracker);
+			final var eventCtx =
+					new WebsocketEventContext(connectionCtx, httpSession, eventCtxTracker);
 			return eventCtx.executeWithinSelf(
 				() -> {
 					try {
@@ -284,7 +306,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * Subclasses may override this method to further customize endpoints.
 	 * {@link InvocationHandler#invoke(Object, Method, Object[])} method of the returned handler
 	 * will be executed within {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
-	 * By default it returns a handler that simply invokes a given method on {@code endpoint}.
+	 * By default it returns a handler that simply invokes the given method on {@code endpoint}.
 	 */
 	protected InvocationHandler getAdditionalDecorator(Object endpoint) {
 		return (proxy, method, args) -> method.invoke(endpoint, args);

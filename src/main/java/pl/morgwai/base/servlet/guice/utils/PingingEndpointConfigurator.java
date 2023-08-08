@@ -1,18 +1,19 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.utils;
 
-import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnClose;
-import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnOpen;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.util.List;
+import java.util.HashSet;
 
-import javax.websocket.*;
+import javax.websocket.OnClose;
+import javax.websocket.Session;
 
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
+
+import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnClose;
+import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnOpen;
 
 
 
@@ -51,8 +52,10 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 
 
 	@Override
-	protected List<Class<? extends Annotation>> getRequiredEndpointMethodAnnotationTypes() {
-		return List.of(OnOpen.class, OnClose.class);
+	protected HashSet<Class<? extends Annotation>> getRequiredEndpointMethodAnnotationTypes() {
+		final var result = super.getRequiredEndpointMethodAnnotationTypes();
+		result.add(OnClose.class);
+		return result;
 	}
 
 

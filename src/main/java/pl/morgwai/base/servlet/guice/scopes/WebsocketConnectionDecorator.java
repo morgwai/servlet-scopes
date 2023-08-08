@@ -21,7 +21,7 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * This is an internal class and users of the library don't need to deal with it directly. Also,
  * the amount of necessary boilerplate will make your eyes burn and heart cry: you've been warned ;]
  */
-class WebsocketConnectionWrapper implements Session {
+class WebsocketConnectionDecorator implements Session {
 
 
 
@@ -31,7 +31,7 @@ class WebsocketConnectionWrapper implements Session {
 
 	/**
 	 * Set by {@link WebsocketConnectionContext#WebsocketConnectionContext(
-	 * WebsocketConnectionWrapper) WebsocketConnectionContext's constructor}.
+	 *WebsocketConnectionDecorator) WebsocketConnectionContext's constructor}.
 	 */
 	void setConnectionCtx(WebsocketConnectionContext ctx) { this.connectionCtx = ctx; }
 	WebsocketConnectionContext connectionCtx;
@@ -54,7 +54,7 @@ class WebsocketConnectionWrapper implements Session {
 	public <T> void addMessageHandler(Class<T> messageClass, MessageHandler.Whole<T> handler) {
 		wrappedConnection.addMessageHandler(
 			messageClass,
-			new WebsocketConnectionWrapper.WholeMessageHandlerWrapper<>(handler)
+			new WebsocketConnectionDecorator.WholeMessageHandlerWrapper<>(handler)
 		);
 	}
 
@@ -64,7 +64,7 @@ class WebsocketConnectionWrapper implements Session {
 	public <T> void addMessageHandler(Class<T> messageClass, MessageHandler.Partial<T> handler) {
 		wrappedConnection.addMessageHandler(
 			messageClass,
-			new WebsocketConnectionWrapper.PartialMessageHandlerWrapper<>(handler)
+			new WebsocketConnectionDecorator.PartialMessageHandlerWrapper<>(handler)
 		);
 	}
 
@@ -86,8 +86,8 @@ class WebsocketConnectionWrapper implements Session {
 	@Override
 	public boolean equals(Object other) {
 		if (other == null) return false;
-		if (WebsocketConnectionWrapper.class != other.getClass()) return false;
-		return wrappedConnection == ((WebsocketConnectionWrapper) other).wrappedConnection;
+		if (WebsocketConnectionDecorator.class != other.getClass()) return false;
+		return wrappedConnection == ((WebsocketConnectionDecorator) other).wrappedConnection;
 	}
 
 	@Override
@@ -97,7 +97,7 @@ class WebsocketConnectionWrapper implements Session {
 
 
 
-	WebsocketConnectionWrapper(
+	WebsocketConnectionDecorator(
 		Session connection,
 		ContextTracker<ContainerCallContext> eventCtxTracker
 	) {
@@ -114,9 +114,9 @@ class WebsocketConnectionWrapper implements Session {
 		final MessageHandler wrapped;
 
 		@Override public boolean equals(Object other) {
-			if (other instanceof WebsocketConnectionWrapper.MessageHandlerWrapper) {
+			if (other instanceof WebsocketConnectionDecorator.MessageHandlerWrapper) {
 				return wrapped.equals(
-						((WebsocketConnectionWrapper.MessageHandlerWrapper) other).wrapped);
+						((WebsocketConnectionDecorator.MessageHandlerWrapper) other).wrapped);
 			}
 			return wrapped.equals(other);
 		}

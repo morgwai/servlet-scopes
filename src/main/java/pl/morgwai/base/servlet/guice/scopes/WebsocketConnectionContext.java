@@ -18,18 +18,18 @@ import pl.morgwai.base.guice.scopes.*;
  * {@link javax.websocket.Endpoint} or of registered {@link javax.websocket.MessageHandler}s, are
  * executed within the same {@code WebsocketConnectionContext} instance.</p>
  *
- * @see ServletModule#websocketConnectionScope corresponding <code>Scope</code>
+ * @see ServletModule#websocketConnectionScope corresponding Scope
  */
 public class WebsocketConnectionContext extends InjectionContext {
 
 
 
-	final WebsocketConnectionWrapper connection;
+	final WebsocketConnectionDecorator connection;
 	public Session getConnection() { return connection; }
 
 
 
-	WebsocketConnectionContext(WebsocketConnectionWrapper connection) {
+	WebsocketConnectionContext(WebsocketConnectionDecorator connection) {
 		this.connection = connection;
 		connection.setConnectionCtx(this);
 	}
