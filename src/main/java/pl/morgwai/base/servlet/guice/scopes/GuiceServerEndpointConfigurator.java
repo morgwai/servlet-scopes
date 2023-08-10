@@ -27,8 +27,6 @@ import net.bytebuddy.matcher.ElementMatchers;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
-import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnOpen;
-
 
 
 /**
@@ -253,37 +251,34 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
 			// replace wsConnection (Session) arg with a wrapper
-			WebsocketConnectionDecorator decoratedConnection = null;
 			if (args != null) {
 				for (int i = 0; i < args.length; i++) {
 					if (args[i] instanceof Session) {
 						if (connectionCtx == null) {
-							// the first call to this endpoint instance (most commonly onOpen(...)),
-							// wrap the intercepted connection and store it for further processing
-							args[i] = decoratedConnection = new WebsocketConnectionDecorator(
+							// the first call to this endpoint instance that has a Session param
+							// (most commonly onOpen(...)), decorate the intercepted Session, create
+							// a connectionCtx, retrieve the HttpSession
+							final var decoratedConnection = new WebsocketConnectionDecorator(
 									(Session) args[i], eventCtxTracker);
-						} else {
-							// subsequent call: replace the connection arg with the wrapper
-							args[i] = connectionCtx.getConnection();
+							final var userProperties = decoratedConnection.getUserProperties();
+							httpSession = (HttpSession)
+									userProperties.get(HttpSession.class.getName());
+							connectionCtx = new WebsocketConnectionContext(decoratedConnection);
+							userProperties.put(
+									WebsocketConnectionContext.class.getName(), connectionCtx);
 						}
+						args[i] = connectionCtx.getConnection();
 						break;
 					}
 				}
 			}
 
-			// the first call to this endpoint, usually onOpen()
+			// the first call to this endpoint instance and it is NOT onOpen() : this is usually a
+			// call from a debugger, most usually toString(). Session has not been intercepted yet,
+			// so contexts couldn't have been created: just call the method outside of contexts and
+			// hope for the best...
 			if (connectionCtx == null) {
-				if ( !isOnOpen(method)) {
-					// this is usually a call from a debugger, most usually toString().
-					// Session has not been intercepted yet, so contexts cannot be created: just
-					// call the bare method outside of contexts and hope for the best...
-					return additionalEndpointDecorator.invoke(proxy, method, args);
-				}
-				// create connectionCtx, retrieve HttpSession
-				final var userProperties = decoratedConnection.getUserProperties();
-				httpSession = (HttpSession) userProperties.get(HttpSession.class.getName());
-				connectionCtx = new WebsocketConnectionContext(decoratedConnection);
-				userProperties.put(WebsocketConnectionContext.class.getName(), connectionCtx);
+				return additionalEndpointDecorator.invoke(proxy, method, args);
 			}
 
 			// execute the original endpoint method within contexts
