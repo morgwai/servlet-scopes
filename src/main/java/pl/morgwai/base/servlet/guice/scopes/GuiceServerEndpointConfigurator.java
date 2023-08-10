@@ -273,11 +273,13 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				}
 			}
 
-			// the first call to this endpoint instance and it is NOT onOpen() : this is usually a
-			// call from a debugger, most usually toString(). Session has not been intercepted yet,
-			// so contexts couldn't have been created: just call the method outside of contexts and
-			// hope for the best...
+			// the first call to this endpoint instance and it is NOT onOpen(...) : this is usually
+			// a call from a debugger, most usually toString(). Session has not been intercepted
+			// yet, so contexts couldn't have been created: just call the method outside of contexts
+			// and hope for the best...
 			if (connectionCtx == null) {
+				log.warning("calling manually methods of endpoints that were designed to run "
+						+ "within contexts, may lead to OutOfScopeException");
 				return additionalEndpointDecorator.invoke(proxy, method, args);
 			}
 
