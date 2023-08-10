@@ -180,6 +180,13 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			for (var method: endpointClass.getDeclaredMethods()) {
 				if (method.isAnnotationPresent(fugitiveAnnotationType)) {
 					fugitiveMethodAnnotationTypesIterator.remove();
+					if (
+						fugitiveAnnotationType.equals(OnOpen.class)
+						&& !Arrays.asList(method.getParameterTypes()).contains(Session.class)
+					) {
+						throw new RuntimeException("method annotated with @OnOpen must have a"
+								+ " javax.websocket.Session param");
+					}
 					break;
 				}
 			}
@@ -273,10 +280,6 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					return additionalEndpointDecorator.invoke(proxy, method, args);
 				}
 				// create connectionCtx, retrieve HttpSession
-				if (decoratedConnection == null) {
-					throw new RuntimeException("method annotated with @OnOpen must have a"
-							+ " javax.websocket.Session param");
-				}
 				final var userProperties = decoratedConnection.getUserProperties();
 				httpSession = (HttpSession) userProperties.get(HttpSession.class.getName());
 				connectionCtx = new WebsocketConnectionContext(decoratedConnection);

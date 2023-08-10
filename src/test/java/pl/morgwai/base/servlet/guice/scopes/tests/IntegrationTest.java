@@ -20,6 +20,7 @@ import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerPro
 import org.eclipse.jetty.websocket.javax.common.JavaxWebSocketContainer;
 import org.junit.*;
 
+import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.tests.server.*;
 
 import static org.junit.Assert.*;
@@ -137,7 +138,7 @@ public class IntegrationTest {
 	 * {@link EchoEndpoint}. Both messages are expected to be sent from the same HTTP session scope
 	 * and the same websocket connection scope.
 	 */
-	List<String[]> testSingleConnectionToServerEndpoint(URI url) throws Exception {
+	List<String[]> testSingleMessageToServerEndpoint(URI url) throws Exception {
 		final var testMessage = "test message for " + url;
 		final var messages = new ArrayList<String[]>(4);
 		final var latch = new CountDownLatch(2);
@@ -173,13 +174,13 @@ public class IntegrationTest {
 
 	/**
 	 * Returns a list containing 4 messages received from the server via 2 calls to
-	 * {@link #testSingleConnectionToServerEndpoint(URI)} made via separate websocket connections.
+	 * {@link #testSingleMessageToServerEndpoint(URI)} made via separate websocket connections.
 	 * All 4 messages are expected to be sent from the same HTTP session scope.
 	 */
 	List<String[]> testServerEndpoint(String type) throws Exception {
 		final var url = URI.create(websocketUrl + type);
-		final var messages = testSingleConnectionToServerEndpoint(url);
-		messages.addAll(testSingleConnectionToServerEndpoint(url));
+		final var messages = testSingleMessageToServerEndpoint(url);
+		messages.addAll(testSingleMessageToServerEndpoint(url));
 		assertEquals("session scoped object hash should remain the same",
 				messages.get(0)[3], messages.get(2)[3]);
 		assertNotEquals("connection scoped object hash should change",
@@ -200,6 +201,38 @@ public class IntegrationTest {
 	@Test
 	public void testAnnotatedEndpoint() throws Exception {
 		testServerEndpoint(AnnotatedEndpoint.TYPE);
+	}
+
+
+
+	void testOpenConnectionToServerEndpoint(String type) throws Exception {
+		final var url = URI.create(websocketUrl + type);
+		final var endpoint = new ClientEndpoint(
+			(message) -> {},
+			(connection, error) -> {
+				log.log(Level.WARNING, "error on connection " + connection.getId(), error);
+			}
+		);
+		final var connection = clientWebsocketContainer.connectToServer(endpoint, null, url);
+		connection.close();
+	}
+
+	@Test
+	public void testOnOpenWithoutSessionParamEndpoint() {
+		Logger.getLogger(GuiceServerEndpointConfigurator.class.getName()).setLevel(Level.OFF);
+		try {
+			testOpenConnectionToServerEndpoint(OnOpenWithoutSessionParamEndpoint.TYPE);
+			fail("instantiation of OnOpenWithoutSessionParamEndpoint should throw an Exception");
+		} catch (Exception expected) {}
+	}
+
+	@Test
+	public void testPingingWithoutOnCloseEndpoint() {
+		Logger.getLogger(GuiceServerEndpointConfigurator.class.getName()).setLevel(Level.OFF);
+		try {
+			testOpenConnectionToServerEndpoint(PingingWithoutOnCloseEndpoint.TYPE);
+			fail("instantiation of PingingWithoutOnCloseEndpoint should throw an Exception");
+		} catch (Exception expected) {}
 	}
 
 
