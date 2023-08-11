@@ -221,7 +221,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			servletContainer = initializationEvent.getServletContext();
 			endpointContainer = ((ServerContainer) servletContainer.getAttribute(
 					"javax.websocket.server.ServerContainer"));
-			servletContainer.addListener(new ContainerCallContext.SessionContextCreator());
+			servletContainer.addListener(new HttpSessionContext.SessionContextCreator());
 
 			final var modules = configureInjections();
 			modules.add(servletModule);

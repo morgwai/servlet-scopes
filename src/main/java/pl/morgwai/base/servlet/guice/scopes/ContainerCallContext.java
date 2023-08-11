@@ -52,18 +52,6 @@ public abstract class ContainerCallContext extends TrackableContext<ContainerCal
 
 
 
-	static class SessionContextCreator implements HttpSessionListener {
-
-		@Override
-		public void sessionCreated(HttpSessionEvent event) {
-			var session = event.getSession();
-			session.setAttribute(
-					HttpSessionContext.class.getName(), new HttpSessionContext(session));
-		}
-	}
-
-
-
 	protected ContainerCallContext(ContextTracker<ContainerCallContext> tracker) {
 		super(tracker);
 	}
