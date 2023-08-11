@@ -19,16 +19,18 @@ import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnOpen;
 
 /**
  * A {@link GuiceServerEndpointConfigurator} that automatically registers and deregisters
- * endpoints to the {@link WebsocketPingerService} set with
- * {@link #setPingerService(WebsocketPingerService)}.
- *
+ * endpoints to a {@link WebsocketPingerService}. The service instance must be set at app startup
+ * with {@link #setPingerService(WebsocketPingerService)}.
  * @see PingingServletContextListener
  */
 public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator {
 
 
 
-	// must be static for this configurator to be usable in @ServerEndpoint annotations
+	/**
+	 * Must be static for this configurator to be usable in
+	 * {@link javax.websocket.server.ServerEndpoint} annotations.
+	 */
 	static WebsocketPingerService pingerService;
 
 

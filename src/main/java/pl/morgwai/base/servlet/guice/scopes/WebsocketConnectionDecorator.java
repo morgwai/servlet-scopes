@@ -19,7 +19,8 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * Decorates {@link MessageHandler}s passed to {@link #addMessageHandler(MessageHandler)} family
  * method with {@link WebsocketEventContext} tracking.
  * This is an internal class and users of the library don't need to deal with it directly. Also,
- * the amount of necessary boilerplate will make your eyes burn and heart cry: you've been warned ;]
+ * the amount of necessary boilerplate will make your eyes burn and heart cry: you've been
+ * warned ;-]
  */
 class WebsocketConnectionDecorator implements Session {
 

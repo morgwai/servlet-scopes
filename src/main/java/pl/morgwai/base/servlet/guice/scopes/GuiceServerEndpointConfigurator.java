@@ -30,11 +30,11 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 /**
- * Automatically injects dependencies of endpoint instances and ensures that lifecycle methods of
- * the created endpoints are executed within {@link WebsocketConnectionContext} and
- * {@link ContainerCallContext}.
+ * Obtains {@code Endpoint} instances from {@link Injector#getInstance(Class) Guice} (so that
+ * all dependencies are injected) and decorates them, so that lifecycle methods are executed within
+ * {@link WebsocketConnectionContext} and {@link ContainerCallContext}.
  * <p>
- * For endpoints annotated with @{@link ServerEndpoint}, this class should be used as
+ * In case of {@code Endpoints} annotated with @{@link ServerEndpoint}, this class should be used as
  * {@link ServerEndpoint#configurator() configurator} param of the annotation:</p>
  * <pre>
  * &#64;ServerEndpoint(
@@ -44,9 +44,9 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * <p>
  * <b>NOTE:</b> methods annotated with @{@link OnOpen} <b>must</b> have a {@link Session} param.</p>
  * <p>
- * For endpoints added programmatically, an instance of this configurator should by supplied as an
- * argument to {@link ServerEndpointConfig.Builder#configurator(Configurator)} method similar to the
- * below:</p>
+ * In case of {@code Endpoints} added programmatically, an instance of this configurator should be
+ * supplied as an argument to {@link ServerEndpointConfig.Builder#configurator(Configurator)}
+ * method:</p>
  * <pre>
  * websocketContainer.addEndpoint(ServerEndpointConfig.Builder
  *         .create(MyEndpoint.class, "/websocket/mySocket")
@@ -62,17 +62,17 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	/**
-	 * Creates a new {@code endpointClass} instance and a proxy for it. Injects the dependencies of
-	 * the newly created endpoint. The proxy ensures that endpoint's lifecycle methods are
+	 * Obtains an instance of {@code endpointClass} from {@link Injector#getInstance(Class) Guice}
+	 * and creates a context-aware proxy for it, so that {@code Endpoint} lifecycle methods are
 	 * executed within {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
-	 * @return a proxy for a new {@code endpointClass} instance.
+	 * @return a proxy for the newly created {@code endpointClass} instance.
 	 */
 	@Override
 	public <EndpointT> EndpointT getEndpointInstance(Class<EndpointT> endpointClass)
 			throws InstantiationException {
 		var injector = this.injector;
 		if (injector == null) {
-			// injector initialization cannot be done in constructor as annotated endpoints may
+			// injector initialization cannot be done in constructor as annotated Endpoints may
 			// create configurator before injector is created in contextInitialized(...).
 			// getEndpointInstance(...) however is never called before contextInitialized(...).
 			// this method may be called by a big number of concurrent threads (for example when all
@@ -96,7 +96,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					.set(endpointProxy, endpointDecorator);
 			return endpointProxy;
 		} catch (Exception e) {
-			log.log(Level.SEVERE, "endpoint instantiation failed", e);
+			log.log(Level.SEVERE, "Endpoint instantiation failed", e);
 			throw new InstantiationException(e.toString());
 		}
 	}
@@ -138,8 +138,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					.intercept(InvocationHandlerAdapter.toField(PROXY_DECORATOR_FIELD_NAME));
 		final ServerEndpoint annotation = endpointClass.getAnnotation(ServerEndpoint.class);
 		if (annotation != null) proxyClassBuilder = proxyClassBuilder.annotateType(annotation);
-// todo: swap the below after https://github.com/raphw/byte-buddy/pull/1485 is merged and released
-/*
+		// todo: swap the below after https://github.com/raphw/byte-buddy/pull/1485 is released
+		/*
 		try (
 			final var unloadedClass = proxyClassBuilder.make();
 		) {
@@ -148,7 +148,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 						ClassLoadingStrategy.Default.INJECTION)
 				.getLoaded();
 		}
-/*/
+		/*/
 		final var unloadedClass = proxyClassBuilder.make();
 		try {
 			return unloadedClass
@@ -162,12 +162,13 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				log.log(Level.WARNING, "exception while closing unloaded dynamic class", e);
 			}
 		}
-//*/
+		//*/
 	}
 
 	/**
-	 * Checks if {@code endpointClass} has all the required methods with appropriate endpoint
-	 * lifecycle annotations as specified by {@link #getRequiredEndpointMethodAnnotationTypes()}.
+	 * Checks if {@code endpointClass} has all the required methods with appropriate
+	 * {@code Endpoint} lifecycle annotations as specified by
+	 * {@link #getRequiredEndpointMethodAnnotationTypes()}.
 	 * @throws RuntimeException if the check fails.
 	 */
 	private void checkIfRequiredEndpointMethodsPresent(Class<?> endpointClass) {
@@ -196,10 +197,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	}
 
 	/**
-	 * Returns a set of annotations of endpoint lifecycle methods that are required to be present
-	 * in endpoint classes using this configurator. By default a singleton of {@link OnOpen}.
-	 * Subclasses may override this method if needed by calling {@code super} and adding their
-	 * required annotations to the obtained set before returning it.
+	 * Returns a set of annotations of {@code Endpoint} lifecycle methods that are required to be
+	 * present in {@code Endpoint} classes using this configurator. By default a singleton of
+	 * {@link OnOpen}. Subclasses may override this method if needed by calling {@code super} and
+	 * adding their required annotations to the obtained set before returning it.
 	 */
 	protected HashSet<Class<? extends Annotation>> getRequiredEndpointMethodAnnotationTypes() {
 		final var result = new HashSet<Class<? extends Annotation>>(5);
@@ -303,7 +304,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	/**
-	 * Subclasses may override this method to further customize endpoints.
+	 * Subclasses may override this method to further customize {@code Endpoints}.
 	 * {@link InvocationHandler#invoke(Object, Method, Object[])} method of the returned handler
 	 * will be executed within {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
 	 * By default it returns a handler that simply invokes the given method on {@code endpoint}.

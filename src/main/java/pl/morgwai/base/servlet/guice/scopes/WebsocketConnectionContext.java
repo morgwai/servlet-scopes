@@ -17,7 +17,6 @@ import pl.morgwai.base.guice.scopes.*;
  * {@link javax.websocket.OnClose @OnClose}), or overriding those of
  * {@link javax.websocket.Endpoint} or of registered {@link javax.websocket.MessageHandler}s, are
  * executed within the same {@code WebsocketConnectionContext} instance.</p>
- *
  * @see ServletModule#websocketConnectionScope corresponding Scope
  */
 public class WebsocketConnectionContext extends InjectionContext {

@@ -19,7 +19,6 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * {@link javax.websocket.OnClose @OnClose}), or overriding those of
  * {@link javax.websocket.Endpoint} or {@link javax.websocket.MessageHandler}s, are
  * executed within a separate new {@code WebsocketEventContext} instance.</p>
- *
  * @see ContainerCallContext super class for more info
  */
 public class WebsocketEventContext extends ContainerCallContext {

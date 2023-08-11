@@ -21,9 +21,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 	final WebsocketPingerService pingerService;
 
-	/**
-	 * Allows subclasses to override pinger mode. By default {@code false}.
-	 */
+	/** Allows subclasses to override pinger mode. By default {@code false}. */
 	protected boolean isPingerInKeepAliveOnlyMode() { return false; }
 
 	/**
@@ -44,9 +42,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 */
 	protected int getPingSize() { return WebsocketPingerService.DEFAULT_PING_SIZE; }
 
-	/**
-	 * Allows subclasses to override {@code synchronizeSending} flag. By default {@code false}.
-	 */
+	/** Allows subclasses to override {@code synchronizeSending} flag. By default {@code false}. */
 	protected boolean shouldSynchronizePingSending() { return false; }
 
 
@@ -79,9 +75,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 
-	/**
-	 * Stops the associated {@link WebsocketPingerService}.
-	 */
+	/** Stops the associated {@link WebsocketPingerService}. */
 	@Override
 	public void contextDestroyed(ServletContextEvent destructionEvent) {
 		pingerService.stop();

@@ -20,9 +20,7 @@ public class ServletModule implements Module {
 
 
 
-	/**
-	 * Allows tracking of {@link ServletRequestContext}s and {@link WebsocketEventContext}s.
-	 */
+	/** Allows tracking of {@link ServletRequestContext}s and {@link WebsocketEventContext}s. */
 	public final ContextTracker<ContainerCallContext> containerCallContextTracker =
 			new ContextTracker<>();
 

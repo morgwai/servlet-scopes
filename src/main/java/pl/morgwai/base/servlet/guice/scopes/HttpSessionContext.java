@@ -8,7 +8,8 @@ import pl.morgwai.base.guice.scopes.InjectionContext;
 
 
 /**
- * Context of a {@link HttpSession}.
+ * Context of an {@link HttpSession}.
+ * @see ServletModule#httpSessionScope corresponding Scope
  */
 public class HttpSessionContext extends InjectionContext {
 
