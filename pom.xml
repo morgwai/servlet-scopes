@@ -38,7 +38,7 @@
 		<maven.compiler.target>11</maven.compiler.target>
 		<maven.compiler.release>11</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<guice.scopes.version>8.0</guice.scopes.version>
+		<guice.scopes.version>8.1</guice.scopes.version>
 		<utils.version>3.0</utils.version>
 		<servlet.utils.version>2.1</servlet.utils.version>
 		<guice.version>6.0.0</guice.version><!--jakarta:<guice.version>7.0.0</guice.version>-->

@@ -35,4 +35,8 @@ public class HttpSessionContext extends InjectionContext {
 					HttpSessionContext.class.getName(), new HttpSessionContext(session));
 		}
 	}
+
+
+
+	private static final long serialVersionUID = 7039954797806124124L;
 }

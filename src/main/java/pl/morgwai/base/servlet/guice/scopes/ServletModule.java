@@ -44,6 +44,10 @@ public class ServletModule implements Module {
 	 * websocket endpoint layer if it does not exist yet. To safely use this scope in websocket
 	 * endpoints, other layers must ensure that a session exists (for example a
 	 * {@link javax.servlet.Filter} targeting URL patterns of websockets can be used).</p>
+	 * <p>
+	 * <b>NOTE:</b> similarly as with
+	 * {@link javax.servlet.http.HttpSession#setAttribute(String, Object) session attributes}, it is
+	 * recommended for session-scoped objects to be {@link java.io.Serializable}.</p>
 	 */
 	public final Scope httpSessionScope = new InducedContextScope<>(
 		"HTTP_SESSION_SCOPE",
