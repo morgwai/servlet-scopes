@@ -264,7 +264,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 				.filter((executor) -> !executor.isTerminated())
 				.collect(Collectors.toList());
 		}
-		handleUnterminatedExecutors(unterminatedExecutors);
+		if ( !unterminatedExecutors.isEmpty()) handleUnterminatedExecutors(unterminatedExecutors);
 	}
 
 	/**
