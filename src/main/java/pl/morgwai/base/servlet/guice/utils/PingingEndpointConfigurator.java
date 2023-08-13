@@ -84,8 +84,7 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 					}
 				}
 				pingerService.addConnection(connection);
-			}
-			if (isOnClose(method)) {
+			} else if (isOnClose(method)) {
 				pingerService.removeConnection(connection);
 			}
 			return method.invoke(endpoint, args);
