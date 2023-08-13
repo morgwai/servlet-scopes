@@ -258,7 +258,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		List<ServletContextTrackingExecutor> unterminatedExecutors;
 		try {
 			unterminatedExecutors = servletModule.awaitTerminationOfAllExecutors(
-					getExecutorsShutdownTimeoutSeconds(), TimeUnit.SECONDS);
+					getExecutorsTerminationTimeoutSeconds(), TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			unterminatedExecutors = servletModule.getExecutors().stream()
 				.filter((executor) -> !executor.isTerminated())
@@ -271,7 +271,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * Returns the timeout for shutdown of executors obtained from {@link #servletModule}.
 	 * By default {@code 5} seconds.
 	 */
-	protected int getExecutorsShutdownTimeoutSeconds() { return 5; }
+	protected int getExecutorsTerminationTimeoutSeconds() { return 5; }
 
 	/**
 	 * Subclasses may override this method to examine the executors that failed to terminate.
