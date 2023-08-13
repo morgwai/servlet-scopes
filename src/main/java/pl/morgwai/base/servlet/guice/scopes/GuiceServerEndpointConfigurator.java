@@ -16,8 +16,7 @@ import javax.websocket.*;
 import javax.websocket.server.*;
 import javax.websocket.server.ServerEndpointConfig.Configurator;
 
-import com.google.inject.Inject;
-import com.google.inject.Injector;
+import com.google.inject.*;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
@@ -58,6 +57,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	volatile Injector injector;
+	ContextTracker<ContainerCallContext> containerCallContextTracker;
 
 
 
@@ -81,7 +81,9 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				injector = this.injector;
 				if (injector == null) {
 					injector = GuiceServletContextListener.getInjector();
-					injector.injectMembers(this);
+					TypeLiteral<ContextTracker<ContainerCallContext>> trackerType =
+							new TypeLiteral<>() {};
+					containerCallContextTracker = injector.getInstance(Key.get(trackerType));
 					this.injector = injector; //must be the last statement in the synchronized block
 				}
 			}
@@ -90,8 +92,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		try {
 			final var proxyClass = getProxyClass(endpointClass);
 			final EndpointT endpointProxy = super.getEndpointInstance(proxyClass);
-			final var endpointDecorator =
-					new EndpointDecorator(injector.getInstance(endpointClass));
+			final var endpointDecorator = new EndpointDecorator(
+				getAdditionalDecorator(injector.getInstance(endpointClass)),
+				containerCallContextTracker
+			);
 			proxyClass.getDeclaredField(PROXY_DECORATOR_FIELD_NAME)
 					.set(endpointProxy, endpointDecorator);
 			return endpointProxy;
@@ -228,81 +232,6 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-	@Inject ContextTracker<ContainerCallContext> eventCtxTracker;
-
-	/**
-	 * Executes each call to the wrapped endpoint instance within the current
-	 * {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
-	 */
-	class EndpointDecorator implements InvocationHandler {
-
-		final InvocationHandler additionalEndpointDecorator;
-		WebsocketConnectionContext connectionCtx;
-		HttpSession httpSession;
-
-
-
-		EndpointDecorator(Object endpoint) {
-			additionalEndpointDecorator = getAdditionalDecorator(endpoint);
-		}
-
-
-
-		@Override
-		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-
-			// replace wsConnection (Session) arg with a wrapper
-			if (args != null) {
-				for (int i = 0; i < args.length; i++) {
-					if (args[i] instanceof Session) {
-						if (connectionCtx == null) {
-							// the first call to this endpoint instance that has a Session param
-							// (most commonly onOpen(...)), decorate the intercepted Session, create
-							// a connectionCtx, retrieve the HttpSession
-							final var decoratedConnection = new WebsocketConnectionDecorator(
-									(Session) args[i], eventCtxTracker);
-							final var userProperties = decoratedConnection.getUserProperties();
-							httpSession = (HttpSession)
-									userProperties.get(HttpSession.class.getName());
-							connectionCtx = new WebsocketConnectionContext(decoratedConnection);
-							userProperties.put(
-									WebsocketConnectionContext.class.getName(), connectionCtx);
-						}
-						args[i] = connectionCtx.getConnection();
-						break;
-					}
-				}
-			}
-
-			// the first call to this endpoint instance and it is NOT onOpen(...) : this is usually
-			// a call from a debugger, most usually toString(). Session has not been intercepted
-			// yet, so contexts couldn't have been created: just call the method outside of contexts
-			// and hope for the best...
-			if (connectionCtx == null) {
-				log.warning("calling manually methods of endpoints that were designed to run "
-						+ "within contexts, may lead to OutOfScopeException");
-				return additionalEndpointDecorator.invoke(proxy, method, args);
-			}
-
-			// execute the original endpoint method within contexts
-			final var eventCtx =
-					new WebsocketEventContext(connectionCtx, httpSession, eventCtxTracker);
-			return eventCtx.executeWithinSelf(
-				() -> {
-					try {
-						return additionalEndpointDecorator.invoke(proxy, method, args);
-					} catch (Error | Exception e) {
-						throw e;
-					} catch (Throwable e) {
-						throw new Exception(e);  // dead code
-					}
-				}
-			);
-		}
-	}
-
-
-
 	/**
 	 * Subclasses may override this method to further customize {@code Endpoints}.
 	 * {@link InvocationHandler#invoke(Object, Method, Object[])} method of the returned handler
@@ -317,4 +246,91 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	protected static final Logger log =
 			Logger.getLogger(GuiceServerEndpointConfigurator.class.getName());
+}
+
+
+
+/**
+ * Executes each call to the wrapped {@code Endpoint} instance within the current
+ * {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
+ */
+class EndpointDecorator implements InvocationHandler {
+
+
+
+	final InvocationHandler wrappedEndpoint;
+	final ContextTracker<ContainerCallContext> containerCallContextTracker;
+
+
+
+	EndpointDecorator(
+		InvocationHandler endpointToWrap,
+		ContextTracker<ContainerCallContext> containerCallContextTracker
+	) {
+		wrappedEndpoint = endpointToWrap;
+		this.containerCallContextTracker = containerCallContextTracker;
+	}
+
+
+
+	// the below 2 are created/retrieved when onOpen(...) call is intercepted
+	WebsocketConnectionContext connectionCtx;
+	HttpSession httpSession;
+
+
+
+	@Override
+	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+
+		// replace the original wsConnection (Session) arg with a decorating wrapper
+		if (args != null) {
+			for (int i = 0; i < args.length; i++) {
+				if (args[i] instanceof Session) {
+					if (connectionCtx == null) {
+						// the first call to this Endpoint instance that has a Session param (most
+						// commonly onOpen(...)) : decorate the intercepted Session, create a new
+						// connectionCtx, retrieve the HttpSession from userProperties
+						final var decoratedConnection = new WebsocketConnectionDecorator(
+								(Session) args[i], containerCallContextTracker);
+						final var userProperties = decoratedConnection.getUserProperties();
+						httpSession = (HttpSession) userProperties.get(HttpSession.class.getName());
+						connectionCtx = new WebsocketConnectionContext(decoratedConnection);
+						userProperties.put(
+								WebsocketConnectionContext.class.getName(), connectionCtx);
+					}
+					args[i] = connectionCtx.getConnection();
+					break;
+				}
+			}
+		}
+
+		// the first call to this Endpoint instance and it is NOT onOpen(...) : this is usually a
+		// call from a debugger, most usually toString(). Session has not been intercepted yet, so
+		// contexts couldn't have been created: just call the method outside of contexts and hope
+		// for the best...
+		if (connectionCtx == null) {
+			log.warning("calling manually methods of endpoints that were designed to run within "
+					+ "contexts, may lead to OutOfScopeException");
+			return wrappedEndpoint.invoke(proxy, method, args);
+		}
+
+		// execute the method within contexts
+		final var eventCtx =
+				new WebsocketEventContext(connectionCtx, httpSession, containerCallContextTracker);
+		return eventCtx.executeWithinSelf(
+			() -> {
+				try {
+					return wrappedEndpoint.invoke(proxy, method, args);
+				} catch (Error | Exception e) {
+					throw e;
+				} catch (Throwable neverHappens) {
+					throw new Exception(neverHappens);  // result mis-designed invoke() signature
+				}
+			}
+		);
+	}
+
+
+
+	static final Logger log = Logger.getLogger(EndpointDecorator.class.getName());
 }
