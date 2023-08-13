@@ -1,11 +1,11 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
-import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
@@ -23,7 +23,6 @@ import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.matcher.ElementMatchers;
-
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
@@ -142,31 +141,15 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					.intercept(InvocationHandlerAdapter.toField(PROXY_DECORATOR_FIELD_NAME));
 		final ServerEndpoint annotation = endpointClass.getAnnotation(ServerEndpoint.class);
 		if (annotation != null) proxyClassBuilder = proxyClassBuilder.annotateType(annotation);
-		// todo: swap the below after https://github.com/raphw/byte-buddy/pull/1485 is released
-		/*
 		try (
 			final var unloadedClass = proxyClassBuilder.make();
 		) {
 			return unloadedClass
-				.load(GuiceServerEndpointConfigurator.class.getClassLoader(),
-						ClassLoadingStrategy.Default.INJECTION)
-				.getLoaded();
+				.load(
+					GuiceServerEndpointConfigurator.class.getClassLoader(),
+					ClassLoadingStrategy.Default.INJECTION
+				).getLoaded();
 		}
-		/*/
-		final var unloadedClass = proxyClassBuilder.make();
-		try {
-			return unloadedClass
-				.load(GuiceServerEndpointConfigurator.class.getClassLoader(),
-						ClassLoadingStrategy.Default.INJECTION)
-				.getLoaded();
-		} finally {
-			try {
-				unloadedClass.close();
-			} catch (IOException e) {
-				log.log(Level.WARNING, "exception while closing unloaded dynamic class", e);
-			}
-		}
-		//*/
 	}
 
 	/**
