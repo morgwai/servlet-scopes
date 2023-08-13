@@ -16,7 +16,7 @@
 		<maven.compiler.target>11</maven.compiler.target>
 		<maven.compiler.release>11</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<servlet.scopes.version>10.0-SNAPSHOT</servlet.scopes.version>
+		<servlet.scopes.version>10.0</servlet.scopes.version>
 	</properties>
 
 	<profiles>
