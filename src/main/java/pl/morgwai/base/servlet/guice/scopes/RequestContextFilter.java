@@ -21,7 +21,7 @@ public class RequestContextFilter implements Filter {
 
 
 
-	@Inject ContextTracker<ContainerCallContext> tracker;
+	@Inject ContextTracker<ContainerCallContext> containerCallContextTracker;
 
 
 
@@ -29,25 +29,19 @@ public class RequestContextFilter implements Filter {
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 		final var ctx = request.getDispatcherType() == DispatcherType.REQUEST
-				? new ServletRequestContext((HttpServletRequest) request, tracker)
+				? new ServletRequestContext(
+						(HttpServletRequest) request, containerCallContextTracker)
 				: (ServletRequestContext)
 						request.getAttribute(ServletRequestContext.class.getName());
 		try {
 			ctx.executeWithinSelf(() -> {
-				try {
-					chain.doFilter(request, response);
-				} catch (IOException | ServletException e) {
-					throw new RuntimeException(e);
-				}
+				chain.doFilter(request, response);
+				return null;
 			});
-		} catch (RuntimeException e) {
-			// if a ServletException or an IOException was thrown from doFilter(...) then unwrap it.
-			// otherwise just re-throw.
-			if (e.getCause() == null) throw e;
-			final var cause = e.getCause();
-			if (cause instanceof IOException) throw (IOException) cause;
-			if (cause instanceof ServletException) throw (ServletException) cause;
+		} catch (IOException | ServletException | RuntimeException e) {
 			throw e;
+		} catch (Exception neverHappens) {
+			// result of wrapping with a Callable
 		}
 	}
 }
