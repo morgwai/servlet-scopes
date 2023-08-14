@@ -16,15 +16,20 @@ class ClientEndpoint extends Endpoint {
 
 	final Whole<String> messageHandler;
 	final BiConsumer<Session, Throwable> errorHandler;
+	final BiConsumer<Session, CloseReason> closeHandler;
 
 	private final CountDownLatch closureLatch = new CountDownLatch(1);
 
 
 
-	public ClientEndpoint(Whole<String> messageHandler, BiConsumer<Session, Throwable> errorHandler)
-	{
+	public ClientEndpoint(
+		Whole<String> messageHandler,
+		BiConsumer<Session, Throwable> errorHandler,
+		BiConsumer<Session, CloseReason> closeHandler
+	) {
 		this.messageHandler = messageHandler;
 		this.errorHandler = errorHandler;
+		this.closeHandler = closeHandler;
 	}
 
 
@@ -46,6 +51,7 @@ class ClientEndpoint extends Endpoint {
 	@Override
 	public void onClose(Session session, CloseReason closeReason) {
 		closureLatch.countDown();
+		if (closeHandler != null) closeHandler.accept(session, closeReason);
 	}
 
 

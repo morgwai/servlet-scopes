@@ -87,6 +87,12 @@ public class EchoEndpoint {
 
 	public void onError(Session connection, Throwable error) {
 		log.warn("error on connection " + connection.getId(), error);
+		error.printStackTrace();
+		try {
+			connection.close(new CloseReason(CloseCodes.UNEXPECTED_CONDITION, error.toString()));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 

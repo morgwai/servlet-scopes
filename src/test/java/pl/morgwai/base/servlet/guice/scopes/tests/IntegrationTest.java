@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.WebSocketContainer;
 
 import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
@@ -141,20 +142,31 @@ public class IntegrationTest {
 	List<String[]> testSingleMessageToServerEndpoint(URI url) throws Exception {
 		final var testMessage = "test message for " + url;
 		final var messages = new ArrayList<String[]>(4);
-		final var latch = new CountDownLatch(2);
+		final var messagesReceived = new CountDownLatch(2);
+		final var testThread = Thread.currentThread();
 		final var endpoint = new ClientEndpoint(
 			(message) -> {
 				if (log.isLoggable(Level.FINE)) log.fine("message from " + url + '\n' + message);
 				messages.add(message.split("\n"));
-				latch.countDown();
+				messagesReceived.countDown();
 			},
 			(connection, error) -> {
 				log.log(Level.WARNING, "error on connection " + connection.getId(), error);
+				error.printStackTrace();
+			},
+			(connection, closeReason) -> {
+				if (closeReason.getCloseCode().getCode() != CloseCodes.NORMAL_CLOSURE.getCode()) {
+					testThread.interrupt();
+				}
 			}
 		);
 		final var connection = clientWebsocketContainer.connectToServer(endpoint, null, url);
 		connection.getAsyncRemote().sendText(testMessage);
-		if ( !latch.await(2L, TimeUnit.SECONDS)) fail("timeout");
+		try {
+			if ( !messagesReceived.await(2L, TimeUnit.SECONDS)) fail("timeout");
+		} catch (InterruptedException e) {
+			fail("server side error");
+		}
 		connection.close();
 		if ( !endpoint.awaitClosure(2L, TimeUnit.SECONDS)) fail("timeout");
 		assertEquals("message should have 5 lines", 5, messages.get(0).length);
@@ -211,7 +223,8 @@ public class IntegrationTest {
 			(message) -> {},
 			(connection, error) -> {
 				log.log(Level.WARNING, "error on connection " + connection.getId(), error);
-			}
+			},
+			(connection, closeReason) -> {}
 		);
 		final var connection = clientWebsocketContainer.connectToServer(endpoint, null, url);
 		connection.close();

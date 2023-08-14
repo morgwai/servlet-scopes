@@ -22,7 +22,12 @@ public class ProgrammaticEndpoint extends Endpoint {
 
 	@Override
 	public void onOpen(Session connection, EndpointConfig config) {
-		connection.addMessageHandler(String.class, echoEndpoint::onMessage);
+		final var handler = new MessageHandler.Whole<String>() {
+			@Override public void onMessage(String message) {
+				echoEndpoint.onMessage(message);
+			}
+		};
+		connection.addMessageHandler(handler);
 		echoEndpoint.onOpen(connection, config);
 	}
 

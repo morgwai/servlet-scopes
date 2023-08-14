@@ -2,6 +2,7 @@
 package pl.morgwai.base.servlet.guice.scopes;
 
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
 import java.net.URI;
 import java.security.Principal;
 import java.util.*;
@@ -41,13 +42,29 @@ class WebsocketConnectionDecorator implements Session {
 
 
 	@Override
-	public void addMessageHandler(MessageHandler handler) throws IllegalStateException {
-		if (handler instanceof MessageHandler.Whole) {
-			handler = new WholeMessageHandlerDecorator<>((MessageHandler.Whole<?>) handler);
-		} else {
-			handler = new PartialMessageHandlerDecorator<>((MessageHandler.Partial<?>) handler);
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	public void addMessageHandler(MessageHandler handler) {
+		final Class<?> messageClass;
+		try {
+			final var handlerType = Arrays.stream(handler.getClass().getGenericInterfaces())
+				.filter((type) -> type instanceof ParameterizedType)
+				.map((type) -> (ParameterizedType) type)
+				.filter(
+					(parameterizedType) -> (
+						parameterizedType.getRawType().equals(MessageHandler.Whole.class)
+						|| parameterizedType.getRawType().equals(MessageHandler.Partial.class)
+					)
+				).findAny()
+				.orElseThrow();
+			messageClass = (Class<?>) handlerType.getActualTypeArguments()[0];
+		} catch (Exception e) {
+			throw new IllegalArgumentException("cannot determine handler type");
 		}
-		wrappedConnection.addMessageHandler(handler);
+		if (handler instanceof MessageHandler.Partial) {
+			addMessageHandler(messageClass, (MessageHandler.Partial) handler);
+		} else {
+			addMessageHandler(messageClass, (MessageHandler.Whole) handler);
+		}
 	}
 
 
