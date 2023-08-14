@@ -87,8 +87,8 @@ class WebsocketConnectionDecorator implements Session {
 	@Override
 	public boolean equals(Object other) {
 		if (other == null) return false;
-		if (WebsocketConnectionDecorator.class != other.getClass()) return false;
-		return wrappedConnection == ((WebsocketConnectionDecorator) other).wrappedConnection;
+		if ( !WebsocketConnectionDecorator.class.isAssignableFrom(other.getClass())) return false;
+		return wrappedConnection.equals(((WebsocketConnectionDecorator) other).wrappedConnection);
 	}
 
 	@Override
@@ -115,11 +115,9 @@ class WebsocketConnectionDecorator implements Session {
 		final MessageHandler wrapped;
 
 		@Override public boolean equals(Object other) {
-			if (other instanceof WebsocketConnectionDecorator.MessageHandlerWrapper) {
-				return wrapped.equals(
-						((WebsocketConnectionDecorator.MessageHandlerWrapper) other).wrapped);
-			}
-			return wrapped.equals(other);
+			if (other == null) return false;
+			if ( !MessageHandlerWrapper.class.isAssignableFrom(other.getClass())) return false;
+			return wrapped.equals(((MessageHandlerWrapper) other).wrapped);
 		}
 
 		@Override public int hashCode() {
