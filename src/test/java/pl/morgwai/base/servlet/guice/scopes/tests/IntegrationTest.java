@@ -14,11 +14,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.websocket.CloseReason.CloseCodes;
-import javax.websocket.WebSocketContainer;
+import jakarta.websocket.CloseReason.CloseCodes;
+import jakarta.websocket.WebSocketContainer;
 
-import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
-import org.eclipse.jetty.websocket.javax.common.JavaxWebSocketContainer;
+import org.eclipse.jetty.websocket.jakarta.client.JakartaWebSocketClientContainerProvider;
+import org.eclipse.jetty.websocket.jakarta.common.JakartaWebSocketContainer;
 import org.junit.*;
 
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
@@ -48,7 +48,7 @@ public class IntegrationTest {
 		final var cookieManager = new CookieManager();
 		wsHttpClient = new org.eclipse.jetty.client.HttpClient();
 		wsHttpClient.setCookieStore(cookieManager.getCookieStore());
-		clientWebsocketContainer = JavaxWebSocketClientContainerProvider.getContainer(wsHttpClient);
+		clientWebsocketContainer = JakartaWebSocketClientContainerProvider.getContainer(wsHttpClient);
 		httpClient = HttpClient.newBuilder().cookieHandler(cookieManager).build();
 		server = new TestServer(0);
 		server.start();
@@ -64,7 +64,7 @@ public class IntegrationTest {
 
 	@After
 	public void shutdown() throws Exception {
-		final var jettyWsContainer = ((JavaxWebSocketContainer) clientWebsocketContainer);
+		final var jettyWsContainer = ((JakartaWebSocketContainer) clientWebsocketContainer);
 		jettyWsContainer.stop();
 		jettyWsContainer.destroy();
 		wsHttpClient.stop();

@@ -6,8 +6,8 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.HashSet;
 
-import javax.websocket.OnClose;
-import javax.websocket.Session;
+import jakarta.websocket.OnClose;
+import jakarta.websocket.Session;
 
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
@@ -29,7 +29,7 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 
 	/**
 	 * Must be static for this configurator to be usable in
-	 * {@link javax.websocket.server.ServerEndpoint} annotations.
+	 * {@link jakarta.websocket.server.ServerEndpoint} annotations.
 	 */
 	static WebsocketPingerService pingerService;
 
@@ -37,7 +37,7 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 
 	/**
 	 * Sets the {@link WebsocketPingerService} to be used. Must be called in {@link
-	 * javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)}
+	 * jakarta.servlet.ServletContextListener#contextInitialized(jakarta.servlet.ServletContextEvent)}
 	 * or in listener's constructor.
 	 */
 	public static void setPingerService(WebsocketPingerService pingerService) {

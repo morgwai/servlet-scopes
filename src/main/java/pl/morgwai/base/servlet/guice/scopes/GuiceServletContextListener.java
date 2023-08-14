@@ -7,12 +7,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.servlet.*;
-import javax.servlet.http.HttpServlet;
-import javax.websocket.DeploymentException;
-import javax.websocket.server.ServerContainer;
-import javax.websocket.server.ServerEndpointConfig;
-import javax.websocket.server.ServerEndpointConfig.Configurator;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.websocket.DeploymentException;
+import jakarta.websocket.server.ServerContainer;
+import jakarta.websocket.server.ServerEndpointConfig;
+import jakarta.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.Module;
 import com.google.inject.*;
@@ -22,7 +22,7 @@ import com.google.inject.*;
 /**
  * Creates and configures {@link #getInjector() app-wide Guice Injector} and a
  * {@link ServletModule}. A single subclass of this class must be created and either annotated with
- * {@link javax.servlet.annotation.WebListener @WebListener} or enlisted in
+ * {@link jakarta.servlet.annotation.WebListener @WebListener} or enlisted in
  * <code>web.xml</code> file in <code>listener</code> element.
  */
 public abstract class GuiceServletContextListener implements ServletContextListener {
@@ -163,7 +163,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * stored as {@link #endpointConfigurator} and shared among all {@code Endpoint} instances
 	 * created with {@link #addEndpoint(Class, String)}.</p>
 	 * <p>
-	 * Note that {@code Endpoints} annotated with {@link javax.websocket.server.ServerEndpoint}
+	 * Note that {@code Endpoints} annotated with {@link jakarta.websocket.server.ServerEndpoint}
 	 * will have their separate instances of {@link Configurator} each.</p>
 	 * <p>
 	 * This method may be overridden by subclasses if a more specialized configurator needs to be
@@ -179,7 +179,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * <p>
 	 * Pre-builds dynamic proxy class for {@code endpointClass} in advance.</p>
 	 * <p>
-	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.</p>
+	 * Useful mostly for unannotated endpoints extending {@link jakarta.websocket.Endpoint}.</p>
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path) throws ServletException {
 		addEndpoint(endpointClass, path, endpointConfigurator);
@@ -189,7 +189,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	/**
 	 * Adds an endpoint using custom {@code configurator}.
 	 * <p>
-	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.</p>
+	 * Useful mostly for unannotated endpoints extending {@link jakarta.websocket.Endpoint}.</p>
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path, Configurator configurator)
 			throws ServletException {
@@ -219,7 +219,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		try {
 			servletContainer = initializationEvent.getServletContext();
 			endpointContainer = ((ServerContainer) servletContainer.getAttribute(
-					"javax.websocket.server.ServerContainer"));
+					"jakarta.websocket.server.ServerContainer"));
 			servletContainer.addListener(new HttpSessionContext.SessionContextCreator());
 
 			final var modules = configureInjections();

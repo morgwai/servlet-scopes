@@ -3,9 +3,9 @@ package pl.morgwai.base.servlet.guice.scopes.tests.server;
 
 import java.io.IOException;
 
-import javax.websocket.*;
-import javax.websocket.CloseReason.CloseCodes;
-import javax.websocket.RemoteEndpoint.Async;
+import jakarta.websocket.*;
+import jakarta.websocket.CloseReason.CloseCodes;
+import jakarta.websocket.RemoteEndpoint.Async;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;

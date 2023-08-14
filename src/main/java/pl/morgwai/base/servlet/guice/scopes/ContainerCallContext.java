@@ -1,7 +1,7 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
-import javax.servlet.http.*;
+import jakarta.servlet.http.*;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
 import pl.morgwai.base.guice.scopes.TrackableContext;
@@ -11,11 +11,11 @@ import pl.morgwai.base.guice.scopes.TrackableContext;
 /**
  * Context of either an {@link ServletRequestContext HttpServletRequest} or a
  * {@link WebsocketEventContext websocket event}. Each instance corresponds to a single
- * container-initiated call to either one of {@link javax.servlet.Servlet}'s
+ * container-initiated call to either one of {@link jakarta.servlet.Servlet}'s
  * {@code doXXX(...)} methods or to one of websocket {@code Endpoint}'s life-cycle methods (either
- * ones overriding one of {@link javax.websocket.Endpoint} methods or ones annotated with one
- * of {@link javax.websocket.OnOpen}, {@link javax.websocket.OnMessage},
- * {@link javax.websocket.OnError}, {@link javax.websocket.OnClose}).
+ * ones overriding one of {@link jakarta.websocket.Endpoint} methods or ones annotated with one
+ * of {@link jakarta.websocket.OnOpen}, {@link jakarta.websocket.OnMessage},
+ * {@link jakarta.websocket.OnError}, {@link jakarta.websocket.OnClose}).
  * <p>
  * Suitable for storing short-living objects, such as {@code EntityManager}s or DB transactions.</p>
  * <p>

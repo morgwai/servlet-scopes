@@ -35,16 +35,16 @@ public class ServletModule implements Module {
 
 
 	/**
-	 * Scopes bindings to the context of a given {@link javax.servlet.http.HttpSession}. Available
+	 * Scopes bindings to the context of a given {@link jakarta.servlet.http.HttpSession}. Available
 	 * both to servlets and websocket endpoints.
 	 * <p>
-	 * <b>NOTE:</b> there's no way to create an {@link javax.servlet.http.HttpSession} from the
+	 * <b>NOTE:</b> there's no way to create an {@link jakarta.servlet.http.HttpSession} from the
 	 * websocket endpoint layer if it does not exist yet. To safely use this scope in websocket
 	 * endpoints, other layers must ensure that a session exists (for example a
-	 * {@link javax.servlet.Filter} targeting URL patterns of websockets can be used).</p>
+	 * {@link jakarta.servlet.Filter} targeting URL patterns of websockets can be used).</p>
 	 * <p>
 	 * <b>NOTE:</b> similarly as with
-	 * {@link javax.servlet.http.HttpSession#setAttribute(String, Object) session attributes}, it is
+	 * {@link jakarta.servlet.http.HttpSession#setAttribute(String, Object) session attributes}, it is
 	 * recommended for session-scoped objects to be {@link java.io.Serializable}.</p>
 	 */
 	public final Scope httpSessionScope = new InducedContextScope<>(
@@ -57,7 +57,7 @@ public class ServletModule implements Module {
 
 	/**
 	 * Scopes bindings to the {@link WebsocketConnectionContext context of a websocket connection
-	 * (javax.websocket.Session)}.
+	 * (jakarta.websocket.Session)}.
 	 */
 	public final Scope websocketConnectionScope = new InducedContextScope<>(
 		"WEBSOCKET_CONNECTION_SCOPE",
@@ -135,8 +135,8 @@ public class ServletModule implements Module {
 	 * <p>
 	 * The default {@link RejectedExecutionHandler} throws a {@link RejectedExecutionException} if
 	 * the queue is full or the executor is shutting down. It should usually be handled by
-	 * sending {@link javax.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} /
-	 * {@link javax.websocket.CloseReason.CloseCodes#TRY_AGAIN_LATER} to the client.</p>
+	 * sending {@link jakarta.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} /
+	 * {@link jakarta.websocket.CloseReason.CloseCodes#TRY_AGAIN_LATER} to the client.</p>
 	 */
 	public ServletContextTrackingExecutor newContextTrackingExecutor(
 		String name,
@@ -157,8 +157,8 @@ public class ServletModule implements Module {
 	 * {@code rejectionHandler} will receive a task wrapped with a {@link ContextBoundRunnable}.</p>
 	 * <p>
 	 * In order for {@link ServletContextTrackingExecutor#execute(
-	 * javax.servlet.http.HttpServletResponse, Runnable)} and
-	 * {@link ServletContextTrackingExecutor#execute(javax.websocket.Session, Runnable)} to work
+	 * jakarta.servlet.http.HttpServletResponse, Runnable)} and
+	 * {@link ServletContextTrackingExecutor#execute(jakarta.websocket.Session, Runnable)} to work
 	 * properly, the {@code rejectionHandler} must throw a {@link RejectedExecutionException}.</p>
 	 */
 	public ServletContextTrackingExecutor newContextTrackingExecutor(
