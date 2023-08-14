@@ -27,12 +27,13 @@ class WebsocketConnectionDecorator implements Session {
 
 
 	final Session wrappedConnection;
-	final ContextTracker<ContainerCallContext> eventCtxTracker;
+	final ContextTracker<ContainerCallContext> containerCallContextTracker;
 	final HttpSession httpSession;
 
 	/**
-	 * Set by {@link WebsocketConnectionContext#WebsocketConnectionContext(
-	 *WebsocketConnectionDecorator) WebsocketConnectionContext's constructor}.
+	 * Set by
+	 * {@link WebsocketConnectionContext#WebsocketConnectionContext(WebsocketConnectionDecorator)
+	 * WebsocketConnectionContext's constructor}.
 	 */
 	void setConnectionCtx(WebsocketConnectionContext ctx) { this.connectionCtx = ctx; }
 	WebsocketConnectionContext connectionCtx;
@@ -42,9 +43,9 @@ class WebsocketConnectionDecorator implements Session {
 	@Override
 	public void addMessageHandler(MessageHandler handler) throws IllegalStateException {
 		if (handler instanceof MessageHandler.Whole) {
-			handler = new WholeMessageHandlerWrapper<>((MessageHandler.Whole<?>) handler);
+			handler = new WholeMessageHandlerDecorator<>((MessageHandler.Whole<?>) handler);
 		} else {
-			handler = new PartialMessageHandlerWrapper<>((MessageHandler.Partial<?>) handler);
+			handler = new PartialMessageHandlerDecorator<>((MessageHandler.Partial<?>) handler);
 		}
 		wrappedConnection.addMessageHandler(handler);
 	}
@@ -55,7 +56,7 @@ class WebsocketConnectionDecorator implements Session {
 	public <T> void addMessageHandler(Class<T> messageClass, MessageHandler.Whole<T> handler) {
 		wrappedConnection.addMessageHandler(
 			messageClass,
-			new WebsocketConnectionDecorator.WholeMessageHandlerWrapper<>(handler)
+			new WholeMessageHandlerDecorator<>(handler)
 		);
 	}
 
@@ -65,7 +66,7 @@ class WebsocketConnectionDecorator implements Session {
 	public <T> void addMessageHandler(Class<T> messageClass, MessageHandler.Partial<T> handler) {
 		wrappedConnection.addMessageHandler(
 			messageClass,
-			new WebsocketConnectionDecorator.PartialMessageHandlerWrapper<>(handler)
+			new PartialMessageHandlerDecorator<>(handler)
 		);
 	}
 
@@ -100,68 +101,68 @@ class WebsocketConnectionDecorator implements Session {
 
 	WebsocketConnectionDecorator(
 		Session connection,
-		ContextTracker<ContainerCallContext> eventCtxTracker
+		ContextTracker<ContainerCallContext> containerCallContextTracker
 	) {
 		this.wrappedConnection = connection;
-		this.eventCtxTracker = eventCtxTracker;
+		this.containerCallContextTracker = containerCallContextTracker;
 		this.httpSession = (HttpSession)
 				wrappedConnection.getUserProperties().get(HttpSession.class.getName());
 	}
 
 
 
-	static abstract class MessageHandlerWrapper implements MessageHandler {
+	static abstract class MessageHandlerDecorator implements MessageHandler {
 
-		final MessageHandler wrapped;
+		final MessageHandler wrappedHandler;
 
 		@Override public boolean equals(Object other) {
 			if (other == null) return false;
-			if ( !MessageHandlerWrapper.class.isAssignableFrom(other.getClass())) return false;
-			return wrapped.equals(((MessageHandlerWrapper) other).wrapped);
+			if ( !MessageHandlerDecorator.class.isAssignableFrom(other.getClass())) return false;
+			return wrappedHandler.equals(((MessageHandlerDecorator) other).wrappedHandler);
 		}
 
 		@Override public int hashCode() {
-			return wrapped.hashCode();
+			return wrappedHandler.hashCode();
 		}
 
-		MessageHandlerWrapper(MessageHandler handler) {
-			this.wrapped = handler;
+		MessageHandlerDecorator(MessageHandler toWrap) {
+			this.wrappedHandler = toWrap;
 		}
 	}
 
 
 
-	class WholeMessageHandlerWrapper<T>
-			extends MessageHandlerWrapper implements MessageHandler.Whole<T> {
+	class WholeMessageHandlerDecorator<T>
+			extends MessageHandlerDecorator implements MessageHandler.Whole<T> {
 
-		final MessageHandler.Whole<T> wrapped;
+		final MessageHandler.Whole<T> wrappedHandler;
 
 		@Override public void onMessage(T message) {
-			new WebsocketEventContext(connectionCtx, httpSession, eventCtxTracker)
-					.executeWithinSelf(() -> wrapped.onMessage(message));
+			new WebsocketEventContext(connectionCtx, httpSession, containerCallContextTracker)
+					.executeWithinSelf(() -> wrappedHandler.onMessage(message));
 		}
 
-		WholeMessageHandlerWrapper(MessageHandler.Whole<T> handler) {
-			super(handler);
-			this.wrapped = handler;
+		WholeMessageHandlerDecorator(MessageHandler.Whole<T> toWrap) {
+			super(toWrap);
+			this.wrappedHandler = toWrap;
 		}
 	}
 
 
 
-	class PartialMessageHandlerWrapper<T>
-			extends MessageHandlerWrapper implements MessageHandler.Partial<T> {
+	class PartialMessageHandlerDecorator<T>
+			extends MessageHandlerDecorator implements MessageHandler.Partial<T> {
 
-		final MessageHandler.Partial<T> wrapped;
+		final MessageHandler.Partial<T> wrappedHandler;
 
 		@Override public void onMessage(T message, boolean last) {
-			new WebsocketEventContext(connectionCtx, httpSession, eventCtxTracker)
-					.executeWithinSelf(() -> wrapped.onMessage(message, last));
+			new WebsocketEventContext(connectionCtx, httpSession, containerCallContextTracker)
+					.executeWithinSelf(() -> wrappedHandler.onMessage(message, last));
 		}
 
-		PartialMessageHandlerWrapper(MessageHandler.Partial<T> handler) {
-			super(handler);
-			this.wrapped = handler;
+		PartialMessageHandlerDecorator(MessageHandler.Partial<T> toWrap) {
+			super(toWrap);
+			this.wrappedHandler = toWrap;
 		}
 	}
 
