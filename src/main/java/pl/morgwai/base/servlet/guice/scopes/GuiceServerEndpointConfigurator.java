@@ -17,12 +17,16 @@ import javax.websocket.server.*;
 import javax.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.*;
+/*
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.matcher.ElementMatchers;
+/*/
+import javassist.util.proxy.*;
+//*/
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
@@ -90,8 +94,12 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				getAdditionalDecorator(injector.getInstance(endpointClass)),
 				containerCallContextTracker
 			);
+			/*
 			proxyClass.getDeclaredField(PROXY_DECORATOR_FIELD_NAME)
 					.set(endpointProxy, endpointDecorator);
+			/*/
+			((Proxy) endpointProxy).setHandler(endpointDecorator);
+			//*/
 			return endpointProxy;
 		} catch (Exception e) {
 			log.log(Level.SEVERE, "Endpoint instantiation failed", e);
@@ -99,9 +107,11 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		}
 	}
 
+	/*
 	static final String PROXY_DECORATOR_FIELD_NAME =
 			GuiceServerEndpointConfigurator.class.getPackageName().replace('.', '_')
 					+ "_endpoint_decorator";
+	//*/
 
 	/**
 	 * Exposed for proxy class pre-building in
@@ -124,6 +134,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		if ( !Endpoint.class.isAssignableFrom(endpointClass)) {
 			checkIfRequiredEndpointMethodsPresent(endpointClass);
 		}
+		/*
 		DynamicType.Builder<EndpointT> proxyClassBuilder = new ByteBuddy()
 			.subclass(endpointClass)
 			.name(GuiceServerEndpointConfigurator.class.getPackageName() + ".ProxyFor_"
@@ -145,6 +156,22 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					ClassLoadingStrategy.Default.INJECTION
 				).getLoaded();
 		}
+		/*/
+		final var proxyClassBuilder = new ProxyFactory() {
+			@Override protected ClassLoader getClassLoader() {
+				return GuiceServerEndpointConfigurator.class.getClassLoader();
+			}
+		};
+		proxyClassBuilder.setSuperclass(endpointClass);
+		final ServerEndpoint annotation = endpointClass.getAnnotation(ServerEndpoint.class);
+		// todo: proxyClassBuilder.addAnnotation(annotation);
+		// see https://stackoverflow.com/questions/76907527/
+		// see https://github.com/jboss-javassist/javassist/issues/459
+		@SuppressWarnings("unchecked")
+		final Class<? extends EndpointT> proxyClass =
+				(Class<? extends EndpointT>) proxyClassBuilder.createClass();
+		return proxyClass;
+		//*/
 	}
 
 	/**
@@ -261,7 +288,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
  * Executes each call to the wrapped {@code Endpoint} instance within the current
  * {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
  */
-class EndpointDecorator implements InvocationHandler {
+class EndpointDecorator implements InvocationHandler, MethodHandler {
 
 
 
@@ -335,6 +362,14 @@ class EndpointDecorator implements InvocationHandler {
 				}
 			}
 		);
+	}
+
+
+
+	@Override
+	public Object invoke(Object proxy, Method proxyMethod, Method superMethod, Object[] args)
+			throws Throwable {
+		return invoke(proxy, proxyMethod, args);
 	}
 
 

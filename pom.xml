@@ -62,9 +62,9 @@
 			<version>${utils.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>net.bytebuddy</groupId>
-			<artifactId>byte-buddy</artifactId>
-			<version>[1.14.6,)</version>
+			<groupId>org.javassist</groupId>
+			<artifactId>javassist</artifactId>
+			<version>[3.29.2-GA,)</version>
 			<optional>true</optional>
 		</dependency>
 
@@ -178,17 +178,17 @@
 						<configuration>
 							<artifactSet>
 								<includes>
-									<include>net.bytebuddy:byte-buddy</include>
+									<include>org.javassist:javassist</include>
 								</includes>
 							</artifactSet>
 							<relocations>
 								<relocation>
-									<pattern>net.bytebuddy</pattern>
-									<shadedPattern>pl.morgwai.base.servlet.guice.scopes.net.bytebuddy</shadedPattern>
+									<pattern>javassist</pattern>
+									<shadedPattern>pl.morgwai.base.servlet.guice.scopes.javassist</shadedPattern>
 								</relocation>
 							</relocations>
 							<shadedArtifactAttached>true</shadedArtifactAttached>
-							<shadedClassifierName>shadedbytebuddy</shadedClassifierName>
+							<shadedClassifierName>shadedjavassist</shadedClassifierName>
 							<minimizeJar>true</minimizeJar>
 						</configuration>
 					</execution>
