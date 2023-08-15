@@ -6,6 +6,7 @@ import java.lang.reflect.ParameterizedType;
 import java.net.URI;
 import java.security.Principal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpSession;
 import javax.websocket.*;
@@ -45,18 +46,18 @@ class WebsocketConnectionDecorator implements Session {
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public void addMessageHandler(MessageHandler handler) {
 		final Class<?> messageClass;
+		final var implementedHandlerTypes = Arrays.stream(handler.getClass().getGenericInterfaces())
+			.filter(ParameterizedType.class::isInstance)
+			.map(ParameterizedType.class::cast)
+			.filter(
+				(parameterizedType) -> (
+					parameterizedType.getRawType().equals(MessageHandler.Whole.class)
+					|| parameterizedType.getRawType().equals(MessageHandler.Partial.class)
+				)
+			).collect(Collectors.toList());
 		try {
-			final var handlerType = Arrays.stream(handler.getClass().getGenericInterfaces())
-				.filter((type) -> type instanceof ParameterizedType)
-				.map((type) -> (ParameterizedType) type)
-				.filter(
-					(parameterizedType) -> (
-						parameterizedType.getRawType().equals(MessageHandler.Whole.class)
-						|| parameterizedType.getRawType().equals(MessageHandler.Partial.class)
-					)
-				).findAny()
-				.orElseThrow();
-			messageClass = (Class<?>) handlerType.getActualTypeArguments()[0];
+			if (implementedHandlerTypes.size() != 1) throw new Exception();
+			messageClass = (Class<?>) implementedHandlerTypes.get(0).getActualTypeArguments()[0];
 		} catch (Exception e) {
 			throw new IllegalArgumentException("cannot determine handler type");
 		}
