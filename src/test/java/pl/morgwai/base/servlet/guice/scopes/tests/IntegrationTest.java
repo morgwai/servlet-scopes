@@ -141,14 +141,15 @@ public class IntegrationTest {
 	 */
 	List<String[]> testSingleMessageToServerEndpoint(URI url) throws Exception {
 		final var testMessage = "test message for " + url;
-		final var messages = new ArrayList<String[]>(4);
-		final var messagesReceived = new CountDownLatch(2);
+		final var replies = new ArrayList<String[]>(4);
+		final var testMessageSent = new CountDownLatch(1);
+		final var repliesReceived = new CountDownLatch(2);
 		final var testThread = Thread.currentThread();
 		final var endpoint = new ClientEndpoint(
-			(message) -> {
-				if (log.isLoggable(Level.FINE)) log.fine("message from " + url + '\n' + message);
-				messages.add(message.split("\n"));
-				messagesReceived.countDown();
+			(reply) -> {
+				if (log.isLoggable(Level.FINE)) log.fine("reply from " + url + '\n' + reply);
+				replies.add(reply.split("\n"));
+				repliesReceived.countDown();
 			},
 			(connection, error) -> {
 				log.log(Level.WARNING, "error on connection " + connection.getId(), error);
@@ -156,32 +157,36 @@ public class IntegrationTest {
 			},
 			(connection, closeReason) -> {
 				if (closeReason.getCloseCode().getCode() != CloseCodes.NORMAL_CLOSURE.getCode()) {
+					try {
+						testMessageSent.await(500L, TimeUnit.MILLISECONDS);
+					} catch (InterruptedException ignored) {}
 					testThread.interrupt();
 				}
 			}
 		);
 		final var connection = clientWebsocketContainer.connectToServer(endpoint, null, url);
 		connection.getAsyncRemote().sendText(testMessage);
+		testMessageSent.countDown();
 		try {
-			if ( !messagesReceived.await(2L, TimeUnit.SECONDS)) fail("timeout");
+			if ( !repliesReceived.await(2L, TimeUnit.SECONDS)) fail("timeout");
 		} catch (InterruptedException e) {
 			fail("server side error");
 		}
 		connection.close();
 		if ( !endpoint.awaitClosure(2L, TimeUnit.SECONDS)) fail("timeout");
-		assertEquals("message should have 5 lines", 5, messages.get(0).length);
-		assertEquals("message should have 5 lines", 5, messages.get(1).length);
-		assertEquals("onOpen message should be a welcome",
-				EchoEndpoint.WELCOME_MESSAGE, messages.get(0)[0]);
-		assertEquals("2nd message should be an echo",
-				testMessage, messages.get(1)[0]);
+		assertEquals("reply should have 5 lines", 5, replies.get(0).length);
+		assertEquals("reply should have 5 lines", 5, replies.get(1).length);
+		assertEquals("onOpen reply should be a welcome",
+				EchoEndpoint.WELCOME_MESSAGE, replies.get(0)[0]);
+		assertEquals("2nd reply should be an echo",
+				testMessage, replies.get(1)[0]);
 		assertEquals("session scoped object hash should remain the same",
-				messages.get(0)[3], messages.get(1)[3]);
+				replies.get(0)[3], replies.get(1)[3]);
 		assertEquals("connection scoped object hash should remain the same",
-				messages.get(0)[4], messages.get(1)[4]);
+				replies.get(0)[4], replies.get(1)[4]);
 		assertNotEquals("event scoped object hash should change",
-				messages.get(0)[2], messages.get(1)[2]);
-		return messages;
+				replies.get(0)[2], replies.get(1)[2]);
+		return replies;
 	}
 
 	/**
@@ -191,13 +196,13 @@ public class IntegrationTest {
 	 */
 	List<String[]> testServerEndpoint(String type) throws Exception {
 		final var url = URI.create(websocketUrl + type);
-		final var messages = testSingleMessageToServerEndpoint(url);
-		messages.addAll(testSingleMessageToServerEndpoint(url));
+		final var replies = testSingleMessageToServerEndpoint(url);
+		replies.addAll(testSingleMessageToServerEndpoint(url));
 		assertEquals("session scoped object hash should remain the same",
-				messages.get(0)[3], messages.get(2)[3]);
+				replies.get(0)[3], replies.get(2)[3]);
 		assertNotEquals("connection scoped object hash should change",
-				messages.get(0)[4], messages.get(2)[4]);
-		return messages;
+				replies.get(0)[4], replies.get(2)[4]);
+		return replies;
 	}
 
 	@Test
