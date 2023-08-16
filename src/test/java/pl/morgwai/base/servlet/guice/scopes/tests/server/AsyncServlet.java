@@ -3,29 +3,50 @@ package pl.morgwai.base.servlet.guice.scopes.tests.server;
 
 import java.io.IOException;
 
-import javax.servlet.DispatcherType;
-import javax.servlet.ServletException;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.google.inject.Inject;
-
 import pl.morgwai.base.servlet.guice.scopes.ServletContextTrackingExecutor;
 
 
 
-@SuppressWarnings("serial")
+/**
+ * Receives requests from {@link ForwardingServlet},
+ * {@link HttpServletRequest#startAsync() starts async processing}, dispatches processing to its
+ * {@link ServletContextTrackingExecutor} and from there {@link AsyncContext#dispatch() dispatches}
+ * back to the container in a way specified by {@link #MODE_PARAM} and {@link #TARGET_PATH_PARAM}.
+ * If a request comes back to this {@code Servlet} {@link DispatcherType#ASYNC asynchronously}, it
+ * is {@link #doAsyncHandling(HttpServletRequest, HttpServletResponse) handled}.
+ */
 public class AsyncServlet extends TestServlet {
 
 
 
-	public static final String PATH = "/async";
+	/**
+	 * A {@link HttpServletRequest#getParameter(String) request param} controlling how
+	 * {@link AsyncContext} will be created. Possible values are {@link #MODE_WRAPPED} and
+	 * {@link #MODE_UNWRAPPED}.
+	 */
 	public static final String MODE_PARAM = "mode";
+	/**
+	 * {@link AsyncContext} will be created with
+	 * {@link HttpServletRequest#startAsync(ServletRequest, ServletResponse)}.
+	 */
 	public static final String MODE_WRAPPED = "wrapped";
-	public static final String MODE_TARGETED = "targeted";
+	/** {@link AsyncContext} will be created with {@link HttpServletRequest#startAsync()}. */
+	public static final String MODE_UNWRAPPED = "unwrapped";
 
-	@Inject
-	ServletContextTrackingExecutor executor;
+	/**
+	 * A {@link HttpServletRequest#getParameter(String) request param} controlling
+	 * {@link AsyncContext} dispatch target. If present, the request will be
+	 * {@link AsyncContext#dispatch(String) dispatched to the given path}, otherwise it will be
+	 * {@link AsyncContext#dispatch() dispatched to its original URI}.
+	 */
+	public static final String TARGET_PATH_PARAM = "targetPath";
+
+	@Inject	ServletContextTrackingExecutor executor;
 
 
 
@@ -33,7 +54,7 @@ public class AsyncServlet extends TestServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
 		if (request.getDispatcherType() == DispatcherType.ASYNC) {
-			doAsyncDispatch(request, response);
+			doAsyncHandling(request, response);
 			return;
 		}
 
@@ -42,20 +63,23 @@ public class AsyncServlet extends TestServlet {
 				? request.startAsync(request, response)
 				: request.startAsync();
 		asyncCtx.setTimeout(0L);
-		executor.execute(response, () -> {
+		executor.execute(() -> {
 			try {
+				verifyScoping(request, "the executor thread");
+				final var targetPath = request.getParameter(TARGET_PATH_PARAM);
+				if (targetPath != null) {
+					asyncCtx.dispatch(targetPath);
+				} else {
+					asyncCtx.dispatch();
+				}
+			} catch (ServletException e) {
+				e.printStackTrace();
 				try {
-					verifyScoping(request, "the executor thread");
-					if (MODE_TARGETED.equals(request.getParameter(MODE_PARAM))) {
-						asyncCtx.dispatch(PATH);
-					} else {
-						asyncCtx.dispatch();
-					}
-				} catch (ServletException e) {
 					response.sendError(
 							HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.toString());
-				}
-			} catch (IOException ignored) {}
+				} catch (IOException ignored) {}
+				asyncCtx.complete();
+			}
 		});
 	}
 }

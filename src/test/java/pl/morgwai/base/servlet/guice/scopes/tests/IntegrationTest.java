@@ -38,11 +38,16 @@ public class IntegrationTest {
 	HttpClient httpClient;
 	TestServer server;
 	int port;
-	String dispatchingServletUrl;
+	String forwardingServletUrl;
 	String websocketUrl;
 
 
 
+	/**
+	 * Creates a {@link #server servlet container}, an {@link #httpClient HTTP client}, a
+	 * {@link #clientWebsocketContainer client websocket container} and some helper URL prefixes
+	 * ({@link #forwardingServletUrl}, {@link #websocketUrl}).
+	 */
 	@Before
 	public void setup() throws Exception {
 		final var cookieManager = new CookieManager();
@@ -54,14 +59,15 @@ public class IntegrationTest {
 		server.start();
 		port = ((ServerSocketChannel) server.getConnectors()[0].getTransport())
 				.socket().getLocalPort();
-		dispatchingServletUrl =
-				"http://localhost:" + port + TestServer.APP_PATH + DispatchingServlet.PATH;
+		forwardingServletUrl = "http://localhost:" + port
+				+ TestServer.APP_PATH + '/' + ForwardingServlet.class.getSimpleName();
 		websocketUrl = "ws://localhost:" + port + TestServer.APP_PATH
 				+ ServletContextListener.WEBSOCKET_PATH + '/';
 	}
 
 
 
+	/** Shutdowns {@link #clientWebsocketContainer} adn {@link #server}. */
 	@After
 	public void shutdown() throws Exception {
 		final var jettyWsContainer = ((JavaxWebSocketContainer) clientWebsocketContainer);
@@ -77,55 +83,77 @@ public class IntegrationTest {
 
 
 	/**
-	 * Sends 2 GET requests to {@code url}.
-	 * Returns a list containing both response bodies. Each response body is split into lines.
-	 * Each response body is expected to have the format defined in {@link TestServlet}.
-	 * Both responses are expected to be sent from the same HTTP session scope.
+	 * Sends {@code request} to the {@link #server}, verifies and returns the response.
+	 * Specifically, verifies if the response code is 200, if the body has 4 lines and if the first
+	 * line contains the {@link Class#getSimpleName() simple name} of the class passed as
+	 * {@code expectedTargetServletClass} param.
+	 * @return an array of 4 {@code Strings} corresponding to the response body lines.
+	 */
+	String[] sendServletRequest(HttpRequest request, Class<?> expectedTargetServletClass)
+			throws Exception {
+		final var response = httpClient.send(request, BodyHandlers.ofString());
+		if (log.isLoggable(Level.FINE)) log.fine("response from " + request.uri() + ", status: "
+				+ response.statusCode() + '\n' + response.body());
+		assertEquals("response code should be 'OK'", 200, response.statusCode());
+		final var responseLines = response.body().split("\n");
+		assertEquals("response should have 4 lines", 4, responseLines.length);
+		assertEquals("processing should be dispatched to the correct servlet",
+				expectedTargetServletClass.getSimpleName(), responseLines[0]);
+		return responseLines;
+	}
+
+	/**
+	 * {@link #sendServletRequest(HttpRequest, Class) Sends} 2 GET requests to {@code url} and
+	 * verifies scoping. Specifically, assumes that the response corresponds to
+	 * {@link TestServlet#RESPONSE_FORMAT} and verifies that request-scoped hash has changed while
+	 * session-scoped remained the same.
+	 * @return a {@code List} containing both response bodies as returned by
+	 *     {@link #sendServletRequest(HttpRequest, Class)}.
 	 */
 	List<String[]> testAsyncCtxDispatch(String url, Class<?> expectedTargetServletClass)
 			throws Exception {
 		final var request = HttpRequest.newBuilder(URI.create(url)).GET()
 				.timeout(Duration.ofSeconds(2)).build();
-
-		final var response = httpClient.send(request, BodyHandlers.ofString()).body();
-		if (log.isLoggable(Level.FINE)) log.fine("response from " + url + '\n' + response);
-		final var responseLines = response.split("\n");
-		assertEquals("response should have 4 lines", 4, responseLines.length);
-		assertEquals("processing should be dispatched to the correct servlet",
-				expectedTargetServletClass.getSimpleName(), responseLines[0]);
-
-		final var response2 = httpClient.send(request, BodyHandlers.ofString()).body();
-		if (log.isLoggable(Level.FINE)) log.fine("response from " + url + '\n' + response2);
-		final var responseLines2 = response2.split("\n");
-		assertEquals("response should have 4 lines", 4, responseLines2.length);
-		assertEquals("processing should be dispatched to the correct servlet",
-				expectedTargetServletClass.getSimpleName(), responseLines2[0]);
+		final var responseLines = sendServletRequest(request, expectedTargetServletClass);
+		final var responseLines2 = sendServletRequest(request, expectedTargetServletClass);
 		assertEquals("session scoped object hash should remain the same",
 				responseLines[3], responseLines2[3]);
 		assertNotEquals("request scoped object hash should change",
 				responseLines[2], responseLines2[2]);
-
 		return List.of(responseLines, responseLines2);
 	}
 
 	@Test
 	public void testUnwrappedAsyncCtxDispatch() throws Exception {
-		testAsyncCtxDispatch(dispatchingServletUrl, DispatchingServlet.class);
+		testAsyncCtxDispatch(
+			forwardingServletUrl + '?' + MODE_PARAM + '=' + MODE_UNWRAPPED,
+			ForwardingServlet.class
+		);
+	}
+
+	@Test
+	public void testUnwrappedTargetedAsyncCtxDispatch() throws Exception {
+		testAsyncCtxDispatch(
+			forwardingServletUrl + '?' + MODE_PARAM + '=' + MODE_UNWRAPPED
+					+ '&' + TARGET_PATH_PARAM + "=/" + TargetedServlet.class.getSimpleName(),
+			TargetedServlet.class
+		);
 	}
 
 	@Test
 	public void testWrappedAsyncCtxDispatch() throws Exception {
 		testAsyncCtxDispatch(
-			dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED,
+			forwardingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED,
 			AsyncServlet.class
 		);
 	}
 
 	@Test
-	public void testTargetedAsyncCtxDispatch() throws Exception {
+	public void testWrappedTargetedAsyncCtxDispatch() throws Exception {
 		testAsyncCtxDispatch(
-			dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_TARGETED,
-			AsyncServlet.class
+			forwardingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED
+					+ '&' + TARGET_PATH_PARAM + "=/" + TargetedServlet.class.getSimpleName(),
+			TargetedServlet.class
 		);
 	}
 
@@ -222,54 +250,34 @@ public class IntegrationTest {
 
 
 
-	void testOpenConnectionToServerEndpoint(String type) throws Exception {
-		final var url = URI.create(websocketUrl + type);
-		final var endpoint = new ClientEndpoint(
-			(message) -> {},
-			(connection, error) -> {
-				log.log(Level.WARNING, "error on connection " + connection.getId(), error);
-			},
-			(connection, closeReason) -> {}
-		);
-		final var connection = clientWebsocketContainer.connectToServer(endpoint, null, url);
-		connection.close();
-	}
-
-	@Test
-	public void testOnOpenWithoutSessionParamEndpoint() {
-		Logger.getLogger(GuiceServerEndpointConfigurator.class.getName()).setLevel(Level.OFF);
-		try {
-			testOpenConnectionToServerEndpoint(OnOpenWithoutSessionParamEndpoint.TYPE);
-			fail("instantiation of OnOpenWithoutSessionParamEndpoint should throw an Exception");
-		} catch (Exception expected) {}
-	}
-
-	@Test
-	public void testPingingWithoutOnCloseEndpoint() {
-		Logger.getLogger(GuiceServerEndpointConfigurator.class.getName()).setLevel(Level.OFF);
-		try {
-			testOpenConnectionToServerEndpoint(PingingWithoutOnCloseEndpoint.TYPE);
-			fail("instantiation of PingingWithoutOnCloseEndpoint should throw an Exception");
-		} catch (Exception expected) {}
-	}
-
-
-
+	/** Performs all the above positive tests in 1 session to check for undesired interactions. */
 	@Test
 	public void testAllInOne() throws Exception {
 		final var requestScopedHashes = new HashSet<>();
 		final var connectionScopedHashes = new HashSet<>();
 
 		final var unwrappedAsyncCtxResponses = testAsyncCtxDispatch(
-			dispatchingServletUrl,
-			DispatchingServlet.class
+			forwardingServletUrl + '?' + MODE_PARAM + '=' + MODE_UNWRAPPED,
+			ForwardingServlet.class
 		);
 		final var sessionScopedHash = unwrappedAsyncCtxResponses.get(0)[3];
 		requestScopedHashes.add(unwrappedAsyncCtxResponses.get(0)[2]);
 		requestScopedHashes.add(unwrappedAsyncCtxResponses.get(1)[2]);
 
+		final var unwrappedTargetedAsyncCtxResponses = testAsyncCtxDispatch(
+			forwardingServletUrl + '?' + MODE_PARAM + '=' + MODE_UNWRAPPED
+					+ '&' + TARGET_PATH_PARAM + "=/" + TargetedServlet.class.getSimpleName(),
+			TargetedServlet.class
+		);
+		assertEquals("session scoped object hash should remain the same",
+				sessionScopedHash, unwrappedTargetedAsyncCtxResponses.get(0)[3]);
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(unwrappedTargetedAsyncCtxResponses.get(0)[2]));
+		assertTrue("call scoped object hash should change",
+				requestScopedHashes.add(unwrappedTargetedAsyncCtxResponses.get(1)[2]));
+
 		final var wrappedAsyncCtxResponses = testAsyncCtxDispatch(
-			dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED,
+			forwardingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED,
 			AsyncServlet.class
 		);
 		assertEquals("session scoped object hash should remain the same",
@@ -279,16 +287,17 @@ public class IntegrationTest {
 		assertTrue("call scoped object hash should change",
 				requestScopedHashes.add(wrappedAsyncCtxResponses.get(1)[2]));
 
-		final var targetedAsyncCtxResponses = testAsyncCtxDispatch(
-			dispatchingServletUrl + '?' + MODE_PARAM + '=' + MODE_TARGETED,
-			AsyncServlet.class
+		final var wrappedTargetedAsyncCtxResponses = testAsyncCtxDispatch(
+			forwardingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED
+					+ '&' + TARGET_PATH_PARAM + "=/" + TargetedServlet.class.getSimpleName(),
+			TargetedServlet.class
 		);
 		assertEquals("session scoped object hash should remain the same",
-				sessionScopedHash, targetedAsyncCtxResponses.get(0)[3]);
+				sessionScopedHash, wrappedTargetedAsyncCtxResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
-				requestScopedHashes.add(targetedAsyncCtxResponses.get(0)[2]));
+				requestScopedHashes.add(wrappedTargetedAsyncCtxResponses.get(0)[2]));
 		assertTrue("call scoped object hash should change",
-				requestScopedHashes.add(targetedAsyncCtxResponses.get(1)[2]));
+				requestScopedHashes.add(wrappedTargetedAsyncCtxResponses.get(1)[2]));
 
 		final var programmaticEndpointResponses = testServerEndpoint(ProgrammaticEndpoint.TYPE);
 		assertEquals("session scoped object hash should remain the same",
@@ -335,6 +344,44 @@ public class IntegrationTest {
 				connectionScopedHashes.add(annotatedEndpointResponses.get(0)[4]));
 		assertTrue("connection scoped object hash should change",
 				connectionScopedHashes.add(annotatedEndpointResponses.get(2)[4]));
+	}
+
+
+
+	/**
+	 * Tries to open a websocket connection to a given {@code Endpoint} {@code type}. If succeeds,
+	 * closes it immediately: intended for tests of invalid {@code Endpoint} classes that should
+	 * fail to instantiate.
+	 */
+	void testOpenConnectionToServerEndpoint(String type) throws Exception {
+		final var url = URI.create(websocketUrl + type);
+		final var endpoint = new ClientEndpoint(
+			(message) -> {},
+			(connection, error) -> {
+				log.log(Level.WARNING, "error on connection " + connection.getId(), error);
+			},
+			(connection, closeReason) -> {}
+		);
+		final var connection = clientWebsocketContainer.connectToServer(endpoint, null, url);
+		connection.close();
+	}
+
+	@Test
+	public void testOnOpenWithoutSessionParamEndpoint() {
+		Logger.getLogger(GuiceServerEndpointConfigurator.class.getName()).setLevel(Level.OFF);
+		try {
+			testOpenConnectionToServerEndpoint(OnOpenWithoutSessionParamEndpoint.TYPE);
+			fail("instantiation of OnOpenWithoutSessionParamEndpoint should throw an Exception");
+		} catch (Exception expected) {}
+	}
+
+	@Test
+	public void testPingingWithoutOnCloseEndpoint() {
+		Logger.getLogger(GuiceServerEndpointConfigurator.class.getName()).setLevel(Level.OFF);
+		try {
+			testOpenConnectionToServerEndpoint(PingingWithoutOnCloseEndpoint.TYPE);
+			fail("instantiation of PingingWithoutOnCloseEndpoint should throw an Exception");
+		} catch (Exception expected) {}
 	}
 
 

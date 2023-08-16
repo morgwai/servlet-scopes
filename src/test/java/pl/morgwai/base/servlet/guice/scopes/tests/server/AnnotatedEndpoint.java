@@ -8,6 +8,7 @@ import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
 
 
 
+/** Extends {@link EchoEndpoint} and annotates lifecycle methods with websocket annotations. */
 @ServerEndpoint(
 		value = AnnotatedEndpoint.PATH, configurator = PingingEndpointConfigurator.class)
 public class AnnotatedEndpoint extends EchoEndpoint {

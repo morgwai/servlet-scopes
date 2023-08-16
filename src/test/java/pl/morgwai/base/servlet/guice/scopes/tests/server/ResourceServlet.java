@@ -9,7 +9,7 @@ import javax.servlet.http.*;
 
 
 
-@SuppressWarnings("serial")
+/** Serves a resource given by {@link #RESOURCE_PATH_PARAM} init param. */
 public class ResourceServlet extends HttpServlet {
 
 

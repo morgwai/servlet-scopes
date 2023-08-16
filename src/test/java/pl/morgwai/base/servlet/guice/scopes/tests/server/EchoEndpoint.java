@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 
 
+/** Implementation of echoing. All other valid {@code Endpoints} either extend or wrap this one. */
 public class EchoEndpoint {
 
 

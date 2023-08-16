@@ -7,6 +7,10 @@ import com.google.inject.Inject;
 
 
 
+/**
+ * Delegates to its wrapped {@link EchoEndpoint} instance. Added programmatically in
+ * {@link ServletContextListener#configureServletsFiltersEndpoints()}.
+ */
 public class ProgrammaticEndpoint extends Endpoint {
 
 

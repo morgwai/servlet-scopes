@@ -9,10 +9,16 @@ import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
 
 
 
+/**
+ * For {@link
+ * pl.morgwai.base.servlet.guice.scopes.tests.IntegrationTest#testPingingWithoutOnCloseEndpoint()}.
+ */
 @ServerEndpoint(
 		value = PingingWithoutOnCloseEndpoint.PATH,
 		configurator = PingingEndpointConfigurator.class)
 public class PingingWithoutOnCloseEndpoint {
+
+
 
 	public static final String TYPE = "pingingWithoutOnClose";
 	public static final String PATH = ServletContextListener.WEBSOCKET_PATH + '/' + TYPE;

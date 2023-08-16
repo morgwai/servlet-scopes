@@ -6,6 +6,7 @@ import org.eclipse.jetty.websocket.javax.server.config.JavaxWebSocketServletCont
 
 
 
+/** An embedded Jetty server with {@code Servlets} and {@code Endpoints} from this package. */
 public class TestServer extends org.eclipse.jetty.server.Server {
 
 
@@ -16,7 +17,7 @@ public class TestServer extends org.eclipse.jetty.server.Server {
 
 	public TestServer(int port) {
 		super(port);
-		var appHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		final var appHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		appHandler.setContextPath(APP_PATH);
 		appHandler.addEventListener(new ServletContextListener());
 		setHandler(appHandler);

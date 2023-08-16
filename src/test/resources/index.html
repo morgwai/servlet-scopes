@@ -8,9 +8,10 @@
 </head>
 
 <body>
-	<a href='dispatch' >unwrapped async ctx dispatch (expecting DispatchingServlet)</a><br/>
-	<a href='dispatch?mode=wrapped' >wrapped async ctx dispatch (expecting AsyncServlet)</a><br/>
-	<a href='dispatch?mode=targeted' >targeted async ctx dispatch (expecting AsyncServlet)</a><br/>
+	<a href='ForwardingServlet?mode=unwrapped' >unwrapped (expecting ForwardingServlet)</a><br/>
+	<a href='ForwardingServlet?mode=unwrapped&targetPath=/TargetedServlet' >unwrapped targeted (expecting TargetedServlet)</a><br/>
+	<a href='ForwardingServlet?mode=wrapped' >wrapped (expecting AsyncServlet)</a><br/>
+	<a href='ForwardingServlet?mode=wrapped&targetPath=/TargetedServlet' >wrapped targeted (expecting TargetedServlet)</a><br/>
 	<br/>
 	<a href='echo?type=programmatic' >programmatic websocket</a><br/>
 	<a href='echo?type=extending' >extending websocket</a><br/>

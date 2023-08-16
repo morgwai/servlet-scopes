@@ -9,14 +9,25 @@ import javax.servlet.http.HttpServletResponse;
 
 
 
-@SuppressWarnings("serial")
+/**
+ * Serves the websocket echo page (a text input field and the corresponding echo log) that
+ * connects to an {@code Endpoint} given by {@link #TYPE_PARAM}.
+ */
 public class WebsocketPageServlet extends ResourceServlet {
 
 
 
-	public static final String PATH = "/echo";
+	/**
+	 * A {@link HttpServletRequest#getParameter(String) request param} specifying which
+	 * {@code Endpoint} to connect to. Valid values are the same as {@code TYPE} constants in
+	 * {@code Endpoints} from this package.
+	 */
 	public static final String TYPE_PARAM = "type";
 
+	/**
+	 * {@code String} in {@code /echo.html} resource that will be replaced by the actual path on the
+	 * server where the {@code Endpoint} given by {@link #TYPE_PARAM} is deployed.
+	 */
 	static final String PATH_PLACEHOLDER = "/websocket/path";
 
 
@@ -41,7 +52,7 @@ public class WebsocketPageServlet extends ResourceServlet {
 				filtered = replaceWebsocketPath(resource, AnnotatedEndpoint.PATH);
 				break;
 			default:
-				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "invalid type");
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "invalid websocket type");
 				return;
 		}
 		try (
