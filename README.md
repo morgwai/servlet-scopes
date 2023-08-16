@@ -123,8 +123,7 @@ There are 2 builds available:
 
 
 ## EXAMPLES
-[a trivial sample app](sample)<br/>
-[a more complex sample app](https://github.com/morgwai/guiced-servlet-jpa/tree/master/sample) from derived [guiced-servlet-jpa lib](https://github.com/morgwai/guiced-servlet-jpa).
+[a trivial sample app built from the test code](sample).
 
 
 ## FAQ
