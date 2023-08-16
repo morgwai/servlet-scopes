@@ -12,12 +12,12 @@
 
 ## OVERVIEW
 
-Provides the below Guice scopes built using [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes) which automatically transfers them to a new thread when dispatching using `ContextTrackingExecutor` (see below).
+Provides the below Guice scopes:
 
 ### containerCallScope
 Scopes bindings to either an `HttpServletRequest` or a websocket event (connection opened/closed, message received, error occurred).<br/>
 Spans over a single container-initiated call to either one of servlet's `doXXX(...)` methods or to a websocket endpoint life-cycle method (annotated with one of the websocket annotations or overriding those of `javax.websocket.Endpoint` or of registered `javax.websocket.MessageHandler`s).<br/>
-Having a common scope for servlet requests and websocket events allows the same binding to be available both in servlets and endpoints.
+Having a common scope for servlet requests and websocket events allows to inject scoped objects both in servlets and endpoints without a need for 2 separate bindings in user `Module`s.
 
 ### websocketConnectionScope
 Scopes bindings to a websocket connection (`javax.websocket.Session`).<br/>
@@ -25,6 +25,8 @@ Spans over a lifetime of a given endpoint instance: all calls to life-cycle meth
 
 ### httpSessionScope
 Scopes bindings to a given `HttpSession`. Available both to servlets and websocket endpoints.
+
+All the above scopes are built using [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes), so they are automatically transferred to a new thread when dispatching using `AsyncContext.dispatch()` or `ServletContextTrackingExecutor` (see below).
 
 
 ## MAIN USER CLASSES
@@ -74,7 +76,9 @@ public class ServletContextListener extends GuiceServletContextListener {
 
     @Override
     protected void configureServletsFiltersEndpoints() throws ServletException {
-        addServlet("myServlet", MyServlet.class, "/myServlet");  // will have its fields injected
+        // MyServlet and MyProgrammaticEndpoint instances will have their dependencies injected
+        addServlet("myServlet", MyServlet.class, "/myServlet");
+        addEndpoint(MyProgrammaticEndpoint.class, "/websocket/myProgrammaticSocket");
         // more servlets / filters / unannotated endpoints here...
     }
 }
@@ -84,16 +88,14 @@ public class ServletContextListener extends GuiceServletContextListener {
 Note: for `GuiceServerEndpointConfigurator` to work, app's `ServletContextListener` still needs to extend either `GuiceServletContextListener` or `PingingServletContextListener` as in the example above, even if there are no programmatic `Servlet`s nor `Endpoint`s.
 ```java
 @ServerEndpoint(
-    value = "/websocket/mySocket",
-    configurator = GuiceServerEndpointConfigurator.class)  // ...or PingingEndpointConfigurator
-public class MyEndpoint {
+        value = "/websocket/myAnnotatedSocket",
+        configurator = GuiceServerEndpointConfigurator.class)  // ...or PingingEndpointConfigurator
+public class MyAnnotatedEndpoint {
 
-    @Inject Provider<MyService> myServiceProvider;
+    @Inject Provider<MyService> myServiceProvider;  // will be injected automatically
 
     // endpoint implementation here...
 }
-// MyEndpoint will have its fields injected. Methods onOpen, onClose, onError and registered
-// MessageHandlers will run within containerCallScope, websocketConnectionScope and httpSessionScope
 ```
 
 ### Transferring contexts to callbacks with `ContextBinder`
