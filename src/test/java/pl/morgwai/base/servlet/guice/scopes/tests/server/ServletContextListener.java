@@ -1,17 +1,15 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes.tests.server;
 
-import java.util.EnumSet;
 import java.util.LinkedList;
 
-import javax.servlet.DispatcherType;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebListener;
+
 import com.google.inject.Module;
 import com.google.inject.name.Names;
-
-import pl.morgwai.base.servlet.guice.utils.PingingServletContextListener;
 import pl.morgwai.base.servlet.guice.scopes.ServletContextTrackingExecutor;
+import pl.morgwai.base.servlet.guice.utils.PingingServletContextListener;
 
 
 
@@ -50,21 +48,18 @@ public class ServletContextListener extends PingingServletContextListener {
 
 	@Override
 	protected void configureServletsFiltersEndpoints() throws ServletException {
-		// mappings with isMatchAfter==true don't match websocket requests
-		addFilter(EnsureSessionFilter.class.getSimpleName(), EnsureSessionFilter.class)
-				.addMappingForUrlPatterns(
-						EnumSet.of(DispatcherType.REQUEST), false, WEBSOCKET_PATH + "/*");
+		installEnsureSessionFilter(WEBSOCKET_PATH + "/*");
 		addEndpoint(ProgrammaticEndpoint.class, ProgrammaticEndpoint.PATH);
-		addServlet(
-				AsyncServlet.class.getSimpleName(), AsyncServlet.class, AsyncServlet.PATH);
+		addServlet(AsyncServlet.class.getSimpleName(), AsyncServlet.class, AsyncServlet.PATH);
 		addServlet(
 			DispatchingServlet.class.getSimpleName(),
 			DispatchingServlet.class,
 			DispatchingServlet.PATH
 		);
 		addServlet("IndexPageServlet", ResourceServlet.class, "", "/index.html")
+				// "" is for the raw app url (like http://localhost:8080/test ) to work
 				.setInitParameter(ResourceServlet.RESOURCE_PATH_PARAM, "/index.html");
-		addServlet(
+		addServlet(  // http://localhost:8080/test/echo
 			WebsocketPageServlet.class.getSimpleName(),
 			WebsocketPageServlet.class,
 			WebsocketPageServlet.PATH

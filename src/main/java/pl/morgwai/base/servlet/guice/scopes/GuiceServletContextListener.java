@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
 import javax.websocket.DeploymentException;
 import javax.websocket.server.ServerContainer;
 import javax.websocket.server.ServerEndpointConfig;
@@ -98,16 +99,14 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Adds a filter with async support and injects its dependencies. Filter mappings should be
-	 * added afterwards with
+	 * Adds {@code filter} with async support and injects its dependencies. Filter mappings should
+	 * be added afterwards with
 	 * {@link FilterRegistration.Dynamic#addMappingForUrlPatterns(EnumSet, boolean, String...)} or
 	 * {@link FilterRegistration.Dynamic#addMappingForServletNames(EnumSet, boolean, String...)}.
 	 * <p>
 	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
 	 */
-	protected FilterRegistration.Dynamic addFilter(String name, Class<? extends Filter> filterClass)
-			throws ServletException {
-		final var filter = servletContainer.createFilter(filterClass);
+	protected FilterRegistration.Dynamic addFilter(String name, Filter filter) {
 		Injector.injectMembers(filter);
 		final var registration = servletContainer.addFilter(name, filter);
 		registration.setAsyncSupported(true);
@@ -116,8 +115,11 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	}
 
 	/**
-	 * Adds a filter with async support and injects its dependencies, then adds a mapping at the
-	 * end of the chain for {@code urlPatterns} and {@code dispatcherTypes}.
+	 * Adds a {@code Filter} of {@code filterClass} with async support, injects its dependencies,
+	 * then adds a mapping at the end of the chain for {@code urlPatterns} with
+	 * {@code dispatcherTypes}. Additional mappings can be added afterwards with
+	 * {@link FilterRegistration.Dynamic#addMappingForUrlPatterns(EnumSet, boolean, String...)} or
+	 * {@link FilterRegistration.Dynamic#addMappingForServletNames(EnumSet, boolean, String...)}.
 	 * <p>
 	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
 	 */
@@ -127,14 +129,19 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		EnumSet<DispatcherType> dispatcherTypes,
 		String... urlPatterns
 	) throws ServletException {
-		final var registration = addFilter(name, filterClass);
-		registration.addMappingForUrlPatterns(dispatcherTypes, true, urlPatterns);
+		final var registration = addFilter(name, servletContainer.createFilter(filterClass));
+		if (urlPatterns.length > 0) {
+			registration.addMappingForUrlPatterns(dispatcherTypes, true, urlPatterns);
+		}
 		return registration;
 	}
 
 	/**
-	 * Adds a filter with async support and injects its dependencies, then adds a mapping at the
-	 * end of the chain for {@code urlPatterns} and {@link DispatcherType#REQUEST} .
+	 * Adds a {@code Filter} of {@code filterClass} with async support, injects its dependencies,
+	 * then adds a mapping at the end of the chain for {@code urlPatterns} with
+	 * {@link DispatcherType#REQUEST}. Additional mappings can be added afterwards with
+	 * {@link FilterRegistration.Dynamic#addMappingForUrlPatterns(EnumSet, boolean, String...)} or
+	 * {@link FilterRegistration.Dynamic#addMappingForServletNames(EnumSet, boolean, String...)}.
 	 * <p>
 	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
 	 */
@@ -143,7 +150,23 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		Class<? extends Filter> filterClass,
 		String... urlPatterns
 	) throws ServletException {
-		return addFilter(name, filterClass, null, urlPatterns);
+		final var registration = addFilter(name, servletContainer.createFilter(filterClass));
+		if (urlPatterns.length > 0) registration.addMappingForUrlPatterns(null, true, urlPatterns);
+		return registration;
+	}
+
+	/**
+	 * Installs at {@code urlPatterns} a filter that ensures each incoming request has an
+	 * {@link javax.servlet.http.HttpSession} created. This is necessary for websocket
+	 * {@code Endpoints} that use {@link ServletModule#httpSessionScope httpSessionScope}.
+	 * <p>
+	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
+	 */
+	protected void installEnsureSessionFilter(String... urlPatterns) {
+		addFilter("ensureSessionFilter", (request, response, chain) -> {
+			((HttpServletRequest) request).getSession();
+			chain.doFilter(request, response);
+		}).addMappingForUrlPatterns(null, false, urlPatterns);
 	}
 
 
