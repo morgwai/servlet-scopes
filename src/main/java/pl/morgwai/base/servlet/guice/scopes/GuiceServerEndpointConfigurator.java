@@ -231,8 +231,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					injector = injectors.values().iterator().next();
 				}
 			}
-			TypeLiteral<ContextTracker<ContainerCallContext>> trackerType = new TypeLiteral<>() {};
-			containerCallContextTracker = injector.getInstance(Key.get(trackerType));
+			containerCallContextTracker =
+					injector.getInstance(ServletModule.containerCallContextTrackerKey);
 			this.injector = injector;
 		}
 	}

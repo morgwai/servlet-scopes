@@ -78,6 +78,14 @@ public class ServletModule implements Module {
 
 
 
+	static final TypeLiteral<ContextTracker<ContainerCallContext>> containerCallContextTrackerType =
+			new TypeLiteral<>() {};
+	/** Guice {@code Key} for {@link #containerCallContextTracker}. For internal purposes mostly .*/
+	public static final Key<ContextTracker<ContainerCallContext>> containerCallContextTrackerKey =
+			Key.get(containerCallContextTrackerType);
+
+
+
 	/** Set in {@link GuiceServletContextListener#contextInitialized(ServletContextEvent)}. */
 	ServletContext servletContext;
 
@@ -95,9 +103,7 @@ public class ServletModule implements Module {
 	@Override
 	public void configure(Binder binder) {
 		binder.bind(ServletContext.class).toInstance(servletContext);
-		TypeLiteral<ContextTracker<ContainerCallContext>> containerCallContextTrackerType =
-				new TypeLiteral<>() {};
-		binder.bind(containerCallContextTrackerType).toInstance(containerCallContextTracker);
+		binder.bind(containerCallContextTrackerKey).toInstance(containerCallContextTracker);
 		binder.bind(ContainerCallContext.class)
 				.toProvider(containerCallContextTracker::getCurrentContext);
 		binder.bind(HttpSessionContext.class).toProvider(
