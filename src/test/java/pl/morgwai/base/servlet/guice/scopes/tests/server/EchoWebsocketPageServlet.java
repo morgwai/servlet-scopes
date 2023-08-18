@@ -13,14 +13,14 @@ import javax.servlet.http.HttpServletResponse;
  * Serves the websocket echo page (a text input field and the corresponding echo log) that
  * connects to an {@code Endpoint} given by {@link #TYPE_PARAM}.
  */
-public class WebsocketPageServlet extends ResourceServlet {
+public class EchoWebsocketPageServlet extends ResourceServlet {
 
 
 
 	/**
 	 * A {@link HttpServletRequest#getParameter(String) request param} specifying which
 	 * {@code Endpoint} to connect to. Valid values are the same as {@code TYPE} constants in
-	 * {@code Endpoints} from this package.
+	 * {@code Endpoints} from this package that extend/wrap {@link EchoEndpoint}.
 	 */
 	public static final String TYPE_PARAM = "type";
 
