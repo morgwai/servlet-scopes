@@ -4,6 +4,9 @@ package pl.morgwai.base.servlet.guice.scopes;
 import java.util.*;
 import java.util.concurrent.*;
 
+import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
+
 import com.google.inject.Module;
 import com.google.inject.*;
 import pl.morgwai.base.guice.scopes.*;
@@ -75,9 +78,15 @@ public class ServletModule implements Module {
 
 
 
+	/** Set in {@link GuiceServletContextListener#contextInitialized(ServletContextEvent)}. */
+	ServletContext servletContext;
+
+
+
 	/**
-	 * Creates infrastructure bindings. Binds the following:
+	 * Creates infrastructure bindings. Specifically, binds the following:
 	 * <ul>
+	 *   <li>{@link ServletContext}</li>
 	 *   <li>Their respective types to {@link #containerCallContextTracker} and all 3 contexts</li>
 	 *   <li>{@code List<ContextTracker<?>>} to {@link #allTrackers}</li>
 	 *   <li>{@link ContextBinder} to {@code new ContextBinder(allTrackers)}</li>
@@ -85,6 +94,7 @@ public class ServletModule implements Module {
 	 */
 	@Override
 	public void configure(Binder binder) {
+		binder.bind(ServletContext.class).toInstance(servletContext);
 		TypeLiteral<ContextTracker<ContainerCallContext>> containerCallContextTrackerType =
 				new TypeLiteral<>() {};
 		binder.bind(containerCallContextTrackerType).toInstance(containerCallContextTracker);
