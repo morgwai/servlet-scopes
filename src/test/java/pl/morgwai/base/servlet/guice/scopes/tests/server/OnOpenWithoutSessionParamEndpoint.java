@@ -10,7 +10,7 @@ import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 
 /**
  * For {@link
- * pl.morgwai.base.servlet.guice.scopes.tests.IntegrationTest#testOnOpenWithoutSessionParamEndpoint(
+ *pl.morgwai.base.servlet.guice.scopes.tests.IntegrationTests#testOnOpenWithoutSessionParamEndpoint(
  * )}.
  */
 @ServerEndpoint(

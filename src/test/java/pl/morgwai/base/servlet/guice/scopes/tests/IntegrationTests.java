@@ -31,7 +31,7 @@ import static pl.morgwai.base.servlet.guice.scopes.tests.server.AsyncServlet.*;
 
 
 
-public class IntegrationTest {
+public class IntegrationTests {
 
 
 
@@ -432,13 +432,13 @@ public class IntegrationTest {
 	 */
 	static Level LOG_LEVEL = Level.WARNING;
 
-	static final Logger log = Logger.getLogger(IntegrationTest.class.getName());
+	static final Logger log = Logger.getLogger(IntegrationTests.class.getName());
 
 	@BeforeClass
 	public static void setupLogging() {
 		try {
 			LOG_LEVEL = Level.parse(System.getProperty(
-					IntegrationTest.class.getPackageName() + ".level"));
+					IntegrationTests.class.getPackageName() + ".level"));
 		} catch (Exception ignored) {}
 		log.setLevel(LOG_LEVEL);
 		for (final var handler: Logger.getLogger("").getHandlers()) handler.setLevel(LOG_LEVEL);

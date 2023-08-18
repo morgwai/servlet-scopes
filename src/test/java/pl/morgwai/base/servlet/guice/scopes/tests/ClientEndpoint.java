@@ -85,5 +85,5 @@ class ClientEndpoint extends Endpoint {
 
 
 
-	static final Logger log = Logger.getLogger(IntegrationTest.class.getName());
+	static final Logger log = Logger.getLogger(IntegrationTests.class.getName());
 }
