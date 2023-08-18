@@ -59,8 +59,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * {@link Injector#injectMembers(Object)} (usually in their {@link Servlet#init(ServletConfig)}
 	 * / {@link Filter#init(FilterConfig)} methods).
 	 */
-	public static Injector getInjector() { return Injector; }
-	static Injector Injector;
+	public static Injector getInjector() { return injector; }
+	static Injector injector;
 
 
 
@@ -98,7 +98,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		String... urlPatterns
 	) throws ServletException {
 		final var servlet = servletContainer.createServlet(servletClass);
-		Injector.injectMembers(servlet);
+		injector.injectMembers(servlet);
 		final var registration = servletContainer.addServlet(name, servlet);
 		registration.addMapping(urlPatterns);
 		registration.setAsyncSupported(true);
@@ -117,7 +117,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
 	 */
 	protected FilterRegistration.Dynamic addFilter(String name, Filter filter) {
-		Injector.injectMembers(filter);
+		injector.injectMembers(filter);
 		final var registration = servletContainer.addFilter(name, filter);
 		registration.setAsyncSupported(true);
 		log.info("registered filter " + name);
@@ -257,7 +257,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 			final var modules = configureInjections();
 			modules.add(servletModule);
-			Injector = createInjector(modules);
+			injector = createInjector(modules);
 			log.info("Guice Injector created successfully");
 
 			addFilter(RequestContextFilter.class.getSimpleName(), RequestContextFilter.class)
