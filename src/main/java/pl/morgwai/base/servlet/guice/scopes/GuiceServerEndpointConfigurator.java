@@ -55,8 +55,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-	volatile Injector injector;
-	ContextTracker<ContainerCallContext> containerCallContextTracker;
+	static Injector injector;
+	static ContextTracker<ContainerCallContext> containerCallContextTracker;
 
 
 
@@ -69,25 +69,6 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	@Override
 	public <EndpointT> EndpointT getEndpointInstance(Class<EndpointT> endpointClass)
 			throws InstantiationException {
-		var injector = this.injector;
-		if (injector == null) {
-			// injector initialization cannot be done in constructor as annotated Endpoints may
-			// create configurator before injector is created in contextInitialized(...).
-			// getEndpointInstance(...) however is never called before contextInitialized(...).
-			// this method may be called by a big number of concurrent threads (for example when all
-			// clients reconnect after a network glitch), so double-checked locking is used.
-			synchronized (this) {
-				injector = this.injector;
-				if (injector == null) {
-					injector = GuiceServletContextListener.getInjector();
-					TypeLiteral<ContextTracker<ContainerCallContext>> trackerType =
-							new TypeLiteral<>() {};
-					containerCallContextTracker = injector.getInstance(Key.get(trackerType));
-					this.injector = injector; //must be the last statement in the synchronized block
-				}
-			}
-		}
-
 		try {
 			final var proxyClass = getProxyClass(endpointClass);
 			final EndpointT endpointProxy = super.getEndpointInstance(proxyClass);

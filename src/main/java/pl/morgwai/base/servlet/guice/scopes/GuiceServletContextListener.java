@@ -22,7 +22,7 @@ import pl.morgwai.base.guice.scopes.*;
 
 
 /**
- * Creates and configures {@link #getInjector() app-wide Guice Injector} and a
+ * Creates and configures {@link #injector app-wide Guice Injector} and a
  * {@link ServletModule}. A single subclass of this class must be created and either annotated with
  * {@link javax.servlet.annotation.WebListener @WebListener} or enlisted in
  * <code>web.xml</code> file in <code>listener</code> element.
@@ -33,7 +33,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/**
 	 * Returns {@link Module}s that configure bindings for user-defined components.
-	 * The result will be passed when creating {@link #getInjector() the app-wide Injector}.
+	 * The result will be passed to {@link #createInjector(LinkedList)} together with other internal
+	 * {@code Modules}.
 	 * <p>
 	 * Implementations may use {@link com.google.inject.Scope}s,
 	 * {@link pl.morgwai.base.guice.scopes.ContextTracker}s and helper methods from
@@ -54,13 +55,21 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	protected final Scope websocketConnectionScope = servletModule.websocketConnectionScope;
 
 	/**
-	 * Returns the app-wide Guice {@link Injector}. Exposed as {@code public static}
-	 * for non-programmatic {@code Servlets / filters} to manually request dependency injection with
-	 * {@link Injector#injectMembers(Object)} (usually in their {@link Servlet#init(ServletConfig)}
-	 * / {@link Filter#init(FilterConfig)} methods).
+	 * For use in {@link #configureServletsFiltersEndpoints()}. {@code Injector} is also stored as a
+	 * {@link ServletContext#getAttribute(String) ServletContext attribute} named after
+	 * {@link Injector}'s class {@link Class#getName() fully-qualified name}.
 	 */
-	public static Injector getInjector() { return injector; }
-	static Injector injector;
+	protected Injector injector;
+
+	/**
+	 * Called by {@link #contextInitialized(ServletContextEvent)} to create
+	 * {@link #injector the app-wide Injector}. By default basically calls
+	 * {@link Guice#createInjector(Iterable) Guice.createInjector(modules)}.
+	 * May be overridden if any additional customizations are needed.
+	 */
+	protected Injector createInjector(LinkedList<Module> modules) {
+		return Guice.createInjector(modules);
+	}
 
 
 
@@ -75,7 +84,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * {@link #addEndpoint(Class, String, Configurator)} are provided for the most common cases.</p>
 	 * <p>
 	 * This method is called <b>after</b> {@link #configureInjections()} is called and
-	 * {@link #getInjector() the Injector} is created.</p>
+	 * {@link #injector} is created.</p>
 	 */
 	protected abstract void configureServletsFiltersEndpoints() throws ServletException;
 
@@ -245,7 +254,10 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * Calls {@link #configureInjections()}, {@link #createInjector(LinkedList) creates the
 	 * app-wide Injector} and calls {@link #configureServletsFiltersEndpoints()}.
 	 * Also creates and installs all other infrastructure elements such as
-	 * {@link #servletContainer}, {@link #endpointContainer}, {@link RequestContextFilter} etc.
+	 * {@link #servletContainer}, {@link #endpointContainer}, {@link RequestContextFilter} etc and
+	 * stores {@link #injector} in a
+	 * {@link ServletContext#setAttribute(String, Object) ServletContext attribute} named after
+	 * {@link Injector}'s class {@link Class#getName() fully-qualified name}.
 	 */
 	@Override
 	public final void contextInitialized(ServletContextEvent initializationEvent) {
@@ -258,11 +270,15 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			final var modules = configureInjections();
 			modules.add(servletModule);
 			injector = createInjector(modules);
+			servletContainer.setAttribute(Injector.class.getName(), injector);
 			log.info("Guice Injector created successfully");
 
 			addFilter(RequestContextFilter.class.getSimpleName(), RequestContextFilter.class)
 					.addMappingForUrlPatterns(
 							EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC), false, "/*");
+			GuiceServerEndpointConfigurator.injector = injector;
+			GuiceServerEndpointConfigurator.containerCallContextTracker =
+					containerCallContextTracker;
 			endpointConfigurator = createEndpointConfigurator();
 
 			configureServletsFiltersEndpoints();
@@ -271,16 +287,6 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			e.printStackTrace();
 			System.exit(1);
 		}
-	}
-
-	/**
-	 *  Called by {@link #contextInitialized(ServletContextEvent)} to create
-	 * {@link #getInjector() the app-wide Injector}. By default basically calls
-	 * {@link Guice#createInjector(Iterable) Guice.createInjector(modules)}.
-	 * May be overridden if some extra customizations are needed.
-	 */
-	protected Injector createInjector(LinkedList<Module> modules) {
-		return Guice.createInjector(modules);
 	}
 
 
@@ -292,6 +298,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	@Override
 	public void contextDestroyed(ServletContextEvent destructionEvent) {
+		GuiceServerEndpointConfigurator.injector = null;
+		GuiceServerEndpointConfigurator.containerCallContextTracker = null;
 		servletModule.shutdownAllExecutors();
 		List<ServletContextTrackingExecutor> unterminatedExecutors;
 		try {
