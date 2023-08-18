@@ -55,8 +55,22 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-	static Injector injector;
-	static ContextTracker<ContainerCallContext> containerCallContextTracker;
+	static final ConcurrentMap<String, Injector> injectors = new ConcurrentHashMap<>(5);
+
+	volatile Injector injector;
+	ContextTracker<ContainerCallContext> containerCallContextTracker;
+
+
+
+	/** Necessary for {@link ServerEndpoint} annotated {@code Endpoints}. */
+	public GuiceServerEndpointConfigurator() {}
+
+	/** For {@link GuiceServletContextListener} managed instance. */
+	protected GuiceServerEndpointConfigurator(
+			Injector injector, ContextTracker<ContainerCallContext> containerCallContextTracker) {
+		this.injector = injector;
+		this.containerCallContextTracker = containerCallContextTracker;
+	}
 
 
 
@@ -181,6 +195,11 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	/**
 	 * Stores into {@link ServerEndpointConfig#getUserProperties() user properties} the
 	 * {@link HttpSession} associated with {@code request}.
+	 * <p>
+	 * For {@code Configurator} instances created by the container (as a result of providing this
+	 * class as a {@link ServerEndpoint#configurator()} argument of annotated {@code Endpoint}
+	 * classes), this method will also initialize {@link #injector} reference on its first
+	 * invocation.</p>
 	 */
 	@Override
 	public void modifyHandshake(
@@ -191,6 +210,30 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		final var httpSession = request.getHttpSession();
 		if (httpSession != null) {
 			config.getUserProperties().put(HttpSession.class.getName(), httpSession);
+		}
+
+		if (this.injector == null) {
+			// multiple threads initializing injector and containerCallContextTracker references
+			// concurrently in the same Configurator instance, will set exactly the same values
+			Injector injector;
+			if (httpSession != null) {
+				final var servletCtx = ((HttpSession) httpSession).getServletContext();
+				injector = (Injector) servletCtx.getAttribute(Injector.class.getName());
+			} else {
+				final var requestPath = request.getRequestURI().getPath();
+				final var servletContextPath = requestPath.substring(
+						0, requestPath.lastIndexOf(config.getPath()));
+				injector = injectors.get(servletContextPath);
+				if (injector == null) {
+					log.severe("Could not find Injector for requestPath " + requestPath);
+					System.err.println("Could not find Injector for requestPath " + requestPath);
+					// pick first and hope for the best...
+					injector = injectors.values().iterator().next();
+				}
+			}
+			TypeLiteral<ContextTracker<ContainerCallContext>> trackerType = new TypeLiteral<>() {};
+			containerCallContextTracker = injector.getInstance(Key.get(trackerType));
+			this.injector = injector;
 		}
 	}
 

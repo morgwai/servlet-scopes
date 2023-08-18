@@ -70,7 +70,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 */
 	@Override
 	protected GuiceServerEndpointConfigurator createEndpointConfigurator() {
-		return new PingingEndpointConfigurator();
+		return new PingingEndpointConfigurator(injector ,containerCallContextTracker);
 	}
 
 

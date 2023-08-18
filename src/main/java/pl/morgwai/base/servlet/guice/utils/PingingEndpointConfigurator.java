@@ -9,6 +9,9 @@ import java.util.HashSet;
 import javax.websocket.OnClose;
 import javax.websocket.Session;
 
+import com.google.inject.Injector;
+import pl.morgwai.base.guice.scopes.ContextTracker;
+import pl.morgwai.base.servlet.guice.scopes.ContainerCallContext;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
@@ -24,6 +27,15 @@ import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnOpen;
  * @see PingingServletContextListener
  */
 public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator {
+
+
+
+	public PingingEndpointConfigurator() {}
+
+	protected PingingEndpointConfigurator(
+			Injector injector, ContextTracker<ContainerCallContext> containerCallContextTracker) {
+		super(injector, containerCallContextTracker);
+	}
 
 
 

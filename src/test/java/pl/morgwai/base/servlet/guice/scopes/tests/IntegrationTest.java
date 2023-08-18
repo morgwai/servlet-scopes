@@ -1,6 +1,7 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes.tests;
 
+import java.io.IOException;
 import java.net.CookieManager;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -15,6 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.websocket.CloseReason.CloseCodes;
+import javax.websocket.DeploymentException;
 import javax.websocket.WebSocketContainer;
 
 import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
@@ -39,14 +41,15 @@ public class IntegrationTest {
 	TestServer server;
 	int port;
 	String forwardingServletUrl;
-	String websocketUrl;
+	String serverWebsocketUrl;
+	String appWebsocketUrl;
 
 
 
 	/**
 	 * Creates a {@link #server servlet container}, an {@link #httpClient HTTP client}, a
 	 * {@link #clientWebsocketContainer client websocket container} and some helper URL prefixes
-	 * ({@link #forwardingServletUrl}, {@link #websocketUrl}).
+	 * ({@link #forwardingServletUrl}, {@link #appWebsocketUrl}).
 	 */
 	@Before
 	public void setup() throws Exception {
@@ -61,7 +64,8 @@ public class IntegrationTest {
 				.socket().getLocalPort();
 		forwardingServletUrl = "http://localhost:" + port
 				+ TestServer.APP_PATH + '/' + ForwardingServlet.class.getSimpleName();
-		websocketUrl = "ws://localhost:" + port + TestServer.APP_PATH
+		serverWebsocketUrl = "ws://localhost:" + port;
+		appWebsocketUrl = serverWebsocketUrl + TestServer.APP_PATH
 				+ ServletContextListener.WEBSOCKET_PATH;
 	}
 
@@ -175,14 +179,10 @@ public class IntegrationTest {
 		final var testThread = Thread.currentThread();
 		final var endpoint = new ClientEndpoint(
 			(reply) -> {
-				if (log.isLoggable(Level.FINE)) log.fine("reply from " + url + '\n' + reply);
 				replies.add(reply.split("\n"));
 				repliesReceived.countDown();
 			},
-			(connection, error) -> {
-				log.log(Level.WARNING, "error on connection " + connection.getId(), error);
-				error.printStackTrace();
-			},
+			(connection, error) -> {},
 			(connection, closeReason) -> {
 				if (closeReason.getCloseCode().getCode() != CloseCodes.NORMAL_CLOSURE.getCode()) {
 					try {
@@ -223,7 +223,7 @@ public class IntegrationTest {
 	 * All 4 messages are expected to be sent from the same HTTP session scope.
 	 */
 	List<String[]> testServerEndpoint(String type) throws Exception {
-		final var url = URI.create(websocketUrl + type);
+		final var url = URI.create(appWebsocketUrl + type);
 		final var replies = testSingleMessageToServerEndpoint(url);
 		replies.addAll(testSingleMessageToServerEndpoint(url));
 		assertEquals("session scoped object hash should remain the same",
@@ -354,7 +354,7 @@ public class IntegrationTest {
 	 * fail to instantiate.
 	 */
 	void testOpenConnectionToServerEndpoint(String type) throws Exception {
-		final var url = URI.create(websocketUrl + type);
+		final var url = URI.create(appWebsocketUrl + type);
 		final var endpoint = new ClientEndpoint(
 			(message) -> {},
 			(connection, error) -> {
@@ -382,6 +382,45 @@ public class IntegrationTest {
 			testOpenConnectionToServerEndpoint(PingingWithoutOnCloseEndpoint.TYPE);
 			fail("instantiation of PingingWithoutOnCloseEndpoint should throw an Exception");
 		} catch (Exception expected) {}
+	}
+
+
+
+	public void testAppSeparation(String testAppWebsocketUrl, String secondAppWebsocketUrl)
+			throws InterruptedException, DeploymentException, IOException {
+		final var messages = new ArrayList<String>(2);
+
+		final var endpoint = new ClientEndpoint(messages::add, null, null);
+		final var uri1 = URI.create(testAppWebsocketUrl);
+		clientWebsocketContainer.connectToServer(endpoint, null, uri1);
+		if ( !endpoint.awaitClosure(500L, TimeUnit.MILLISECONDS)) fail("timeout");
+
+		final var endpoint2 = new ClientEndpoint(messages::add, null, null);
+		final var uri2 = URI.create(secondAppWebsocketUrl);
+		clientWebsocketContainer.connectToServer(endpoint2, null, uri2);
+		if ( !endpoint2.awaitClosure(500L, TimeUnit.MILLISECONDS)) fail("timeout");
+
+		assertNotEquals("Endpoint Configurators of separate apps should have separate Injectors",
+				messages.get(0), messages.get(1));
+	}
+
+	@Test
+	public void testAppSeparation() throws InterruptedException, DeploymentException, IOException {
+		testAppSeparation(
+			appWebsocketUrl + AppSeparationTestEndpoint.TYPE,
+			serverWebsocketUrl + TestServer.SECOND_APP_PATH
+					+ ServletContextListener.WEBSOCKET_PATH + AppSeparationTestEndpoint.TYPE
+		);
+	}
+
+	@Test
+	public void testAppSeparationNoSession()
+			throws InterruptedException, DeploymentException, IOException {
+		testAppSeparation(
+			serverWebsocketUrl + TestServer.APP_PATH + NoSessionAppSeparationTestEndpoint.PATH,
+			serverWebsocketUrl + TestServer.SECOND_APP_PATH
+					+ NoSessionAppSeparationTestEndpoint.PATH
+		);
 	}
 
 

@@ -212,7 +212,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * used.</p>
 	 */
 	protected GuiceServerEndpointConfigurator createEndpointConfigurator() {
-		return new GuiceServerEndpointConfigurator();
+		return new GuiceServerEndpointConfigurator(injector, containerCallContextTracker);
 	}
 
 	/**
@@ -277,9 +277,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			addFilter(RequestContextFilter.class.getSimpleName(), RequestContextFilter.class)
 					.addMappingForUrlPatterns(
 							EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC), false, "/*");
-			GuiceServerEndpointConfigurator.injector = injector;
-			GuiceServerEndpointConfigurator.containerCallContextTracker =
-					containerCallContextTracker;
+			GuiceServerEndpointConfigurator.injectors.put(
+					servletContainer.getContextPath(), injector);
 			endpointConfigurator = createEndpointConfigurator();
 
 			configureServletsFiltersEndpoints();
@@ -299,8 +298,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	@Override
 	public void contextDestroyed(ServletContextEvent destructionEvent) {
-		GuiceServerEndpointConfigurator.injector = null;
-		GuiceServerEndpointConfigurator.containerCallContextTracker = null;
+		GuiceServerEndpointConfigurator.injectors.remove(servletContainer.getContextPath());
 		servletModule.shutdownAllExecutors();
 		List<ServletContextTrackingExecutor> unterminatedExecutors;
 		try {

@@ -4,6 +4,8 @@ package pl.morgwai.base.servlet.guice.scopes.tests;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.websocket.*;
 import javax.websocket.MessageHandler.Whole;
@@ -19,6 +21,8 @@ class ClientEndpoint extends Endpoint {
 	final BiConsumer<Session, CloseReason> closeHandler;
 
 	private final CountDownLatch closureLatch = new CountDownLatch(1);
+
+	Session connection;
 
 
 
@@ -36,13 +40,28 @@ class ClientEndpoint extends Endpoint {
 
 	@Override
 	public void onOpen(Session connection, EndpointConfig config) {
-		connection.addMessageHandler(String.class, messageHandler);
+		this.connection = connection;
+		if (log.isLoggable(Level.FINER)) {
+			log.finer("opened connection to " + connection.getRequestURI().getPath());
+		}
+		connection.addMessageHandler(String.class, (message) -> {
+			if (log.isLoggable(Level.FINE)) {
+				log.fine("message from " + connection.getRequestURI().getPath() + '\n' + message);
+			}
+			messageHandler.onMessage(message);
+		});
 	}
 
 
 
 	@Override
 	public void onError(Session connection, Throwable error) {
+		log.log(
+			Level.WARNING,
+			"error on connection to " + connection.getRequestURI().getPath(),
+			error
+		);
+		error.printStackTrace();
 		if (errorHandler != null) errorHandler.accept(connection, error);
 	}
 
@@ -50,6 +69,10 @@ class ClientEndpoint extends Endpoint {
 
 	@Override
 	public void onClose(Session session, CloseReason closeReason) {
+		if (log.isLoggable(Level.FINER)) {
+			log.finer("connection to " + connection.getRequestURI().getPath() + " closed with "
+					+ closeReason.getCloseCode() + ": '" + closeReason.getReasonPhrase() + "'");
+		}
 		closureLatch.countDown();
 		if (closeHandler != null) closeHandler.accept(session, closeReason);
 	}
@@ -59,4 +82,8 @@ class ClientEndpoint extends Endpoint {
 	public boolean awaitClosure(long timeout, TimeUnit unit) throws InterruptedException {
 		return closureLatch.await(timeout, unit);
 	}
+
+
+
+	static final Logger log = Logger.getLogger(IntegrationTest.class.getName());
 }
