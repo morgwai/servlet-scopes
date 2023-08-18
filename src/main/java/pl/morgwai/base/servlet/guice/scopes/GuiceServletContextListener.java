@@ -17,6 +17,7 @@ import javax.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.Module;
 import com.google.inject.*;
+import pl.morgwai.base.guice.scopes.*;
 
 
 
@@ -42,6 +43,15 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/** For use in {@link #configureInjections()}. */
 	protected final ServletModule servletModule = new ServletModule();
+	/** Same as in {@link #servletModule} for convenience. */
+	protected final ContextTracker<ContainerCallContext> containerCallContextTracker =
+			servletModule.containerCallContextTracker;
+	/** Same as in {@link #servletModule} for use in {@link #configureInjections()}. */
+	protected final Scope containerCallScope = servletModule.containerCallScope;
+	/** Same as in {@link #servletModule} for use in {@link #configureInjections()}. */
+	protected final Scope httpSessionScope = servletModule.httpSessionScope;
+	/** Same as in {@link #servletModule} for use in {@link #configureInjections()}. */
+	protected final Scope websocketConnectionScope = servletModule.websocketConnectionScope;
 
 	/**
 	 * Returns the app-wide Guice {@link Injector}. Exposed as {@code public static}

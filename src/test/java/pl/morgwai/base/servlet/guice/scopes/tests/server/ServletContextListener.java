@@ -42,15 +42,15 @@ public class ServletContextListener extends PingingServletContextListener {
 			binder.bind(Service.class)
 				.annotatedWith(Names.named(CONTAINER_CALL))
 				.to(Service.class)
-				.in(servletModule.containerCallScope);
+				.in(containerCallScope);
 			binder.bind(Service.class)
 				.annotatedWith(Names.named(WEBSOCKET_CONNECTION))
 				.to(Service.class)
-				.in(servletModule.websocketConnectionScope);
+				.in(websocketConnectionScope);
 			binder.bind(Service.class)
 				.annotatedWith(Names.named(HTTP_SESSION))
 				.to(Service.class)
-				.in(servletModule.httpSessionScope);
+				.in(httpSessionScope);
 		});
 		return modules;
 	}
