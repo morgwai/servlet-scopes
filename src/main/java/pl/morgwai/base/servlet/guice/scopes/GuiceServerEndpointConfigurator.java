@@ -144,7 +144,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		final var fugitiveMethodAnnotationTypesIterator = fugitiveMethodAnnotationTypes.iterator();
 		while (fugitiveMethodAnnotationTypesIterator.hasNext()) {
 			final var fugitiveAnnotationType = fugitiveMethodAnnotationTypesIterator.next();
-			for (var method: endpointClass.getDeclaredMethods()) {
+			for (var method: endpointClass.getMethods()) {
 				if (method.isAnnotationPresent(fugitiveAnnotationType)) {
 					fugitiveMethodAnnotationTypesIterator.remove();
 					if (
