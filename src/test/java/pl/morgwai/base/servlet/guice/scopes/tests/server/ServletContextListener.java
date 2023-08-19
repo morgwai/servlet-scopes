@@ -3,8 +3,8 @@ package pl.morgwai.base.servlet.guice.scopes.tests.server;
 
 import java.util.LinkedList;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebListener;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebListener;
 
 import com.google.inject.Module;
 import com.google.inject.name.Names;

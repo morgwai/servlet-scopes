@@ -11,10 +11,10 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.servlet.http.HttpSession;
-import javax.websocket.*;
-import javax.websocket.server.*;
-import javax.websocket.server.ServerEndpointConfig.Configurator;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.*;
+import jakarta.websocket.server.*;
+import jakarta.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.*;
 import net.bytebuddy.ByteBuddy;
@@ -166,7 +166,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 						&& !Arrays.asList(method.getParameterTypes()).contains(Session.class)
 					) {
 						throw new RuntimeException("method annotated with @OnOpen must have a"
-								+ " javax.websocket.Session param");
+								+ " jakarta.websocket.Session param");
 					}
 					break;
 				}
