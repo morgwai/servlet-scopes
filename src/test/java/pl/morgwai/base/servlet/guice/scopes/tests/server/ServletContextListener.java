@@ -19,7 +19,7 @@ public class ServletContextListener extends PingingServletContextListener {
 
 
 	/** All {@code Endpoints} are deployed somewhere under this path. */
-	public static final String WEBSOCKET_PATH = "/websocket";
+	public static final String WEBSOCKET_PATH = "/websocket/";
 
 	// values for @Named corresponding to available Scopes
 	public static final String CONTAINER_CALL = "containerCall";
@@ -84,7 +84,7 @@ public class ServletContextListener extends PingingServletContextListener {
 			"/" + TargetedServlet.class.getSimpleName()
 		);
 
-		installEnsureSessionFilter(WEBSOCKET_PATH + "/*");
+		installEnsureSessionFilter(WEBSOCKET_PATH + '*');
 		addEndpoint(ProgrammaticEndpoint.class, ProgrammaticEndpoint.PATH);
 		addServlet(
 			EchoWebsocketPageServlet.class.getSimpleName(),

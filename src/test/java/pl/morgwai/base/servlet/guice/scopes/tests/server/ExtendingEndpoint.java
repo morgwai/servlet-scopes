@@ -15,5 +15,5 @@ public class ExtendingEndpoint extends ProgrammaticEndpoint {
 
 
 	public static final String TYPE = "extending";
-	public static final String PATH = ServletContextListener.WEBSOCKET_PATH + '/' + TYPE;
+	public static final String PATH = ServletContextListener.WEBSOCKET_PATH + TYPE;
 }

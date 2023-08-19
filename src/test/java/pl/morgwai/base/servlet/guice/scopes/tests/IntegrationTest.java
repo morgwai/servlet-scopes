@@ -62,7 +62,7 @@ public class IntegrationTest {
 		forwardingServletUrl = "http://localhost:" + port
 				+ TestServer.APP_PATH + '/' + ForwardingServlet.class.getSimpleName();
 		websocketUrl = "ws://localhost:" + port + TestServer.APP_PATH
-				+ ServletContextListener.WEBSOCKET_PATH + '/';
+				+ ServletContextListener.WEBSOCKET_PATH;
 	}
 
 

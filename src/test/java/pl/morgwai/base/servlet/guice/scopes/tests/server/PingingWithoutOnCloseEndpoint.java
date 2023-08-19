@@ -21,7 +21,7 @@ public class PingingWithoutOnCloseEndpoint {
 
 
 	public static final String TYPE = "pingingWithoutOnClose";
-	public static final String PATH = ServletContextListener.WEBSOCKET_PATH + '/' + TYPE;
+	public static final String PATH = ServletContextListener.WEBSOCKET_PATH + TYPE;
 
 
 

@@ -16,7 +16,7 @@ public class ProgrammaticEndpoint extends Endpoint {
 
 
 	public static final String TYPE = "programmatic";
-	public static final String PATH = ServletContextListener.WEBSOCKET_PATH + '/' + TYPE;
+	public static final String PATH = ServletContextListener.WEBSOCKET_PATH + TYPE;
 
 
 

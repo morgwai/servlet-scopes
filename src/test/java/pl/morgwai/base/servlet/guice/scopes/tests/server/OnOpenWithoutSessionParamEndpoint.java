@@ -21,7 +21,7 @@ public class OnOpenWithoutSessionParamEndpoint {
 
 
 	public static final String TYPE = "onOpenWithoutSessionParam";
-	public static final String PATH = ServletContextListener.WEBSOCKET_PATH + '/' + TYPE;
+	public static final String PATH = ServletContextListener.WEBSOCKET_PATH + TYPE;
 
 
 
