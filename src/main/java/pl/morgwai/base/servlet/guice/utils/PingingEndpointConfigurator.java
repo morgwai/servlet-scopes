@@ -64,18 +64,6 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 		services.remove(servletContext.getContextPath());
 	}
 
-	/**
-	 * @deprecated if your {@link javax.servlet.ServletContextListener} does not extend
-	 *     {@link PingingServletContextListener}, then use
-	 *     {@link #registerPingerService(WebsocketPingerService, ServletContext)} instead of this
-	 *     method in your
-	 *     {@link javax.servlet.ServletContextListener#contextInitialized(ServletContextEvent)}.
-	 */
-	@Deprecated(forRemoval = true)
-	public static void setPingerService(WebsocketPingerService pingerService) {
-		services.put("<-;{ invalid path for fallback in modifyHandshake()", pingerService);
-	}
-
 
 
 	volatile WebsocketPingerService pingerService;
