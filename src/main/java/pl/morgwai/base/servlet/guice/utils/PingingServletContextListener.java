@@ -23,7 +23,9 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 
-	final WebsocketPingerService pingerService;
+	protected final WebsocketPingerService pingerService;
+
+
 
 	/** Allows subclasses to override pinger mode. By default {@code false}. */
 	protected boolean isPingerInKeepAliveOnlyMode() { return false; }
@@ -49,20 +51,31 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	/** Allows subclasses to override {@code synchronizeSending} flag. By default {@code false}. */
 	protected boolean shouldSynchronizePingSending() { return false; }
 
-
-
-	public PingingServletContextListener() {
+	/**
+	 * Creates a {@link WebsocketPingerService}. Used in constructor to initialize
+	 * {@link #pingerService}. By default uses {@link #isPingerInKeepAliveOnlyMode()},
+	 * {@link #getPingIntervalSeconds()}, {@link #getPingFailureLimit()} and {@link #getPingSize()}
+	 * to configure the returned service. May be overridden if non-standard customizations are
+	 * required.
+	 */
+	protected WebsocketPingerService createPingerService() {
 		if (isPingerInKeepAliveOnlyMode()) {
-			pingerService = new WebsocketPingerService(
+			return new WebsocketPingerService(
 					getPingIntervalSeconds(), shouldSynchronizePingSending());
 		} else {
-			pingerService = new WebsocketPingerService(
+			return new WebsocketPingerService(
 				getPingIntervalSeconds(),
 				getPingFailureLimit(),
 				getPingSize(),
 				shouldSynchronizePingSending()
 			);
 		}
+	}
+
+
+
+	public PingingServletContextListener() {
+		pingerService = createPingerService();
 	}
 
 
