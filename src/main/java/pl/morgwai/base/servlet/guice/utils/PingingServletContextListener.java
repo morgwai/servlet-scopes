@@ -3,7 +3,7 @@ package pl.morgwai.base.servlet.guice.utils;
 
 import java.util.LinkedList;
 
-import javax.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextEvent;
 
 import com.google.inject.Injector;
 import com.google.inject.Module;

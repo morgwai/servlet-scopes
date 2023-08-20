@@ -3,9 +3,9 @@ package pl.morgwai.base.servlet.guice.scopes.tests.server;
 
 import java.io.IOException;
 
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import static pl.morgwai.base.servlet.guice.scopes.tests.server.ServletContextListener.*;
 
@@ -13,7 +13,7 @@ import static pl.morgwai.base.servlet.guice.scopes.tests.server.ServletContextLi
 
 /**
  * All test requests initially arrive to this {@code Servlet} and are
- * {@link javax.servlet.RequestDispatcher#forward(ServletRequest, ServletResponse) forwarded} to
+ * {@link jakarta.servlet.RequestDispatcher#forward(ServletRequest, ServletResponse) forwarded} to
  * {@link AsyncServlet}. If a request comes back to this {@code Servlet}
  * {@link DispatcherType#ASYNC asynchronously}, it is
  * {@link #doAsyncHandling(HttpServletRequest, HttpServletResponse) handled}.

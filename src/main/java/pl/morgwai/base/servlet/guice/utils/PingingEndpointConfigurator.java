@@ -10,11 +10,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.http.HttpSession;
-import javax.websocket.*;
-import javax.websocket.server.*;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.*;
+import jakarta.websocket.server.*;
 
 import com.google.inject.Injector;
 import pl.morgwai.base.guice.scopes.ContextTracker;
@@ -65,11 +65,11 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 	}
 
 	/**
-	 * @deprecated if your {@link javax.servlet.ServletContextListener} does not extend
+	 * @deprecated if your {@link jakarta.servlet.ServletContextListener} does not extend
 	 *     {@link PingingServletContextListener}, then use
 	 *     {@link #registerPingerService(WebsocketPingerService, ServletContext)} instead of this
 	 *     method in your
-	 *     {@link javax.servlet.ServletContextListener#contextInitialized(ServletContextEvent)}.
+	 *     {@link jakarta.servlet.ServletContextListener#contextInitialized(ServletContextEvent)}.
 	 */
 	@Deprecated(forRemoval = true)
 	public static void setPingerService(WebsocketPingerService pingerService) {

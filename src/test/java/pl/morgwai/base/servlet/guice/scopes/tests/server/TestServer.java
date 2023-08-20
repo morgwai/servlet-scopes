@@ -3,7 +3,7 @@ package pl.morgwai.base.servlet.guice.scopes.tests.server;
 
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.websocket.javax.server.config.JavaxWebSocketServletContainerInitializer;
+import org.eclipse.jetty.websocket.jakarta.server.config.JakartaWebSocketServletContainerInitializer;
 
 
 
@@ -23,7 +23,7 @@ public class TestServer extends org.eclipse.jetty.server.Server {
 		final var testAppHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		testAppHandler.setContextPath(APP_PATH);
 		testAppHandler.addEventListener(new ServletContextListener());
-		JavaxWebSocketServletContainerInitializer.configure(
+		JakartaWebSocketServletContainerInitializer.configure(
 			testAppHandler,
 			(servletContainer, websocketContainer) -> {
 				websocketContainer.setDefaultMaxTextMessageBufferSize(1023);
@@ -39,7 +39,7 @@ public class TestServer extends org.eclipse.jetty.server.Server {
 		final var secondAppHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		secondAppHandler.setContextPath(SECOND_APP_PATH);
 		secondAppHandler.addEventListener(new ManualServletContextListener());
-		JavaxWebSocketServletContainerInitializer.configure(
+		JakartaWebSocketServletContainerInitializer.configure(
 			secondAppHandler,
 			(servletContainer, websocketContainer) -> {
 				websocketContainer.setDefaultMaxTextMessageBufferSize(1023);
