@@ -22,10 +22,10 @@ import pl.morgwai.base.guice.scopes.*;
 
 
 /**
- * Creates and configures {@link #injector app-wide Guice Injector} and a
- * {@link ServletModule}. A single subclass of this class must be created and either annotated with
- * {@link javax.servlet.annotation.WebListener @WebListener} or enlisted in
- * <code>web.xml</code> file in <code>listener</code> element.
+ * Creates and configures {@link #injector app-wide Guice Injector} and a {@link ServletModule}.
+ * Usually a single subclass of this class should be created in a given app and either annotated
+ * with {@link javax.servlet.annotation.WebListener @WebListener} or enlisted in the app's
+ * {@code web.xml} file in a {@code <listener>} element.
  */
 public abstract class GuiceServletContextListener implements ServletContextListener {
 
@@ -260,9 +260,9 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * {@link Injector}'s class {@link Class#getName() fully-qualified name}.
 	 */
 	@Override
-	public final void contextInitialized(ServletContextEvent initializationEvent) {
+	public final void contextInitialized(ServletContextEvent initialization) {
 		try {
-			servletContainer = initializationEvent.getServletContext();
+			servletContainer = initialization.getServletContext();
 			servletModule.servletContext = servletContainer;
 			endpointContainer = ((ServerContainer) servletContainer.getAttribute(
 					"javax.websocket.server.ServerContainer"));
@@ -277,8 +277,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			addFilter(RequestContextFilter.class.getSimpleName(), RequestContextFilter.class)
 					.addMappingForUrlPatterns(
 							EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC), false, "/*");
-			GuiceServerEndpointConfigurator.injectors.put(
-					servletContainer.getContextPath(), injector);
+			GuiceServerEndpointConfigurator.registerInjector(injector, servletContainer);
 			endpointConfigurator = createEndpointConfigurator();
 
 			configureServletsFiltersEndpoints();
@@ -297,8 +296,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * are terminated, calls {@link #handleUnterminatedExecutors(List)}.
 	 */
 	@Override
-	public void contextDestroyed(ServletContextEvent destructionEvent) {
-		GuiceServerEndpointConfigurator.injectors.remove(servletContainer.getContextPath());
+	public void contextDestroyed(ServletContextEvent destruction) {
+		GuiceServerEndpointConfigurator.deregisterInjector(servletContainer);
 		servletModule.shutdownAllExecutors();
 		List<ServletContextTrackingExecutor> unterminatedExecutors;
 		try {

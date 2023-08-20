@@ -28,6 +28,9 @@ import pl.morgwai.base.servlet.guice.scopes.tests.server.*;
 
 import static org.junit.Assert.*;
 import static pl.morgwai.base.servlet.guice.scopes.tests.server.AsyncServlet.*;
+import static pl.morgwai.base.servlet.guice.scopes.tests.server.ServletContextListener
+		.WEBSOCKET_PATH;
+import static pl.morgwai.base.servlet.guice.scopes.tests.server.TestServer.*;
 
 
 
@@ -41,6 +44,7 @@ public class IntegrationTests {
 	TestServer server;
 	int port;
 	String forwardingServletUrl;
+	String forwardingServletSecondAppUrl;
 	String serverWebsocketUrl;
 	String appWebsocketUrl;
 
@@ -62,11 +66,12 @@ public class IntegrationTests {
 		server.start();
 		port = ((ServerSocketChannel) server.getConnectors()[0].getTransport())
 				.socket().getLocalPort();
-		forwardingServletUrl = "http://localhost:" + port
-				+ TestServer.APP_PATH + '/' + ForwardingServlet.class.getSimpleName();
+		forwardingServletUrl = "http://localhost:" + port + APP_PATH + '/'
+				+ ForwardingServlet.class.getSimpleName();
+		forwardingServletSecondAppUrl = "http://localhost:" + port + SECOND_APP_PATH + '/'
+				+ ForwardingServlet.class.getSimpleName();
 		serverWebsocketUrl = "ws://localhost:" + port;
-		appWebsocketUrl = serverWebsocketUrl + TestServer.APP_PATH
-				+ ServletContextListener.WEBSOCKET_PATH;
+		appWebsocketUrl = serverWebsocketUrl + APP_PATH + WEBSOCKET_PATH;
 	}
 
 
@@ -161,6 +166,40 @@ public class IntegrationTests {
 		);
 	}
 
+	@Test
+	public void testUnwrappedAsyncCtxDispatchManualListener() throws Exception {
+		testAsyncCtxDispatch(
+			forwardingServletSecondAppUrl + '?' + MODE_PARAM + '=' + MODE_UNWRAPPED,
+			ForwardingServlet.class
+		);
+	}
+
+	@Test
+	public void testUnwrappedTargetedAsyncCtxDispatchManualListener() throws Exception {
+		testAsyncCtxDispatch(
+			forwardingServletSecondAppUrl + '?' + MODE_PARAM + '=' + MODE_UNWRAPPED
+				+ '&' + TARGET_PATH_PARAM + "=/" + TargetedServlet.class.getSimpleName(),
+			TargetedServlet.class
+		);
+	}
+
+	@Test
+	public void testWrappedAsyncCtxDispatchManualListener() throws Exception {
+		testAsyncCtxDispatch(
+			forwardingServletSecondAppUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED,
+			AsyncServlet.class
+		);
+	}
+
+	@Test
+	public void testWrappedTargetedAsyncCtxDispatchManualListener() throws Exception {
+		testAsyncCtxDispatch(
+			forwardingServletSecondAppUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED
+				+ '&' + TARGET_PATH_PARAM + "=/" + TargetedServlet.class.getSimpleName(),
+			TargetedServlet.class
+		);
+	}
+
 
 
 	/**
@@ -222,10 +261,10 @@ public class IntegrationTests {
 	 * {@link #testSingleMessageToServerEndpoint(URI)} made via separate websocket connections.
 	 * All 4 messages are expected to be sent from the same HTTP session scope.
 	 */
-	List<String[]> testServerEndpoint(String type) throws Exception {
-		final var url = URI.create(appWebsocketUrl + type);
-		final var replies = testSingleMessageToServerEndpoint(url);
-		replies.addAll(testSingleMessageToServerEndpoint(url));
+	List<String[]> testServerEndpoint(String url) throws Exception {
+		final var uri = URI.create(url);
+		final var replies = testSingleMessageToServerEndpoint(uri);
+		replies.addAll(testSingleMessageToServerEndpoint(uri));
 		assertEquals("session scoped object hash should remain the same",
 				replies.get(0)[3], replies.get(2)[3]);
 		assertNotEquals("connection scoped object hash should change",
@@ -235,17 +274,32 @@ public class IntegrationTests {
 
 	@Test
 	public void testProgrammaticEndpoint() throws Exception {
-		testServerEndpoint(ProgrammaticEndpoint.TYPE);
+		testServerEndpoint(serverWebsocketUrl + APP_PATH + ProgrammaticEndpoint.PATH);
 	}
 
 	@Test
 	public void testExtendingEndpoint() throws Exception {
-		testServerEndpoint(ExtendingEndpoint.TYPE);
+		testServerEndpoint(serverWebsocketUrl + APP_PATH + ExtendingEndpoint.PATH);
 	}
 
 	@Test
 	public void testAnnotatedEndpoint() throws Exception {
-		testServerEndpoint(AnnotatedEndpoint.TYPE);
+		testServerEndpoint(serverWebsocketUrl + APP_PATH + AnnotatedEndpoint.PATH);
+	}
+
+	@Test
+	public void testProgrammaticEndpointManualListener() throws Exception {
+		testServerEndpoint(serverWebsocketUrl + SECOND_APP_PATH + ProgrammaticEndpoint.PATH);
+	}
+
+	@Test
+	public void testExtendingEndpointManualListener() throws Exception {
+		testServerEndpoint(serverWebsocketUrl + SECOND_APP_PATH + ExtendingEndpoint.PATH);
+	}
+
+	@Test
+	public void testAnnotatedEndpointManualListener() throws Exception {
+		testServerEndpoint(serverWebsocketUrl + SECOND_APP_PATH + AnnotatedEndpoint.PATH);
 	}
 
 
@@ -299,7 +353,8 @@ public class IntegrationTests {
 		assertTrue("call scoped object hash should change",
 				requestScopedHashes.add(wrappedTargetedAsyncCtxResponses.get(1)[2]));
 
-		final var programmaticEndpointResponses = testServerEndpoint(ProgrammaticEndpoint.TYPE);
+		final var programmaticEndpointResponses =
+				testServerEndpoint(appWebsocketUrl + ProgrammaticEndpoint.TYPE);
 		assertEquals("session scoped object hash should remain the same",
 				sessionScopedHash, programmaticEndpointResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
@@ -313,7 +368,8 @@ public class IntegrationTests {
 		connectionScopedHashes.add(programmaticEndpointResponses.get(0)[4]);
 		connectionScopedHashes.add(programmaticEndpointResponses.get(2)[4]);
 
-		final var extendingEndpointResponses = testServerEndpoint(ExtendingEndpoint.TYPE);
+		final var extendingEndpointResponses =
+				testServerEndpoint(appWebsocketUrl + ExtendingEndpoint.TYPE);
 		assertEquals("session scoped object hash should remain the same",
 				sessionScopedHash, extendingEndpointResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
@@ -329,7 +385,8 @@ public class IntegrationTests {
 		assertTrue("connection scoped object hash should change",
 				connectionScopedHashes.add(extendingEndpointResponses.get(2)[4]));
 
-		final var annotatedEndpointResponses = testServerEndpoint(AnnotatedEndpoint.TYPE);
+		final var annotatedEndpointResponses =
+				testServerEndpoint(appWebsocketUrl + AnnotatedEndpoint.TYPE);
 		assertEquals("session scoped object hash should remain the same",
 				sessionScopedHash, annotatedEndpointResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
@@ -409,7 +466,7 @@ public class IntegrationTests {
 		testAppSeparation(
 			appWebsocketUrl + AppSeparationTestEndpoint.TYPE,
 			serverWebsocketUrl + TestServer.SECOND_APP_PATH
-					+ ServletContextListener.WEBSOCKET_PATH + AppSeparationTestEndpoint.TYPE
+					+ WEBSOCKET_PATH + AppSeparationTestEndpoint.TYPE
 		);
 	}
 
@@ -417,7 +474,7 @@ public class IntegrationTests {
 	public void testAppSeparationNoSession()
 			throws InterruptedException, DeploymentException, IOException {
 		testAppSeparation(
-			serverWebsocketUrl + TestServer.APP_PATH + NoSessionAppSeparationTestEndpoint.PATH,
+			serverWebsocketUrl + APP_PATH + NoSessionAppSeparationTestEndpoint.PATH,
 			serverWebsocketUrl + TestServer.SECOND_APP_PATH
 					+ NoSessionAppSeparationTestEndpoint.PATH
 		);

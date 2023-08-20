@@ -11,6 +11,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
 import javax.servlet.http.HttpSession;
 import javax.websocket.*;
 import javax.websocket.server.*;
@@ -57,6 +59,25 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	static final ConcurrentMap<String, Injector> injectors = new ConcurrentHashMap<>(5);
 
+	/**
+	 * Registers {@code injector} to be used by container-created
+	 * {@code GuiceServerEndpointConfigurator} instances for {@code Endpoints} annotated with
+	 * {@link ServerEndpoint} deployed in the {@code servletContext}.
+	 * <p>
+	 * This method is called automatically by
+	 * {@link GuiceServletContextListener#contextInitialized(ServletContextEvent)}, it must be
+	 * called manually in apps that don't use it.</p>
+	 */
+	public static void registerInjector(Injector injector, ServletContext servletContext) {
+		injectors.put(servletContext.getContextPath(), injector);
+	}
+
+	public static void deregisterInjector(ServletContext servletContext) {
+		injectors.remove(servletContext.getContextPath());
+	}
+
+
+
 	volatile Injector injector;
 	ContextTracker<ContainerCallContext> containerCallContextTracker;
 
@@ -66,7 +87,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	public GuiceServerEndpointConfigurator() {}
 
 	/** For {@link GuiceServletContextListener} managed instance. */
-	protected GuiceServerEndpointConfigurator(
+	public GuiceServerEndpointConfigurator(
 			Injector injector, ContextTracker<ContainerCallContext> containerCallContextTracker) {
 		this.injector = injector;
 		this.containerCallContextTracker = containerCallContextTracker;

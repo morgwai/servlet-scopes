@@ -32,8 +32,8 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 
 	public PingingEndpointConfigurator() {}
 
-	protected PingingEndpointConfigurator(
-			Injector injector, ContextTracker<ContainerCallContext> containerCallContextTracker) {
+	public PingingEndpointConfigurator(
+		Injector injector, ContextTracker<ContainerCallContext> containerCallContextTracker) {
 		super(injector, containerCallContextTracker);
 	}
 

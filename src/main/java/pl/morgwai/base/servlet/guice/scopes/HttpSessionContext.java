@@ -27,7 +27,7 @@ public class HttpSessionContext extends InjectionContext {
 
 
 	/** Registered in {@link GuiceServletContextListener}. */
-	static class SessionContextCreator implements HttpSessionListener {
+	public static class SessionContextCreator implements HttpSessionListener {
 
 		@Override
 		public void sessionCreated(HttpSessionEvent event) {

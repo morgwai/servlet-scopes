@@ -26,13 +26,11 @@ public class ServletContextListener extends PingingServletContextListener {
 	public static final String WEBSOCKET_CONNECTION = "wsConnection";
 	public static final String HTTP_SESSION = "httpSession";
 
-	final ServletContextTrackingExecutor executor =
-			servletModule.newContextTrackingExecutor("testExecutor", 2);
-
 
 
 	@Override
 	protected LinkedList<Module> configureInjections() {
+		final var executor = servletModule.newContextTrackingExecutor("testExecutor", 2);
 		final var modules = new LinkedList<Module>();
 		modules.add((binder) -> {
 			// usually Executors are bound with same name, but in this app there's only 1

@@ -38,11 +38,13 @@ public class TestServer extends org.eclipse.jetty.server.Server {
 
 		final var secondAppHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		secondAppHandler.setContextPath(SECOND_APP_PATH);
-		secondAppHandler.addEventListener(new ServletContextListener());
+		secondAppHandler.addEventListener(new ManualServletContextListener());
 		JavaxWebSocketServletContainerInitializer.configure(
 			secondAppHandler,
 			(servletContainer, websocketContainer) -> {
 				websocketContainer.setDefaultMaxTextMessageBufferSize(1023);
+				websocketContainer.addEndpoint(AnnotatedEndpoint.class);
+				websocketContainer.addEndpoint(ExtendingEndpoint.class);
 				websocketContainer.addEndpoint(AppSeparationTestEndpoint.class);
 				websocketContainer.addEndpoint(NoSessionAppSeparationTestEndpoint.class);
 			}

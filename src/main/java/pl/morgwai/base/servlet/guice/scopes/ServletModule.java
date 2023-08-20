@@ -89,6 +89,16 @@ public class ServletModule implements Module {
 	/** Set in {@link GuiceServletContextListener#contextInitialized(ServletContextEvent)}. */
 	ServletContext servletContext;
 
+	/** For {@link GuiceServletContextListener#servletModule}. */
+	ServletModule() {}
+
+	/**
+	 * Creates a new module. For usage in apps that don't use {@link GuiceServletContextListener}.
+	 */
+	public ServletModule(ServletContext servletContext) {
+		this.servletContext = servletContext;
+	}
+
 
 
 	/**
