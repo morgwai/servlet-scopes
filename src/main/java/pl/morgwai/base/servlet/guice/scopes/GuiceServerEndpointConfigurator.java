@@ -72,6 +72,13 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		injectors.put(servletContext.getContextPath(), injector);
 	}
 
+	/**
+	 * Removes the reference to the {@link Injector} associated with {@code servletContext}.
+	 * <p>
+	 * This method is called automatically by
+	 * {@link GuiceServletContextListener#contextDestroyed(ServletContextEvent)}, it must be
+	 * called manually in apps that don't use it.</p>
+	 */
 	public static void deregisterInjector(ServletContext servletContext) {
 		injectors.remove(servletContext.getContextPath());
 	}
@@ -272,8 +279,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-	protected static final Logger log =
-			Logger.getLogger(GuiceServerEndpointConfigurator.class.getName());
+	static final Logger log = Logger.getLogger(GuiceServerEndpointConfigurator.class.getName());
 }
 
 

@@ -64,7 +64,6 @@ public class ManualServletContextListener implements ServletContextListener {
 					.in(servletModule.httpSessionScope);
 			});
 			final Injector injector = Guice.createInjector(modules);
-			servletContainer.setAttribute(Injector.class.getName(), injector);
 
 			final var requestCtxFilter = servletContainer.createFilter(RequestContextFilter.class);
 			injector.injectMembers(requestCtxFilter);
@@ -76,10 +75,13 @@ public class ManualServletContextListener implements ServletContextListener {
 				false,
 				"/*"
 			);
+
+			servletContainer.setAttribute(Injector.class.getName(), injector);
+			servletContainer.setAttribute(WebsocketPingerService.class.getName(), pingerService);
 			GuiceServerEndpointConfigurator.registerInjector(injector, servletContainer);
-			PingingEndpointConfigurator.setPingerService(pingerService);
+			PingingEndpointConfigurator.registerPingerService(pingerService, servletContainer);
 			final var endpointConfigurator = new PingingEndpointConfigurator(
-					injector, servletModule.containerCallContextTracker);
+					injector, servletModule.containerCallContextTracker, pingerService);
 
 			final var indexPageServlet = servletContainer.createServlet(ResourceServlet.class);
 			injector.injectMembers(indexPageServlet);

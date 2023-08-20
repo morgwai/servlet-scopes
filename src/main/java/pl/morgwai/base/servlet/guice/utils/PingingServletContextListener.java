@@ -1,8 +1,12 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.utils;
 
+import java.util.LinkedList;
+
 import javax.servlet.ServletContextEvent;
 
+import com.google.inject.Injector;
+import com.google.inject.Module;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServletContextListener;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
@@ -59,7 +63,15 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 				shouldSynchronizePingSending()
 			);
 		}
-		PingingEndpointConfigurator.setPingerService(pingerService);
+	}
+
+
+
+	@Override
+	protected Injector createInjector(LinkedList<Module> modules) {
+		servletContainer.setAttribute(WebsocketPingerService.class.getName(), pingerService);
+		PingingEndpointConfigurator.registerPingerService(pingerService, servletContainer);
+		return super.createInjector(modules);
 	}
 
 
@@ -70,15 +82,17 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 */
 	@Override
 	protected GuiceServerEndpointConfigurator createEndpointConfigurator() {
-		return new PingingEndpointConfigurator(injector ,containerCallContextTracker);
+		return new PingingEndpointConfigurator(
+				injector ,containerCallContextTracker, pingerService);
 	}
 
 
 
 	/** Stops the associated {@link WebsocketPingerService}. */
 	@Override
-	public void contextDestroyed(ServletContextEvent destructionEvent) {
+	public void contextDestroyed(ServletContextEvent destruction) {
+		PingingEndpointConfigurator.deregisterPingerService(servletContainer);
 		pingerService.stop();
-		super.contextDestroyed(destructionEvent);
+		super.contextDestroyed(destruction);
 	}
 }
