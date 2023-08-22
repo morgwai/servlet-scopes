@@ -181,7 +181,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * <p>
 	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
 	 */
-	protected void installEnsureSessionFilter(String... urlPatterns) {
+	protected void addEnsureSessionFilter(String... urlPatterns) {
 		addFilter("ensureSessionFilter", (request, response, chain) -> {
 			((HttpServletRequest) request).getSession();
 			chain.doFilter(request, response);

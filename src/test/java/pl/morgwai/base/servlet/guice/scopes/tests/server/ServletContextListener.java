@@ -82,7 +82,7 @@ public class ServletContextListener extends PingingServletContextListener {
 			"/" + TargetedServlet.class.getSimpleName()
 		);
 
-		installEnsureSessionFilter(WEBSOCKET_PATH + '*');
+		addEnsureSessionFilter(WEBSOCKET_PATH + '*');
 		addEndpoint(ProgrammaticEndpoint.class, ProgrammaticEndpoint.PATH);
 		addServlet(
 			EchoWebsocketPageServlet.class.getSimpleName(),

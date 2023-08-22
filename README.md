@@ -76,7 +76,7 @@ public class ServletContextListener extends GuiceServletContextListener {
 
     @Override
     protected void configureServletsFiltersEndpoints() throws ServletException {
-        installEnsureSessionFilter("/websocket/*");
+        addEnsureSessionFilter("/websocket/*");
 
         // MyServlet and MyProgrammaticEndpoint instances will have their dependencies injected
         addServlet("myServlet", MyServlet.class, "/myServlet");
@@ -136,6 +136,6 @@ There are 2 builds available:
 * `guice-context-scopes` is thread-safe: a single request can be handled by multiple threads (as long as accessed scoped objects are thread-safe or properly synchronized).
 * `guice-context-scopes` allows to remove objects from scopes.
 
-**Why do I have to install myself a filter that creates HTTP session for websocket requests? Can't `installEnsureSessionFilter("/*")` be called automatically?**
+**Why do I have to install myself a filter that creates HTTP session for websocket requests? Can't `addEnsureSessionFilter("/*")` be called automatically?**
 
 Always enforcing a session creation is not acceptable in many cases, so this would limit applicability of this lib. Reasons may be technical (cookies disabled, non-browser clients that don't even follow redirections), legal (user explicitly refusing any data storage) and probably others. It's a sad trade-off between applicability and API safety.
