@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import javax.servlet.*;
 import javax.servlet.ServletContextListener;
+import javax.servlet.annotation.WebListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.websocket.server.ServerContainer;
 import javax.websocket.server.ServerEndpointConfig;
@@ -27,6 +28,7 @@ import static pl.morgwai.base.servlet.guice.scopes.tests.server.ServletContextLi
  * as {@link pl.morgwai.base.servlet.guice.scopes.tests.server.ServletContextListener} from this
  * package (that extends {@link pl.morgwai.base.servlet.guice.utils.PingingServletContextListener}).
  */
+@WebListener
 public class ManualServletContextListener implements ServletContextListener {
 
 
@@ -149,6 +151,7 @@ public class ManualServletContextListener implements ServletContextListener {
 	@Override
 	public void contextDestroyed(ServletContextEvent destruction) {
 		pingerService.stop();
+		PingingEndpointConfigurator.deregisterPingerService(destruction.getServletContext());
 		GuiceServerEndpointConfigurator.deregisterInjector(destruction.getServletContext());
 		servletModule.shutdownAllExecutors();
 		List<ServletContextTrackingExecutor> unterminated;
