@@ -1,7 +1,7 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.utils;
 
-import javax.servlet.ServletContextEvent;
+import javax.annotation.Nonnull;
 
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServletContextListener;
@@ -90,10 +90,11 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 	/** Stops {@link #pingerService} and unregisters it from {@link PingingEndpointConfigurator}. */
+	@Nonnull
 	@Override
-	public void contextDestroyed(ServletContextEvent destruction) {
+	protected DestroySuperEnforcer destroy() {
 		PingingEndpointConfigurator.deregisterPingerService(servletContainer);
 		pingerService.stop();
-		super.contextDestroyed(destruction);
+		return super.destroy();
 	}
 }

@@ -63,7 +63,7 @@ public class ServletContextListener extends GuiceServletContextListener {
                           // ...or `extends PingingServletContextListener {`
 
     @Override
-    protected LinkedList<Module> configureInjections() {
+    protected LinkedList<Module> configureInjections() throws Exception {
         final var modules = new LinkedList<Module>();
         modules.add((binder) -> {
             binder.bind(MyService.class).in(containerCallScope);

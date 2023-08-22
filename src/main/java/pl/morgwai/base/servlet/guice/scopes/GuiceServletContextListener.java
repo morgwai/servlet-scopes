@@ -7,6 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nonnull;
 import javax.servlet.*;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -294,7 +295,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * are terminated, calls {@link #handleUnterminatedExecutors(List)}.
 	 */
 	@Override
-	public void contextDestroyed(ServletContextEvent destruction) {
+	public final void contextDestroyed(ServletContextEvent destruction) {
 		GuiceServerEndpointConfigurator.deregisterInjector(servletContainer);
 		servletModule.shutdownAllExecutors();
 		List<ServletContextTrackingExecutor> unterminatedExecutors;
@@ -307,7 +308,10 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 				.collect(Collectors.toList());
 		}
 		if ( !unterminatedExecutors.isEmpty()) handleUnterminatedExecutors(unterminatedExecutors);
+		destroy();
 	}
+
+
 
 	/**
 	 * Returns the timeout for termination of executors obtained from {@link #servletModule}.
@@ -326,6 +330,21 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	protected void handleUnterminatedExecutors(
 			List<ServletContextTrackingExecutor> unterminatedExecutors) {
 		for (var executor: unterminatedExecutors) executor.shutdownNow();
+	}
+
+
+
+	/**
+	 * Releases any resources that the app may hold. Called at the end of
+	 * {@link #contextDestroyed(ServletContextEvent)}.
+	 */
+	@Nonnull
+	protected DestroySuperEnforcer destroy() {
+		return new DestroySuperEnforcer();
+	}
+
+	public static class DestroySuperEnforcer {
+		private DestroySuperEnforcer() {}
 	}
 
 
