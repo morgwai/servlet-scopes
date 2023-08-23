@@ -5,13 +5,11 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
 import javax.servlet.http.HttpSession;
 import javax.websocket.*;
 import javax.websocket.server.*;
@@ -27,8 +25,10 @@ import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnOpen;
 
 
 /**
- * A {@link GuiceServerEndpointConfigurator} that automatically registers and deregisters
- * {@code Endpoints} to a {@link WebsocketPingerService}.
+ * A {@link GuiceServerEndpointConfigurator} that additionally automatically registers and
+ * deregisters {@code Endpoints} to its associated {@link WebsocketPingerService}. In addition to
+ * usage instructions from the super-class, annotated {@code Endpoints} <b>must</b> have a method
+ * annotated with @{@link OnClose}.
  * @see PingingServletContextListener
  */
 public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator {
@@ -44,8 +44,8 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 	 * {@link ServerEndpoint} deployed in the {@code servletContext}.
 	 * <p>
 	 * This method is called automatically by
-	 * {@link PingingServletContextListener#createInjector(LinkedList)}, it must be
-	 * called manually in apps that don't use it.</p>
+	 * {@link PingingServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)},
+	 * it must be called manually in apps that don't use it.</p>
 	 */
 	public static void registerPingerService(
 			WebsocketPingerService pingerService, ServletContext servletContext) {
@@ -57,8 +57,8 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 	 * {@code servletContext}.
 	 * <p>
 	 * This method is called automatically by
-	 * {@link PingingServletContextListener#contextDestroyed(ServletContextEvent)}, it must be
-	 * called manually in apps that don't use it.</p>
+	 * {@link PingingServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)},
+	 * it must be called manually in apps that don't use it.</p>
 	 */
 	public static void deregisterPingerService(ServletContext servletContext) {
 		services.remove(servletContext.getContextPath());

@@ -12,7 +12,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
 import javax.servlet.http.HttpSession;
 import javax.websocket.*;
 import javax.websocket.server.*;
@@ -30,28 +29,50 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 /**
- * Obtains {@code Endpoint} instances from {@link Injector#getInstance(Class) Guice} (so that
- * all dependencies are injected) and decorates them, so that lifecycle methods are executed within
- * {@link WebsocketConnectionContext} and {@link ContainerCallContext}.
+ * Obtains {@code Endpoint} instances from {@link Injector#getInstance(Class) Guice} and decorates
+ * methods to run within websocket contexts. This way, all dependencies are injected and
+ * {@link Scope}s from {@link ServletModule} ({@link ServletModule#containerCallScope},
+ * {@link ServletModule#websocketConnectionScope} and {@link ServletModule#httpSessionScope}) work
+ * properly.
  * <p>
- * In case of {@code Endpoints} annotated with @{@link ServerEndpoint}, this class should be used as
+ * To use this {@code Configurator} for programmatically added {@code Endpoints}, create an instance
+ * using {@link #GuiceServerEndpointConfigurator(Injector, ContextTracker)} and pass it to the
+ * {@link ServerEndpointConfig.Builder#configurator(Configurator) config}:</p>
+ * <pre>{@code
+ * websocketContainer.addEndpoint(ServerEndpointConfig.Builder
+ *         .create(MyProgrammaticEndpoint.class, "/websocket/programmatic")
+ *         .configurator(new GuiceServerEndpointConfigurator())
+ *         .build());}</pre>
+ * <p>
+ * To use this {@code Configurator} for @{@link ServerEndpoint} annotated {@code Endpoints}, first
+ * {@link #registerInjector(Injector, ServletContext)} and
+ * {@link #deregisterInjector(ServletContext)} static methods must be called respectively in
+ * {@link javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
+ * } and
+ * {@link javax.servlet.ServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)}
+ * of app's {@link javax.servlet.ServletContextListener}, so that container-created (with
+ * {@link #GuiceServerEndpointConfigurator() param-less constructor}) instances of this configurator
+ * can obtain a reference to the {@link Injector app-wide Injector}. Note: if app's {@code Listener}
+ * extends {@link GuiceServletContextListener}, this is already taken care of.<br/>
+ * Second, {@code Endpoint} methods annotated with @{@link OnOpen} <b>must</b> have a
+ * {@link Session} param.<br/>
+ * After the above conditions are met, simply pass this class as
  * {@link ServerEndpoint#configurator() configurator} param of the annotation:</p>
  * <pre>
  * &#64;ServerEndpoint(
- *     value = "/websocket/mySocket",
- *     configurator = GuiceServerEndpointConfigurator.class)
- * public class MyEndpoint {...}</pre>
- * <p>
- * <b>NOTE:</b> methods annotated with @{@link OnOpen} <b>must</b> have a {@link Session} param.</p>
- * <p>
- * In case of {@code Endpoints} added programmatically, an instance of this configurator should be
- * supplied as an argument to {@link ServerEndpointConfig.Builder#configurator(Configurator)}
- * method:</p>
- * <pre>
- * websocketContainer.addEndpoint(ServerEndpointConfig.Builder
- *         .create(MyEndpoint.class, "/websocket/mySocket")
- *         .configurator(new GuiceServerEndpointConfigurator())
- *         .build());</pre>
+ *         value = "/websocket/annotated",
+ *         configurator = GuiceServerEndpointConfigurator.class)
+ * public class MyAnnotatedEndpoint {
+ *
+ *     &#64;OnOpen public void onOpen(
+ *         Session connection  // other optional params here...
+ *     ) {
+ *         // ...
+ *     }
+ *
+ *     // other methods here...
+ * }</pre>
+ * @see GuiceServletContextListener
  */
 public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Configurator {
 
@@ -65,8 +86,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * {@link ServerEndpoint} deployed in the {@code servletContext}.
 	 * <p>
 	 * This method is called automatically by
-	 * {@link GuiceServletContextListener#contextInitialized(ServletContextEvent)}, it must be
-	 * called manually in apps that don't use it.</p>
+	 * {@link GuiceServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)},
+	 * it must be called manually in apps that don't use it.</p>
 	 */
 	public static void registerInjector(Injector injector, ServletContext servletContext) {
 		injectors.put(servletContext.getContextPath(), injector);
@@ -76,8 +97,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * Removes the reference to the {@link Injector} associated with {@code servletContext}.
 	 * <p>
 	 * This method is called automatically by
-	 * {@link GuiceServletContextListener#contextDestroyed(ServletContextEvent)}, it must be
-	 * called manually in apps that don't use it.</p>
+	 * {@link GuiceServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)},
+	 * it must be called manually in apps that don't use it.</p>
 	 */
 	public static void deregisterInjector(ServletContext servletContext) {
 		injectors.remove(servletContext.getContextPath());

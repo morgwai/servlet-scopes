@@ -66,7 +66,7 @@ public class ServletContextListener extends GuiceServletContextListener {
     protected LinkedList<Module> configureInjections() {
         final var modules = new LinkedList<Module>();
         modules.add((binder) -> {
-            binder.bind(MyService.class).in(servletModule.containerCallScope);
+            binder.bind(MyService.class).in(containerCallScope);
                 // @Inject Provider<MyService> myServiceProvider;
                 // will now work both in servlets and endpoints
             // more bindings here...
@@ -75,7 +75,8 @@ public class ServletContextListener extends GuiceServletContextListener {
     }
 
     @Override
-    protected void configureServletsFiltersEndpoints() throws ServletException {
+    protected void configureServletsFiltersEndpoints() throws ServletException, DeploymentException
+    {
         addEnsureSessionFilter("/websocket/*");
 
         // MyServlet and MyProgrammaticEndpoint instances will have their dependencies injected

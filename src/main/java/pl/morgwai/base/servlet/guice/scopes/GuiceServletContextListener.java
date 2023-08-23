@@ -33,12 +33,12 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/**
 	 * Returns {@link Module}s that configure bindings for user-defined components.
-	 * The result will be passed to {@link #createInjector(LinkedList)} together with other internal
-	 * {@code Modules}.
+	 * The result will be passed to {@link #createInjector(LinkedList)}. {@link #servletModule} and
+	 * other internal {@code Modules} will be added automatically to the list.
 	 * <p>
 	 * Implementations may use {@link com.google.inject.Scope}s,
 	 * {@link pl.morgwai.base.guice.scopes.ContextTracker}s and helper methods from
-	 * {@link #servletModule}.</p>
+	 * {@link #servletModule} when defining {@link Module}s being added.</p>
 	 */
 	protected abstract LinkedList<Module> configureInjections() throws Exception;
 
@@ -55,15 +55,16 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	protected final Scope websocketConnectionScope = servletModule.websocketConnectionScope;
 
 	/**
-	 * For use in {@link #configureServletsFiltersEndpoints()}. {@code Injector} is also stored as a
+	 * The app-wide {@link Injector}. For use in {@link #configureServletsFiltersEndpoints()}.
+	 * {@code Injector} is also stored as a
 	 * {@link ServletContext#getAttribute(String) ServletContext attribute} named after
 	 * {@link Injector}'s class {@link Class#getName() fully-qualified name}.
 	 */
 	protected Injector injector;
 
 	/**
-	 * Called by {@link #contextInitialized(ServletContextEvent)} to create
-	 * {@link #injector the app-wide Injector}. By default basically calls
+	 * Creates {@link #injector the app-wide Injector} when called by
+	 * {@link #contextInitialized(ServletContextEvent)}. By default basically calls
 	 * {@link Guice#createInjector(Iterable) Guice.createInjector(modules)}.
 	 * May be overridden if any additional customizations are needed.
 	 */
@@ -74,17 +75,14 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Programmatically adds servlets, filters and endpoints.
+	 * Programmatically adds {@link Servlet}s, {@link Filter}s and {@code Endpoints} and performs
+	 * any other setup required by the given app. Called at the end of
+	 * {@link #contextInitialized(ServletContextEvent)}, may use {@link #injector} (as well as
+	 * {@link #servletContainer} and {@link #endpointContainer}).
 	 * <p>
-	 * If all of these components are configured via annotations or <code>web.xml</code> file,
-	 * then this method may be empty.</p>
-	 * <p>
-	 * Convenience helper methods {@link #addServlet(String, Class, String...)},
-	 * {@link #addFilter(String, Class, String...)}, {@link #addEndpoint(Class, String)} and
-	 * {@link #addEndpoint(Class, String, Configurator)} are provided for the most common cases.</p>
-	 * <p>
-	 * This method is called <b>after</b> {@link #configureInjections()} is called and
-	 * {@link #injector} is created.</p>
+	 * Convenience helper method families {@link #addServlet(String, Class, String...)},
+	 * {@link #addFilter(String, Class, String...)}, {@link #addEndpoint(Class, String)} are
+	 * provided for the most common cases for use in {@code configurationHook}.</p>
 	 */
 	protected abstract void configureServletsFiltersEndpoints()
 			throws ServletException, DeploymentException;
@@ -215,6 +213,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	protected GuiceServerEndpointConfigurator createEndpointConfigurator() {
 		return new GuiceServerEndpointConfigurator(injector, containerCallContextTracker);
 	}
+
+
 
 	/**
 	 * Adds an endpoint using {@link #endpointConfigurator}. For use in

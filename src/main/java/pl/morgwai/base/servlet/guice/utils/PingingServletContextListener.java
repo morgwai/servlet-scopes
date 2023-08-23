@@ -10,10 +10,9 @@ import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
 /**
- * A {@link GuiceServletContextListener} that automatically registers and deregisters endpoints
- * to a {@link WebsocketPingerService}. Endpoints need to be created with
- * {@link #addEndpoint(Class, String) addEndpoint(Class, String)} or annotated to use
- * {@link PingingEndpointConfigurator}.
+ * A {@link GuiceServletContextListener} that automatically registers and deregisters
+ * {@code Endpoints} added with {@link #addEndpoint(Class, String)} to its associated
+ * {@link WebsocketPingerService}.
  */
 public abstract class PingingServletContextListener extends GuiceServletContextListener {
 
@@ -90,7 +89,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 
-	/** Stops the associated {@link WebsocketPingerService}. */
+	/** Stops {@link #pingerService} and unregisters it from {@link PingingEndpointConfigurator}. */
 	@Override
 	public void contextDestroyed(ServletContextEvent destruction) {
 		PingingEndpointConfigurator.deregisterPingerService(servletContainer);
