@@ -40,7 +40,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * {@link pl.morgwai.base.guice.scopes.ContextTracker}s and helper methods from
 	 * {@link #servletModule}.</p>
 	 */
-	protected abstract LinkedList<Module> configureInjections() throws ServletException;
+	protected abstract LinkedList<Module> configureInjections() throws Exception;
 
 	/** For use in {@link #configureInjections()}. */
 	protected final ServletModule servletModule = new ServletModule();
@@ -86,7 +86,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * This method is called <b>after</b> {@link #configureInjections()} is called and
 	 * {@link #injector} is created.</p>
 	 */
-	protected abstract void configureServletsFiltersEndpoints() throws ServletException;
+	protected abstract void configureServletsFiltersEndpoints()
+			throws ServletException, DeploymentException;
 
 	/** For use in {@link #configureServletsFiltersEndpoints()}. */
 	protected ServletContext servletContainer;
@@ -223,7 +224,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * <p>
 	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.</p>
 	 */
-	protected void addEndpoint(Class<?> endpointClass, String path) throws ServletException {
+	protected void addEndpoint(Class<?> endpointClass, String path) throws DeploymentException {
 		addEndpoint(endpointClass, path, endpointConfigurator);
 		endpointConfigurator.getProxyClass(endpointClass);  // pre-build dynamic proxy class
 	}
@@ -234,18 +235,14 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.</p>
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path, Configurator configurator)
-			throws ServletException {
-		try {
-			endpointContainer.addEndpoint(
-				ServerEndpointConfig.Builder
-					.create(endpointClass, path)
-					.configurator(configurator)
-					.build()
-			);
-			log.info("registered endpoint " + endpointClass.getSimpleName());
-		} catch (DeploymentException e) {
-			throw new ServletException(e);
-		}
+			throws DeploymentException {
+		endpointContainer.addEndpoint(
+			ServerEndpointConfig.Builder
+				.create(endpointClass, path)
+				.configurator(configurator)
+				.build()
+		);
+		log.info("registered endpoint " + endpointClass.getSimpleName());
 	}
 
 
@@ -281,10 +278,11 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			endpointConfigurator = createEndpointConfigurator();
 
 			configureServletsFiltersEndpoints();
-		} catch (Throwable e) {
-			log.log(Level.SEVERE, "could not start the server", e);
+		} catch (Exception e) {
+			final var message = "could not deploy the app at " + servletContainer.getContextPath();
+			log.log(Level.SEVERE, message, e);
 			e.printStackTrace();
-			System.exit(1);
+			throw new RuntimeException(message, e);
 		}
 	}
 

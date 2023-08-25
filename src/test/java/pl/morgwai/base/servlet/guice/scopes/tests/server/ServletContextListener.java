@@ -5,6 +5,7 @@ import java.util.LinkedList;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebListener;
+import javax.websocket.DeploymentException;
 
 import com.google.inject.Module;
 import com.google.inject.name.Names;
@@ -56,7 +57,8 @@ public class ServletContextListener extends PingingServletContextListener {
 
 
 	@Override
-	protected void configureServletsFiltersEndpoints() throws ServletException {
+	protected void configureServletsFiltersEndpoints() throws ServletException, DeploymentException
+	{
 		addServlet(
 			"IndexPageServlet",
 			ResourceServlet.class,
