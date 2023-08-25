@@ -1,12 +1,8 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.utils;
 
-import java.util.LinkedList;
-
 import javax.servlet.ServletContextEvent;
 
-import com.google.inject.Injector;
-import com.google.inject.Module;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServletContextListener;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
@@ -80,21 +76,14 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 
-	@Override
-	protected Injector createInjector(LinkedList<Module> modules) {
-		servletContainer.setAttribute(WebsocketPingerService.class.getName(), pingerService);
-		PingingEndpointConfigurator.registerPingerService(pingerService, servletContainer);
-		return super.createInjector(modules);
-	}
-
-
-
 	/**
 	 * Overrides default configurator used by {@link #addEndpoint(Class, String)} to be a
 	 * {@link PingingEndpointConfigurator}.
 	 */
 	@Override
 	protected GuiceServerEndpointConfigurator createEndpointConfigurator() {
+		servletContainer.setAttribute(WebsocketPingerService.class.getName(), pingerService);
+		PingingEndpointConfigurator.registerPingerService(pingerService, servletContainer);
 		return new PingingEndpointConfigurator(
 				injector ,containerCallContextTracker, pingerService);
 	}
