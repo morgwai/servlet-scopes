@@ -38,9 +38,15 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * <p>
 	 * Implementations may use {@link com.google.inject.Scope}s,
 	 * {@link pl.morgwai.base.guice.scopes.ContextTracker}s and helper methods from
-	 * {@link #servletModule} when defining {@link Module}s being added.</p>
+	 * {@link #servletModule} and config data from {@link #appDeployment} when defining
+	 * {@link Module}s.</p>
 	 */
 	protected abstract LinkedList<Module> configureInjections() throws Exception;
+
+	/**
+	 * For use in {@link #configureInjections()} and {@link #configureServletsFiltersEndpoints()}.
+	 */
+	protected ServletContext appDeployment;
 
 	/** For use in {@link #configureInjections()}. */
 	protected final ServletModule servletModule = new ServletModule();
@@ -50,6 +56,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	protected final Scope httpSessionScope = servletModule.httpSessionScope;
 	/** Same as in {@link #servletModule} for use in {@link #configureInjections()}. */
 	protected final Scope websocketConnectionScope = servletModule.websocketConnectionScope;
+
+
 
 	/**
 	 * The app-wide {@link Injector}. For use in {@link #configureServletsFiltersEndpoints()}.
@@ -98,12 +106,6 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	protected abstract void configureServletsFiltersEndpoints()
 			throws ServletException, DeploymentException;
-
-	/** For use in {@link #configureServletsFiltersEndpoints()}. */
-	protected ServletContext appDeployment;
-
-	/** For use in {@link #configureServletsFiltersEndpoints()}. */
-	protected ServerContainer endpointContainer;
 
 
 
@@ -227,6 +229,9 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	}
 
 
+
+	/** For use in {@link #configureServletsFiltersEndpoints()}. */
+	protected ServerContainer endpointContainer;
 
 	/**
 	 * Adds an endpoint using {@link #endpointConfigurator}. For use in
@@ -358,6 +363,5 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 
-	protected static final Logger log =
-			Logger.getLogger(GuiceServletContextListener.class.getName());
+	static final Logger log = Logger.getLogger(GuiceServletContextListener.class.getName());
 }
