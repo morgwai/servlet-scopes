@@ -2,6 +2,7 @@
 package pl.morgwai.base.servlet.guice.scopes;
 
 import java.lang.annotation.Annotation;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -84,7 +85,14 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-	static final ConcurrentMap<String, ServletContext> appDeployments = new ConcurrentHashMap<>(5);
+	/**
+	 * {@link WeakReference} wrapping prevents leaks of {@link ServletContext appDeployments} if
+	 * {@link #deregisterDeployment(ServletContext)} is not called. Empty {@link WeakReference}
+	 * objects together with their path keys will still be leaked though, but that's very little
+	 * comparing to whole {@link ServletContext appDeployments}.
+	 */
+	static final ConcurrentMap<String, WeakReference<ServletContext>> appDeployments =
+			new ConcurrentHashMap<>(5);
 
 	/**
 	 * Registers {@code appDeployment} to be used by container-created
@@ -95,7 +103,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * it must be called manually in apps that don't use it.</p>
 	 */
 	public static void registerDeployment(ServletContext appDeployment) {
-		appDeployments.put(appDeployment.getContextPath(), appDeployment);
+		appDeployments.put(appDeployment.getContextPath(), new WeakReference<>(appDeployment));
 	}
 
 	/**
@@ -106,7 +114,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * it must be called manually in apps that don't use it.</p>
 	 */
 	public static void deregisterDeployment(ServletContext appDeployment) {
-		appDeployments.remove(appDeployment.getContextPath());
+		appDeployments.remove(appDeployment.getContextPath()).clear();
 	}
 
 
@@ -289,13 +297,13 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				final var requestPath = request.getRequestURI().getPath();
 				final var servletContextPath = requestPath.substring(
 						0, requestPath.lastIndexOf(config.getPath()));
-				appDeployment = appDeployments.get(servletContextPath);
+				appDeployment = appDeployments.get(servletContextPath).get();
 				if (appDeployment == null) {
 					final var message = "Could not find deployment for requestPath " + requestPath;
 					log.severe(message);
 					System.err.println(message);
 					// pick first and hope for the best...
-					appDeployment = appDeployments.values().iterator().next();
+					appDeployment = appDeployments.values().iterator().next().get();
 				}
 			}
 			initialize(appDeployment);
