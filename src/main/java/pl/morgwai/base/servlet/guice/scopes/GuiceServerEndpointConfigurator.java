@@ -36,7 +36,7 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * properly.
  * <p>
  * To use this {@code Configurator} for programmatically added {@code Endpoints}, create an instance
- * using {@link #GuiceServerEndpointConfigurator(Injector, ContextTracker)} and pass it to the
+ * using {@link #GuiceServerEndpointConfigurator(ServletContext)} and pass it to the
  * {@link ServerEndpointConfig.Builder#configurator(Configurator) config}:</p>
  * <pre>{@code
  * websocketContainer.addEndpoint(ServerEndpointConfig.Builder
@@ -45,16 +45,22 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  *         .build());}</pre>
  * <p>
  * To use this {@code Configurator} for @{@link ServerEndpoint} annotated {@code Endpoints}, first
- * {@link #registerInjector(Injector, ServletContext)} and
- * {@link #deregisterInjector(ServletContext)} static methods must be called respectively in
+ * the app-wide {@link Injector} must be
+ * {@link ServletContext#setAttribute(String, Object) stored as a deployment attribute} under the
+ * {@link Class#getName() fully-qualified name} of {@link Injector} class in
+ * {@link javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
+ * } method of app's {@link javax.servlet.ServletContextListener}.<br/>
+ * Secondly, {@link #registerDeployment(ServletContext)} and
+ * {@link #deregisterDeployment(ServletContext)} static methods must be called respectively in
  * {@link javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
  * } and
  * {@link javax.servlet.ServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)}
- * of app's {@link javax.servlet.ServletContextListener}, so that container-created (with
- * {@link #GuiceServerEndpointConfigurator() param-less constructor}) instances of this configurator
- * can obtain a reference to the {@link Injector app-wide Injector}. Note: if app's {@code Listener}
- * extends {@link GuiceServletContextListener}, this is already taken care of.<br/>
- * Second, {@code Endpoint} methods annotated with @{@link OnOpen} <b>must</b> have a
+ * methods of app's {@link javax.servlet.ServletContextListener}, so that container-created
+ * instances (with {@link #GuiceServerEndpointConfigurator() the param-less constructor}) of this
+ * {@code Configurator} can obtain a reference to the {@link Injector}.<br/>
+ * Note: if app's {@code Listener} extends {@link GuiceServletContextListener}, the above setup is
+ * already taken care of.<br/>
+ * Finally, {@code Endpoint} methods annotated with @{@link OnOpen} <b>must</b> have a
  * {@link Session} param.<br/>
  * After the above conditions are met, simply pass this class as
  * {@link ServerEndpoint#configurator() configurator} param of the annotation:</p>
@@ -78,36 +84,36 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-	static final ConcurrentMap<String, Injector> injectors = new ConcurrentHashMap<>(5);
+	static final ConcurrentMap<String, ServletContext> appDeployments = new ConcurrentHashMap<>(5);
 
 	/**
-	 * Registers {@code injector} to be used by container-created
-	 * {@code GuiceServerEndpointConfigurator} instances for {@code Endpoints} annotated with
-	 * {@link ServerEndpoint} deployed in the {@code servletContext}.
+	 * Registers {@code appDeployment} to be used by container-created
+	 * {@code GuiceServerEndpointConfigurator} instances.
 	 * <p>
 	 * This method is called automatically by
 	 * {@link GuiceServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)},
 	 * it must be called manually in apps that don't use it.</p>
 	 */
-	public static void registerInjector(Injector injector, ServletContext servletContext) {
-		injectors.put(servletContext.getContextPath(), injector);
+	public static void registerDeployment(ServletContext appDeployment) {
+		appDeployments.put(appDeployment.getContextPath(), appDeployment);
 	}
 
 	/**
-	 * Removes the reference to the {@link Injector} associated with {@code servletContext}.
+	 * Removes a reference to {@code appDeployment}.
 	 * <p>
 	 * This method is called automatically by
 	 * {@link GuiceServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)},
 	 * it must be called manually in apps that don't use it.</p>
 	 */
-	public static void deregisterInjector(ServletContext servletContext) {
-		injectors.remove(servletContext.getContextPath());
+	public static void deregisterDeployment(ServletContext appDeployment) {
+		appDeployments.remove(appDeployment.getContextPath());
 	}
 
 
 
-	volatile Injector injector;
-	ContextTracker<ContainerCallContext> containerCallContextTracker;
+	protected volatile ServletContext appDeployment;
+	protected Injector injector;
+	protected ContextTracker<ContainerCallContext> containerCallContextTracker;
 
 
 
@@ -115,10 +121,22 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	public GuiceServerEndpointConfigurator() {}
 
 	/** For {@link GuiceServletContextListener} managed instance. */
-	public GuiceServerEndpointConfigurator(
-			Injector injector, ContextTracker<ContainerCallContext> containerCallContextTracker) {
-		this.injector = injector;
-		this.containerCallContextTracker = containerCallContextTracker;
+	public GuiceServerEndpointConfigurator(ServletContext appDeployment) {
+		this.appDeployment = appDeployment;
+		initialize(appDeployment);
+	}
+
+	/**
+	 * Initializes this instance member fields with references from {@code appDeployment}
+	 * {@link ServletContext#getAttribute(String) attributes}. Called either by
+	 * {@link #GuiceServerEndpointConfigurator(ServletContext)} or by
+	 * {@link #modifyHandshake(ServerEndpointConfig, HandshakeRequest, HandshakeResponse)} in case
+	 * of container-created instances for {@code Endpoints} annotated with {@link ServerEndpoint}.
+	 */
+	protected void initialize(ServletContext appDeployment) {
+		injector = (Injector) appDeployment.getAttribute(Injector.class.getName());
+		containerCallContextTracker =
+				injector.getInstance(ServletModule.containerCallContextTrackerKey);
 	}
 
 
@@ -246,8 +264,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * {@link HttpSession} associated with {@code request}.
 	 * <p>
 	 * For {@code Configurator} instances created by the container (as a result of providing this
-	 * class as a {@link ServerEndpoint#configurator()} argument of annotated {@code Endpoint}
-	 * classes), this method will also initialize {@link #injector} reference on its first
+	 * class as a {@link ServerEndpoint#configurator()} argument of some annotated {@code Endpoint}
+	 * class), this method will also call {@link #initialize(ServletContext)} on its first
 	 * invocation.</p>
 	 */
 	@Override
@@ -261,28 +279,27 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			config.getUserProperties().put(HttpSession.class.getName(), httpSession);
 		}
 
-		if (this.injector == null) {
-			// multiple threads initializing injector and containerCallContextTracker references
-			// concurrently in the same Configurator instance, will set exactly the same values
-			Injector injector;
+		if (this.appDeployment == null) {
+			// multiple threads initializing appDeployment reference concurrently in the same
+			// Configurator instance, will set exactly the same values
+			ServletContext appDeployment;
 			if (httpSession != null) {
-				final var servletCtx = ((HttpSession) httpSession).getServletContext();
-				injector = (Injector) servletCtx.getAttribute(Injector.class.getName());
+				appDeployment = ((HttpSession) httpSession).getServletContext();
 			} else {
 				final var requestPath = request.getRequestURI().getPath();
 				final var servletContextPath = requestPath.substring(
 						0, requestPath.lastIndexOf(config.getPath()));
-				injector = injectors.get(servletContextPath);
-				if (injector == null) {
-					log.severe("Could not find Injector for requestPath " + requestPath);
-					System.err.println("Could not find Injector for requestPath " + requestPath);
+				appDeployment = appDeployments.get(servletContextPath);
+				if (appDeployment == null) {
+					final var message = "Could not find deployment for requestPath " + requestPath;
+					log.severe(message);
+					System.err.println(message);
 					// pick first and hope for the best...
-					injector = injectors.values().iterator().next();
+					appDeployment = appDeployments.values().iterator().next();
 				}
 			}
-			containerCallContextTracker =
-					injector.getInstance(ServletModule.containerCallContextTrackerKey);
-			this.injector = injector;
+			initialize(appDeployment);
+			this.appDeployment = appDeployment;
 		}
 	}
 

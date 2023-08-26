@@ -80,10 +80,8 @@ public class ManualServletContextListener implements ServletContextListener {
 
 			servletContainer.setAttribute(Injector.class.getName(), injector);
 			servletContainer.setAttribute(WebsocketPingerService.class.getName(), pingerService);
-			GuiceServerEndpointConfigurator.registerInjector(injector, servletContainer);
-			PingingEndpointConfigurator.registerPingerService(pingerService, servletContainer);
-			final var endpointConfigurator = new PingingEndpointConfigurator(
-					injector, servletModule.containerCallContextTracker, pingerService);
+			GuiceServerEndpointConfigurator.registerDeployment(servletContainer);
+			final var endpointConfigurator = new PingingEndpointConfigurator(servletContainer);
 
 			final var indexPageServlet = servletContainer.createServlet(ResourceServlet.class);
 			injector.injectMembers(indexPageServlet);
@@ -151,8 +149,7 @@ public class ManualServletContextListener implements ServletContextListener {
 	@Override
 	public void contextDestroyed(ServletContextEvent destruction) {
 		pingerService.stop();
-		PingingEndpointConfigurator.deregisterPingerService(destruction.getServletContext());
-		GuiceServerEndpointConfigurator.deregisterInjector(destruction.getServletContext());
+		GuiceServerEndpointConfigurator.deregisterDeployment(destruction.getServletContext());
 		servletModule.shutdownAllExecutors();
 		List<ServletContextTrackingExecutor> unterminated;
 		try {

@@ -18,7 +18,6 @@ import javax.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.Module;
 import com.google.inject.*;
-import pl.morgwai.base.guice.scopes.*;
 
 
 
@@ -45,9 +44,6 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/** For use in {@link #configureInjections()}. */
 	protected final ServletModule servletModule = new ServletModule();
-	/** Same as in {@link #servletModule} for convenience. */
-	protected final ContextTracker<ContainerCallContext> containerCallContextTracker =
-			servletModule.containerCallContextTracker;
 	/** Same as in {@link #servletModule} for use in {@link #configureInjections()}. */
 	protected final Scope containerCallScope = servletModule.containerCallScope;
 	/** Same as in {@link #servletModule} for use in {@link #configureInjections()}. */
@@ -227,7 +223,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * used.</p>
 	 */
 	protected GuiceServerEndpointConfigurator createEndpointConfigurator() {
-		return new GuiceServerEndpointConfigurator(injector, containerCallContextTracker);
+		return new GuiceServerEndpointConfigurator(servletContainer);
 	}
 
 
@@ -284,14 +280,14 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			final var modules = configureInjections();
 			modules.add(servletModule);
 			injector = createInjector(modules);
-			servletContainer.setAttribute(Injector.class.getName(), injector);
 			log.info("Guice Injector created successfully");
+			servletContainer.setAttribute(Injector.class.getName(), injector);
+			endpointConfigurator = createEndpointConfigurator();
+			GuiceServerEndpointConfigurator.registerDeployment(servletContainer);
 
 			addFilter(RequestContextFilter.class.getSimpleName(), RequestContextFilter.class)
 					.addMappingForUrlPatterns(
 							EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC), false, "/*");
-			GuiceServerEndpointConfigurator.registerInjector(injector, servletContainer);
-			endpointConfigurator = createEndpointConfigurator();
 
 			for (var configurationHook: configurationHooks) configurationHook.call();
 			configureServletsFiltersEndpoints();
@@ -312,7 +308,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	@Override
 	public final void contextDestroyed(ServletContextEvent destruction) {
-		GuiceServerEndpointConfigurator.deregisterInjector(servletContainer);
+		GuiceServerEndpointConfigurator.deregisterDeployment(servletContainer);
 		servletModule.shutdownAllExecutors();
 		List<ServletContextTrackingExecutor> unterminatedExecutors;
 		try {

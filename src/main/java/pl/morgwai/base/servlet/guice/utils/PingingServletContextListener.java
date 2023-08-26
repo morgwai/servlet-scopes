@@ -69,7 +69,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 	public PingingServletContextListener() {
 		pingerService = createPingerService();
-		addShutdownHook(this::stopAndUnregisterPingerService);
+		addShutdownHook(this::stopPingerService);
 	}
 
 
@@ -81,16 +81,12 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	@Override
 	protected GuiceServerEndpointConfigurator createEndpointConfigurator() {
 		servletContainer.setAttribute(WebsocketPingerService.class.getName(), pingerService);
-		PingingEndpointConfigurator.registerPingerService(pingerService, servletContainer);
-		return new PingingEndpointConfigurator(
-				injector ,containerCallContextTracker, pingerService);
+		return new PingingEndpointConfigurator(servletContainer);
 	}
 
 
 
-	/** Stops {@link #pingerService} and unregisters it from {@link PingingEndpointConfigurator}. */
-	void stopAndUnregisterPingerService() {
-		PingingEndpointConfigurator.deregisterPingerService(servletContainer);
+	void stopPingerService() {
 		pingerService.stop();
 	}
 }
