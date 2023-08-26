@@ -90,7 +90,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * Programmatically adds {@link Servlet}s, {@link Filter}s and {@code Endpoints} and performs
 	 * any other setup required by the given app. Called at the end of
 	 * {@link #contextInitialized(ServletContextEvent)}, may use {@link #injector} (as well as
-	 * {@link #servletContainer} and {@link #endpointContainer}).
+	 * {@link #appDeployment} and {@link #endpointContainer}).
 	 * <p>
 	 * Convenience helper method families {@link #addServlet(String, Class, String...)},
 	 * {@link #addFilter(String, Class, String...)}, {@link #addEndpoint(Class, String)} are
@@ -100,7 +100,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			throws ServletException, DeploymentException;
 
 	/** For use in {@link #configureServletsFiltersEndpoints()}. */
-	protected ServletContext servletContainer;
+	protected ServletContext appDeployment;
 
 	/** For use in {@link #configureServletsFiltersEndpoints()}. */
 	protected ServerContainer endpointContainer;
@@ -117,9 +117,9 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		Class<? extends HttpServlet> servletClass,
 		String... urlPatterns
 	) throws ServletException {
-		final var servlet = servletContainer.createServlet(servletClass);
+		final var servlet = appDeployment.createServlet(servletClass);
 		injector.injectMembers(servlet);
-		final var registration = servletContainer.addServlet(name, servlet);
+		final var registration = appDeployment.addServlet(name, servlet);
 		registration.addMapping(urlPatterns);
 		registration.setAsyncSupported(true);
 		log.info("registered servlet " + name);
@@ -138,7 +138,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	protected FilterRegistration.Dynamic addFilter(String name, Filter filter) {
 		injector.injectMembers(filter);
-		final var registration = servletContainer.addFilter(name, filter);
+		final var registration = appDeployment.addFilter(name, filter);
 		registration.setAsyncSupported(true);
 		log.info("registered filter " + name);
 		return registration;
@@ -159,7 +159,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		EnumSet<DispatcherType> dispatcherTypes,
 		String... urlPatterns
 	) throws ServletException {
-		final var registration = addFilter(name, servletContainer.createFilter(filterClass));
+		final var registration = addFilter(name, appDeployment.createFilter(filterClass));
 		if (urlPatterns.length > 0) {
 			registration.addMappingForUrlPatterns(dispatcherTypes, true, urlPatterns);
 		}
@@ -180,7 +180,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		Class<? extends Filter> filterClass,
 		String... urlPatterns
 	) throws ServletException {
-		final var registration = addFilter(name, servletContainer.createFilter(filterClass));
+		final var registration = addFilter(name, appDeployment.createFilter(filterClass));
 		if (urlPatterns.length > 0) registration.addMappingForUrlPatterns(null, true, urlPatterns);
 		return registration;
 	}
@@ -223,7 +223,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * used.</p>
 	 */
 	protected GuiceServerEndpointConfigurator createEndpointConfigurator() {
-		return new GuiceServerEndpointConfigurator(servletContainer);
+		return new GuiceServerEndpointConfigurator(appDeployment);
 	}
 
 
@@ -263,7 +263,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * Calls {@link #configureInjections()}, {@link #createInjector(LinkedList) creates the
 	 * app-wide Injector} and calls {@link #configureServletsFiltersEndpoints()}.
 	 * Also creates and installs all other infrastructure elements such as
-	 * {@link #servletContainer}, {@link #endpointContainer}, {@link RequestContextFilter} etc and
+	 * {@link #appDeployment}, {@link #endpointContainer}, {@link RequestContextFilter} etc and
 	 * stores {@link #injector} in a
 	 * {@link ServletContext#setAttribute(String, Object) ServletContext attribute} named after
 	 * {@link Injector}'s class {@link Class#getName() fully-qualified name}.
@@ -271,19 +271,19 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	@Override
 	public final void contextInitialized(ServletContextEvent initialization) {
 		try {
-			servletContainer = initialization.getServletContext();
-			servletModule.servletContext = servletContainer;
-			endpointContainer = ((ServerContainer) servletContainer.getAttribute(
+			appDeployment = initialization.getServletContext();
+			servletModule.appDeployment = appDeployment;
+			endpointContainer = ((ServerContainer) appDeployment.getAttribute(
 					"javax.websocket.server.ServerContainer"));
-			servletContainer.addListener(new HttpSessionContext.SessionContextCreator());
+			appDeployment.addListener(new HttpSessionContext.SessionContextCreator());
 
 			final var modules = configureInjections();
 			modules.add(servletModule);
 			injector = createInjector(modules);
 			log.info("Guice Injector created successfully");
-			servletContainer.setAttribute(Injector.class.getName(), injector);
+			appDeployment.setAttribute(Injector.class.getName(), injector);
 			endpointConfigurator = createEndpointConfigurator();
-			GuiceServerEndpointConfigurator.registerDeployment(servletContainer);
+			GuiceServerEndpointConfigurator.registerDeployment(appDeployment);
 
 			addFilter(RequestContextFilter.class.getSimpleName(), RequestContextFilter.class)
 					.addMappingForUrlPatterns(
@@ -292,7 +292,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			for (var configurationHook: configurationHooks) configurationHook.call();
 			configureServletsFiltersEndpoints();
 		} catch (Exception e) {
-			final var message = "could not deploy the app at " + servletContainer.getContextPath();
+			final var message = "could not deploy the app at " + appDeployment.getContextPath();
 			log.log(Level.SEVERE, message, e);
 			e.printStackTrace();
 			throw new RuntimeException(message, e);
@@ -308,7 +308,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	@Override
 	public final void contextDestroyed(ServletContextEvent destruction) {
-		GuiceServerEndpointConfigurator.deregisterDeployment(servletContainer);
+		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
 		servletModule.shutdownAllExecutors();
 		List<ServletContextTrackingExecutor> unterminatedExecutors;
 		try {

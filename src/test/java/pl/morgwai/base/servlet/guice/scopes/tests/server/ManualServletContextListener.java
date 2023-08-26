@@ -41,11 +41,11 @@ public class ManualServletContextListener implements ServletContextListener {
 	@Override
 	public final void contextInitialized(ServletContextEvent initialization) {
 		try {
-			final ServletContext servletContainer = initialization.getServletContext();
-			servletModule = new ServletModule(servletContainer);
+			final ServletContext appDeployment = initialization.getServletContext();
+			servletModule = new ServletModule(appDeployment);
 			final ServerContainer endpointContainer = ((ServerContainer)
-					servletContainer.getAttribute("javax.websocket.server.ServerContainer"));
-			servletContainer.addListener(new HttpSessionContext.SessionContextCreator());
+					appDeployment.getAttribute("javax.websocket.server.ServerContainer"));
+			appDeployment.addListener(new HttpSessionContext.SessionContextCreator());
 
 			final var executor = servletModule.newContextTrackingExecutor("testExecutor", 2);
 			final var modules = new LinkedList<Module>();
@@ -67,9 +67,9 @@ public class ManualServletContextListener implements ServletContextListener {
 			});
 			final Injector injector = Guice.createInjector(modules);
 
-			final var requestCtxFilter = servletContainer.createFilter(RequestContextFilter.class);
+			final var requestCtxFilter = appDeployment.createFilter(RequestContextFilter.class);
 			injector.injectMembers(requestCtxFilter);
-			final var requestCtxFilterRegistration = servletContainer.addFilter(
+			final var requestCtxFilterRegistration = appDeployment.addFilter(
 					RequestContextFilter.class.getSimpleName(), requestCtxFilter);
 			requestCtxFilterRegistration.setAsyncSupported(true);
 			requestCtxFilterRegistration.addMappingForUrlPatterns(
@@ -78,42 +78,42 @@ public class ManualServletContextListener implements ServletContextListener {
 				"/*"
 			);
 
-			servletContainer.setAttribute(Injector.class.getName(), injector);
-			servletContainer.setAttribute(WebsocketPingerService.class.getName(), pingerService);
-			GuiceServerEndpointConfigurator.registerDeployment(servletContainer);
-			final var endpointConfigurator = new PingingEndpointConfigurator(servletContainer);
+			appDeployment.setAttribute(Injector.class.getName(), injector);
+			appDeployment.setAttribute(WebsocketPingerService.class.getName(), pingerService);
+			GuiceServerEndpointConfigurator.registerDeployment(appDeployment);
+			final var endpointConfigurator = new PingingEndpointConfigurator(appDeployment);
 
-			final var indexPageServlet = servletContainer.createServlet(ResourceServlet.class);
+			final var indexPageServlet = appDeployment.createServlet(ResourceServlet.class);
 			injector.injectMembers(indexPageServlet);
 			final var indexPageRegistration =
-					servletContainer.addServlet("IndexPageServlet", indexPageServlet);
+					appDeployment.addServlet("IndexPageServlet", indexPageServlet);
 			indexPageRegistration.setAsyncSupported(true);
 			indexPageRegistration.addMapping("", "/index.html");
 			indexPageRegistration.setInitParameter(
 					ResourceServlet.RESOURCE_PATH_PARAM, "/index.html");
 
-			final var forwardingServlet = servletContainer.createServlet(ForwardingServlet.class);
+			final var forwardingServlet = appDeployment.createServlet(ForwardingServlet.class);
 			injector.injectMembers(forwardingServlet);
-			final var forwardingServletRegistration = servletContainer.addServlet(
+			final var forwardingServletRegistration = appDeployment.addServlet(
 					ForwardingServlet.class.getSimpleName(), forwardingServlet);
 			forwardingServletRegistration.setAsyncSupported(true);
 			forwardingServletRegistration.addMapping("/" + ForwardingServlet.class.getSimpleName());
 
-			final var asyncServlet = servletContainer.createServlet(AsyncServlet.class);
+			final var asyncServlet = appDeployment.createServlet(AsyncServlet.class);
 			injector.injectMembers(asyncServlet);
-			final var asyncServletRegistration = servletContainer.addServlet(
+			final var asyncServletRegistration = appDeployment.addServlet(
 					AsyncServlet.class.getSimpleName(), asyncServlet);
 			asyncServletRegistration.setAsyncSupported(true);
 			asyncServletRegistration.addMapping("/" + AsyncServlet.class.getSimpleName());
 
-			final var targetedServlet = servletContainer.createServlet(TargetedServlet.class);
+			final var targetedServlet = appDeployment.createServlet(TargetedServlet.class);
 			injector.injectMembers(targetedServlet);
-			final var targetedServletRegistration = servletContainer.addServlet(
+			final var targetedServletRegistration = appDeployment.addServlet(
 					TargetedServlet.class.getSimpleName(), targetedServlet);
 			targetedServletRegistration.setAsyncSupported(true);
 			targetedServletRegistration.addMapping("/" + TargetedServlet.class.getSimpleName());
 
-			final var ensureSessionFilterRegistration = servletContainer.addFilter(
+			final var ensureSessionFilterRegistration = appDeployment.addFilter(
 				"ensureSessionFilter",
 				(request, response, chain) -> {
 					((HttpServletRequest) request).getSession();
@@ -132,9 +132,9 @@ public class ManualServletContextListener implements ServletContextListener {
 			);
 
 			final var echoWebsocketPageServlet =
-					servletContainer.createServlet(EchoWebsocketPageServlet.class);
+					appDeployment.createServlet(EchoWebsocketPageServlet.class);
 			injector.injectMembers(echoWebsocketPageServlet);
-			final var echoWebsocketPageServletRegistration = servletContainer.addServlet(
+			final var echoWebsocketPageServletRegistration = appDeployment.addServlet(
 					EchoWebsocketPageServlet.class.getSimpleName(), echoWebsocketPageServlet);
 			echoWebsocketPageServletRegistration.setAsyncSupported(true);
 			echoWebsocketPageServletRegistration.addMapping("/echo");

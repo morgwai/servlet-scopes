@@ -80,8 +80,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 */
 	@Override
 	protected GuiceServerEndpointConfigurator createEndpointConfigurator() {
-		servletContainer.setAttribute(WebsocketPingerService.class.getName(), pingerService);
-		return new PingingEndpointConfigurator(servletContainer);
+		appDeployment.setAttribute(WebsocketPingerService.class.getName(), pingerService);
+		return new PingingEndpointConfigurator(appDeployment);
 	}
 
 

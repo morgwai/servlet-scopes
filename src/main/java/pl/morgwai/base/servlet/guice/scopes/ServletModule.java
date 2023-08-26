@@ -87,7 +87,7 @@ public class ServletModule implements Module {
 
 
 	/** Set in {@link GuiceServletContextListener#contextInitialized(ServletContextEvent)}. */
-	ServletContext servletContext;
+	ServletContext appDeployment;
 
 	/** For {@link GuiceServletContextListener#servletModule}. */
 	ServletModule() {}
@@ -95,8 +95,8 @@ public class ServletModule implements Module {
 	/**
 	 * Creates a new module. For usage in apps that don't use {@link GuiceServletContextListener}.
 	 */
-	public ServletModule(ServletContext servletContext) {
-		this.servletContext = servletContext;
+	public ServletModule(ServletContext appDeployment) {
+		this.appDeployment = appDeployment;
 	}
 
 
@@ -112,7 +112,7 @@ public class ServletModule implements Module {
 	 */
 	@Override
 	public void configure(Binder binder) {
-		binder.bind(ServletContext.class).toInstance(servletContext);
+		binder.bind(ServletContext.class).toInstance(appDeployment);
 		binder.bind(containerCallContextTrackerKey).toInstance(containerCallContextTracker);
 		binder.bind(ContainerCallContext.class)
 				.toProvider(containerCallContextTracker::getCurrentContext);
