@@ -389,8 +389,8 @@ class EndpointDecorator implements InvocationHandler {
 		// contexts couldn't have been created: just call the method outside of contexts and hope
 		// for the best...
 		if (connectionCtx == null) {
-			log.warning(MANUAL_CALL_WARNING);
-			System.err.println(MANUAL_CALL_WARNING);
+			log.warning(proxy.getClass().getSimpleName() + MANUAL_CALL_WARNING);
+			System.err.println(proxy.getClass().getSimpleName() + MANUAL_CALL_WARNING);
 			return wrappedEndpoint.invoke(proxy, method, args);
 		}
 
@@ -413,6 +413,6 @@ class EndpointDecorator implements InvocationHandler {
 
 
 	static final Logger log = Logger.getLogger(EndpointDecorator.class.getName());
-	static final String MANUAL_CALL_WARNING = "calling manually methods of Endpoints that were "
+	static final String MANUAL_CALL_WARNING = ": calling manually methods of Endpoints that were "
 			+ "designed to run within contexts, may lead to an OutOfScopeException";
 }

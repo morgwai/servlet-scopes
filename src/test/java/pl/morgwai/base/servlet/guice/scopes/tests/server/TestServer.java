@@ -21,6 +21,7 @@ public class TestServer extends org.eclipse.jetty.server.Server {
 		super(port);
 
 		final var testAppHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		testAppHandler.setDisplayName("testApp");
 		testAppHandler.setContextPath(APP_PATH);
 		testAppHandler.addEventListener(new ServletContextListener());
 		JavaxWebSocketServletContainerInitializer.configure(
@@ -37,6 +38,7 @@ public class TestServer extends org.eclipse.jetty.server.Server {
 		);
 
 		final var secondAppHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		secondAppHandler.setDisplayName("secondApp");
 		secondAppHandler.setContextPath(SECOND_APP_PATH);
 		secondAppHandler.addEventListener(new ManualServletContextListener());
 		JavaxWebSocketServletContainerInitializer.configure(

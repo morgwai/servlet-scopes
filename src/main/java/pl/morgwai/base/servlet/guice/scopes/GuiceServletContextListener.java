@@ -47,6 +47,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * For use in {@link #configureInjections()} and {@link #configureServletsFiltersEndpoints()}.
 	 */
 	protected ServletContext appDeployment;
+	protected String deploymentName;
 
 	/** For use in {@link #configureInjections()}. */
 	protected final ServletModule servletModule = new ServletModule();
@@ -124,7 +125,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		final var registration = appDeployment.addServlet(name, servlet);
 		registration.addMapping(urlPatterns);
 		registration.setAsyncSupported(true);
-		log.info("registered servlet " + name);
+		log.info(deploymentName + ": added servlet " + name);
 		return registration;
 	}
 
@@ -142,7 +143,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		injector.injectMembers(filter);
 		final var registration = appDeployment.addFilter(name, filter);
 		registration.setAsyncSupported(true);
-		log.info("registered filter " + name);
+		log.info(deploymentName + ": added filter " + name);
 		return registration;
 	}
 
@@ -259,7 +260,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 				.configurator(configurator)
 				.build()
 		);
-		log.info("registered endpoint " + endpointClass.getSimpleName());
+		log.info(deploymentName + ": added Endpoint " + endpointClass.getSimpleName());
 	}
 
 
@@ -277,6 +278,11 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	public final void contextInitialized(ServletContextEvent initialization) {
 		try {
 			appDeployment = initialization.getServletContext();
+			final String nameFromDescriptor = appDeployment.getServletContextName();
+			deploymentName = (nameFromDescriptor != null && !nameFromDescriptor.isBlank())
+					? nameFromDescriptor
+					: appDeployment.getContextPath().isEmpty()
+							? "rootApp" : "app at " + appDeployment.getContextPath();
 			servletModule.appDeployment = appDeployment;
 			endpointContainer = ((ServerContainer) appDeployment.getAttribute(
 					"javax.websocket.server.ServerContainer"));
@@ -285,7 +291,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			final var modules = configureInjections();
 			modules.add(servletModule);
 			injector = createInjector(modules);
-			log.info("Guice Injector created successfully");
+			log.info(deploymentName + ": Guice Injector created successfully");
 			appDeployment.setAttribute(Injector.class.getName(), injector);
 			endpointConfigurator = createEndpointConfigurator();
 			GuiceServerEndpointConfigurator.registerDeployment(appDeployment);
@@ -296,8 +302,9 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 			for (var configurationHook: configurationHooks) configurationHook.call();
 			configureServletsFiltersEndpoints();
+			log.info(deploymentName + " deployed successfully");
 		} catch (Exception e) {
-			final var message = "could not deploy the app at " + appDeployment.getContextPath();
+			final var message = "could not deploy " + deploymentName;
 			log.log(Level.SEVERE, message, e);
 			e.printStackTrace();
 			throw new RuntimeException(message, e);
@@ -313,6 +320,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	@Override
 	public final void contextDestroyed(ServletContextEvent destruction) {
+		log.info(deploymentName + ": shutting down");
 		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
 		servletModule.shutdownAllExecutors();
 		List<ServletContextTrackingExecutor> unterminatedExecutors;
