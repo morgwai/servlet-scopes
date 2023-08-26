@@ -2,12 +2,12 @@
 package pl.morgwai.base.servlet.guice.scopes;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nonnull;
 import javax.servlet.*;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -72,6 +72,21 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	protected Injector createInjector(LinkedList<Module> modules) {
 		return Guice.createInjector(modules);
 	}
+
+
+
+	/**
+	 * Adds {@code configurationHook} to be called in
+	 * {@link #contextInitialized(ServletContextEvent)} right before
+	 * {@link #configureServletsFiltersEndpoints()}. This is intended for abstract subclasses to
+	 * hook in their stuff. Concrete app listeners should rather do all their setup in
+	 * {@link #configureServletsFiltersEndpoints()}.
+	 */
+	protected void addConfigurationHook(Callable<Void> configurationHook) {
+		configurationHooks.add(configurationHook);
+	}
+
+	private final List<Callable<Void>> configurationHooks = new LinkedList<>();
 
 
 
@@ -278,6 +293,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			GuiceServerEndpointConfigurator.registerInjector(injector, servletContainer);
 			endpointConfigurator = createEndpointConfigurator();
 
+			for (var configurationHook: configurationHooks) configurationHook.call();
 			configureServletsFiltersEndpoints();
 		} catch (Exception e) {
 			final var message = "could not deploy the app at " + servletContainer.getContextPath();
@@ -308,7 +324,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 				.collect(Collectors.toList());
 		}
 		if ( !unterminatedExecutors.isEmpty()) handleUnterminatedExecutors(unterminatedExecutors);
-		destroy();
+		for (var shutdownHook : shutdownHooks) shutdownHook.run();
 	}
 
 
@@ -335,17 +351,14 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Releases any resources that the app may hold. Called at the end of
+	 * Adds {@code shutdownHook} to be run at the end of
 	 * {@link #contextDestroyed(ServletContextEvent)}.
 	 */
-	@Nonnull
-	protected DestroySuperEnforcer destroy() {
-		return new DestroySuperEnforcer();
+	protected void addShutdownHook(Runnable shutdownHook) {
+		shutdownHooks.add(shutdownHook);
 	}
 
-	public static class DestroySuperEnforcer {
-		private DestroySuperEnforcer() {}
-	}
+	private final List<Runnable> shutdownHooks = new LinkedList<>();
 
 
 
