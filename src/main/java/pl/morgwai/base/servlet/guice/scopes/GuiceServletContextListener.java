@@ -8,13 +8,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.servlet.*;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.websocket.DeploymentException;
-import javax.websocket.server.ServerContainer;
-import javax.websocket.server.ServerEndpointConfig;
-import javax.websocket.server.ServerEndpointConfig.Configurator;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.websocket.DeploymentException;
+import jakarta.websocket.server.ServerContainer;
+import jakarta.websocket.server.ServerEndpointConfig;
+import jakarta.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.Module;
 import com.google.inject.*;
@@ -24,7 +24,7 @@ import com.google.inject.*;
 /**
  * Creates and configures {@link #injector app-wide Guice Injector} and a {@link ServletModule}.
  * Usually a single subclass of this class should be created in a given app and either annotated
- * with {@link javax.servlet.annotation.WebListener @WebListener} or enlisted in the app's
+ * with {@link jakarta.servlet.annotation.WebListener @WebListener} or enlisted in the app's
  * {@code web.xml} file in a {@code <listener>} element.
  */
 public abstract class GuiceServletContextListener implements ServletContextListener {
@@ -190,7 +190,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/**
 	 * Installs at {@code urlPatterns} a filter that ensures each incoming request has an
-	 * {@link javax.servlet.http.HttpSession} created. This is necessary for websocket
+	 * {@link jakarta.servlet.http.HttpSession} created. This is necessary for websocket
 	 * {@code Endpoints} that use {@link ServletModule#httpSessionScope httpSessionScope}.
 	 * <p>
 	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
@@ -219,7 +219,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * stored as {@link #endpointConfigurator} and shared among all {@code Endpoint} instances
 	 * created with {@link #addEndpoint(Class, String)}.</p>
 	 * <p>
-	 * Note that {@code Endpoints} annotated with {@link javax.websocket.server.ServerEndpoint}
+	 * Note that {@code Endpoints} annotated with {@link jakarta.websocket.server.ServerEndpoint}
 	 * will have their separate instances of {@link Configurator} each.</p>
 	 * <p>
 	 * This method may be overridden by subclasses if a more specialized configurator needs to be
@@ -240,7 +240,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * <p>
 	 * Pre-builds dynamic proxy class for {@code endpointClass} in advance.</p>
 	 * <p>
-	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.</p>
+	 * Useful mostly for unannotated endpoints extending {@link jakarta.websocket.Endpoint}.</p>
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path) throws DeploymentException {
 		addEndpoint(endpointClass, path, endpointConfigurator);
@@ -250,7 +250,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	/**
 	 * Adds an endpoint using custom {@code configurator}.
 	 * <p>
-	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.</p>
+	 * Useful mostly for unannotated endpoints extending {@link jakarta.websocket.Endpoint}.</p>
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path, Configurator configurator)
 			throws DeploymentException {
@@ -285,7 +285,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 							? "rootApp" : "app at " + appDeployment.getContextPath();
 			servletModule.appDeployment = appDeployment;
 			endpointContainer = ((ServerContainer) appDeployment.getAttribute(
-					"javax.websocket.server.ServerContainer"));
+					"jakarta.websocket.server.ServerContainer"));
 			appDeployment.addListener(new HttpSessionContext.SessionContextCreator());
 
 			final var modules = configureInjections();
