@@ -3,8 +3,8 @@ package pl.morgwai.base.servlet.guice.scopes;
 
 import java.io.IOException;
 
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
 
 import com.google.inject.Inject;
 
@@ -14,7 +14,7 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 /**
  * Creates context for each newly incoming {@link HttpServletRequest} and transfers context when
- * requests are {@link javax.servlet.AsyncContext#dispatch(String) dispatched from AsyncContext} to
+ * requests are {@link jakarta.servlet.AsyncContext#dispatch(String) dispatched from AsyncContext} to
  * new threads.
  */
 public class RequestContextFilter implements Filter {

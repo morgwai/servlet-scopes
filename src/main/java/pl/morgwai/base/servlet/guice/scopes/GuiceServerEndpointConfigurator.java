@@ -12,11 +12,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpSession;
-import javax.websocket.*;
-import javax.websocket.server.*;
-import javax.websocket.server.ServerEndpointConfig.Configurator;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.*;
+import jakarta.websocket.server.*;
+import jakarta.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.*;
 import net.bytebuddy.ByteBuddy;
@@ -49,14 +49,14 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * the app-wide {@link Injector} must be
  * {@link ServletContext#setAttribute(String, Object) stored as a deployment attribute} under the
  * {@link Class#getName() fully-qualified name} of {@link Injector} class in
- * {@link javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
- * } method of app's {@link javax.servlet.ServletContextListener}.<br/>
+ * {@link jakarta.servlet.ServletContextListener#contextInitialized(jakarta.servlet.ServletContextEvent)
+ * } method of app's {@link jakarta.servlet.ServletContextListener}.<br/>
  * Secondly, {@link #registerDeployment(ServletContext)} and
  * {@link #deregisterDeployment(ServletContext)} static methods must be called respectively in
- * {@link javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
+ * {@link jakarta.servlet.ServletContextListener#contextInitialized(jakarta.servlet.ServletContextEvent)
  * } and
- * {@link javax.servlet.ServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)}
- * methods of app's {@link javax.servlet.ServletContextListener}, so that container-created
+ * {@link jakarta.servlet.ServletContextListener#contextDestroyed(jakarta.servlet.ServletContextEvent)}
+ * methods of app's {@link jakarta.servlet.ServletContextListener}, so that container-created
  * instances (with {@link #GuiceServerEndpointConfigurator() the param-less constructor}) of this
  * {@code Configurator} can obtain a reference to the {@link Injector}.<br/>
  * Note: if app's {@code Listener} extends {@link GuiceServletContextListener}, the above setup is
@@ -99,7 +99,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * {@code GuiceServerEndpointConfigurator} instances.
 	 * <p>
 	 * This method is called automatically by
-	 * {@link GuiceServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)},
+	 * {@link GuiceServletContextListener#contextInitialized(jakarta.servlet.ServletContextEvent)},
 	 * it must be called manually in apps that don't use it.</p>
 	 */
 	public static void registerDeployment(ServletContext appDeployment) {
@@ -110,7 +110,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * Removes a reference to {@code appDeployment}.
 	 * <p>
 	 * This method is called automatically by
-	 * {@link GuiceServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)},
+	 * {@link GuiceServletContextListener#contextDestroyed(jakarta.servlet.ServletContextEvent)},
 	 * it must be called manually in apps that don't use it.</p>
 	 */
 	public static void deregisterDeployment(ServletContext appDeployment) {
@@ -241,7 +241,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 						&& !Arrays.asList(method.getParameterTypes()).contains(Session.class)
 					) {
 						throw new RuntimeException("method annotated with @OnOpen must have a"
-								+ " javax.websocket.Session param");
+								+ " jakarta.websocket.Session param");
 					}
 					break;
 				}

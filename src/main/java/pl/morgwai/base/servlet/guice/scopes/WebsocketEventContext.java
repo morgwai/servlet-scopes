@@ -1,7 +1,7 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
@@ -12,12 +12,12 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * an error occurrence.
  * <p>
  * Each instance is associated with a single invocation of some endpoint life-cycle or
- * {@link javax.websocket.MessageHandler} method.
+ * {@link jakarta.websocket.MessageHandler} method.
  * Specifically, all methods annotated with one of the websocket
- * annotations ({@link javax.websocket.OnOpen @OnOpen},
- * {@link javax.websocket.OnMessage @OnMessage}, {@link javax.websocket.OnError @OnError} and
- * {@link javax.websocket.OnClose @OnClose}), or overriding those of
- * {@link javax.websocket.Endpoint} or {@link javax.websocket.MessageHandler}s, are
+ * annotations ({@link jakarta.websocket.OnOpen @OnOpen},
+ * {@link jakarta.websocket.OnMessage @OnMessage}, {@link jakarta.websocket.OnError @OnError} and
+ * {@link jakarta.websocket.OnClose @OnClose}), or overriding those of
+ * {@link jakarta.websocket.Endpoint} or {@link jakarta.websocket.MessageHandler}s, are
  * executed within a separate new {@code WebsocketEventContext} instance.</p>
  * @see ContainerCallContext super class for more info
  */
