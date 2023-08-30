@@ -46,8 +46,11 @@
 				this.input.chatWidget = this;
 				this.input.onkeydown = function(event) {
 					// 'this' means 'this.input' now
-					if (event.keyCode == 13 && this.value != ''
-							&& this.chatWidget.sendMessage != null) {
+					if (
+						event.keyCode == 13
+						&& this.value != ''
+						&& this.chatWidget.sendMessage != null
+					) {
 						this.chatWidget.sendMessage(this.value);
 						this.value = "";
 					}
@@ -65,8 +68,8 @@
 
 
 
-		const initialBackoff = 1000;
-		const maxBackoff = 600000;
+		const initialBackoff = 1000;  // 1 second
+		const maxBackoff = 600000;  // 10 minutes
 
 		var backoffBind = function(socket, chatWidget, backoff) {
 			socket.onopen = function () {
