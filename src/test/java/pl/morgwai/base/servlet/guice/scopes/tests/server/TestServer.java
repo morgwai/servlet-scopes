@@ -2,8 +2,8 @@
 package pl.morgwai.base.servlet.guice.scopes.tests.server;
 
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.websocket.jakarta.server.config.JakartaWebSocketServletContainerInitializer;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.websocket.jakarta.server.config.JakartaWebSocketServletContainerInitializer;
 
 
 
@@ -60,6 +60,7 @@ public class TestServer extends org.eclipse.jetty.server.Server {
 
 
 
+/*
 	public static void main(String[] args) throws Exception {
 		var port = DEFAULT_PORT;
 		try {
@@ -74,6 +75,7 @@ public class TestServer extends org.eclipse.jetty.server.Server {
 		server.start();
 		server.join();
 	}
+*/
 
 	public static final String PORT_ENVVAR = "SCOPES_SAMPLE_PORT";
 	public static final int DEFAULT_PORT = 8080;
