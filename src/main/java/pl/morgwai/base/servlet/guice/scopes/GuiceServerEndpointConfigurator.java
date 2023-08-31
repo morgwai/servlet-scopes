@@ -40,27 +40,31 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * using {@link #GuiceServerEndpointConfigurator(ServletContext)} and pass it to the
  * {@link ServerEndpointConfig.Builder#configurator(Configurator) config}:</p>
  * <pre>{@code
- * websocketContainer.addEndpoint(ServerEndpointConfig.Builder
+ * final var configurator = new GuiceServerEndpointConfigurator(servletContext);
+ * websocketContainer.addEndpoint(
+ *     ServerEndpointConfig.Builder
  *         .create(MyProgrammaticEndpoint.class, "/websocket/programmatic")
- *         .configurator(new GuiceServerEndpointConfigurator())
- *         .build());}</pre>
+ *         .configurator(configurator)
+ *         .build()
+ * );}</pre>
  * <p>
  * To use this {@code Configurator} for @{@link ServerEndpoint} annotated {@code Endpoints}, first
  * the app-wide {@link Injector} must be
  * {@link ServletContext#setAttribute(String, Object) stored as a deployment attribute} under the
  * {@link Class#getName() fully-qualified name} of {@link Injector} class in
  * {@link javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
- * } method of app's {@link javax.servlet.ServletContextListener}.<br/>
+ * contextInitialized(event)} method of app's {@link javax.servlet.ServletContextListener}.<br/>
  * Secondly, {@link #registerDeployment(ServletContext)} and
  * {@link #deregisterDeployment(ServletContext)} static methods must be called respectively in
  * {@link javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
- * } and
- * {@link javax.servlet.ServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)}
- * methods of app's {@link javax.servlet.ServletContextListener}, so that container-created
- * instances (with {@link #GuiceServerEndpointConfigurator() the param-less constructor}) of this
- * {@code Configurator} can obtain a reference to the {@link Injector}.<br/>
- * Note: if app's {@code Listener} extends {@link GuiceServletContextListener}, the above setup is
- * already taken care of.<br/>
+ * contextInitialized(event)} and
+ * {@link javax.servlet.ServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)
+ * contextDestroyed(event)} methods of app's {@link javax.servlet.ServletContextListener}.<br/>
+ * This way container-created instances (with
+ * {@link #GuiceServerEndpointConfigurator() the param-less constructor}) of this
+ * {@code Configurator} can obtain a reference to the {@link Injector}. Note that if app's
+ * {@code Listener} extends {@link GuiceServletContextListener}, the whole above setup is
+ * automatically taken care of.<br/>
  * Finally, {@code Endpoint} methods annotated with @{@link OnOpen} <b>must</b> have a
  * {@link Session} param.<br/>
  * After the above conditions are met, simply pass this class as
