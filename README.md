@@ -2,11 +2,11 @@
 
 `containerCallScope` (either a `HttpServletRequest` or a websocket endpoint event), `websocketConnectionScope` (`javax.websocket.Session`) and `httpSessionScope`.<br/>
 <br/>
-**latest release: 12.1**<br/>
-[javax flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/12.1-javax/jar)
-([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/12.1-javax)) - supports Servlet `4.0.1` and Websocket `1.1` APIs<br/>
-[jakarta flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/12.1-jakarta/jar)
-([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/12.1-jakarta)) - supports Servlet `5.0.0` to at least `6.0.0` and Websocket `2.0.0` to at least `2.1.1` APIs 
+**latest release: 12.2**<br/>
+[javax flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/12.2-javax/jar)
+([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/12.2-javax)) - supports Servlet `4.0.1` and Websocket `1.1` APIs<br/>
+[jakarta flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/12.2-jakarta/jar)
+([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/12.2-jakarta)) - supports Servlet `5.0.0` to at least `6.0.0` and Websocket `2.0.0` to at least `2.1.1` APIs 
 
 
 
