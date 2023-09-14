@@ -224,6 +224,9 @@ public class IntegrationTests {
 			(connection, error) -> {},
 			(connection, closeReason) -> {
 				if (closeReason.getCloseCode().getCode() != CloseCodes.NORMAL_CLOSURE.getCode()) {
+					// server endpoint error: interrupt testThread awaiting for replies (they will
+					// never arrive), but not before testMessage is sent as
+					// getAsyncRemote.sendText(...) may clear interruption status.
 					try {
 						testMessageSent.await(500L, TimeUnit.MILLISECONDS);
 					} catch (InterruptedException ignored) {}
