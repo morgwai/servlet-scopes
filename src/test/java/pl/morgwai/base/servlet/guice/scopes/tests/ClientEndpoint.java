@@ -73,8 +73,8 @@ class ClientEndpoint extends Endpoint {
 			log.finer("connection to " + connection.getRequestURI().getPath() + " closed with "
 					+ closeReason.getCloseCode() + ": '" + closeReason.getReasonPhrase() + "'");
 		}
-		closureLatch.countDown();
 		if (closeHandler != null) closeHandler.accept(session, closeReason);
+		closureLatch.countDown();
 	}
 
 

@@ -34,13 +34,19 @@ public class ManualServletContextListener implements ServletContextListener {
 
 
 	ServletModule servletModule;
-	final WebsocketPingerService pingerService = new WebsocketPingerService();
+	WebsocketPingerService pingerService;
 
 
 
 	@Override
 	public final void contextInitialized(ServletContextEvent initialization) {
 		try {
+			final var intervalFromProperty = System.getProperty(PING_INTERVAL_MILLIS_PROPERTY);
+			pingerService = new WebsocketPingerService(
+				intervalFromProperty != null ? Long.parseLong(intervalFromProperty) : 500L,
+				TimeUnit.MILLISECONDS,
+				WebsocketPingerService.DEFAULT_FAILURE_LIMIT
+			);
 			final ServletContext appDeployment = initialization.getServletContext();
 			servletModule = new ServletModule(appDeployment);
 			final ServerContainer endpointContainer = ((ServerContainer)
@@ -138,6 +144,23 @@ public class ManualServletContextListener implements ServletContextListener {
 					EchoWebsocketPageServlet.class.getSimpleName(), echoWebsocketPageServlet);
 			echoWebsocketPageServletRegistration.setAsyncSupported(true);
 			echoWebsocketPageServletRegistration.addMapping("/echo");
+
+			endpointContainer.addEndpoint(
+				ServerEndpointConfig.Builder
+					.create(RttReportingEndpoint.class, RttReportingEndpoint.PATH)
+					.configurator(endpointConfigurator)
+					.build()
+			);
+
+			final var rttReportingPageServlet =
+					appDeployment.createServlet(ResourceServlet.class);
+			injector.injectMembers(rttReportingPageServlet);
+			final var rttReportingPageRegistration =
+					appDeployment.addServlet("RttReportingPageServlet", rttReportingPageServlet);
+			rttReportingPageRegistration.setAsyncSupported(true);
+			rttReportingPageRegistration.addMapping("/rttReporting");
+			rttReportingPageRegistration.setInitParameter(
+					ResourceServlet.RESOURCE_PATH_PARAM, "/rttReporting.html");
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException(

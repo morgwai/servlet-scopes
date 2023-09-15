@@ -36,14 +36,14 @@ public class EchoEndpoint {
 	@Inject @Named(ServletContextListener.HTTP_SESSION)
 	Provider<Service> httpSessionScopedProvider;
 
-	Async sender;
+	Async connector;
 
 
 
 	public void onOpen(Session connection, EndpointConfig config) {
 		this.connection = connection;
 		connection.setMaxIdleTimeout(5L * 60L * 1000L);
-		sender = connection.getAsyncRemote();
+		connector = connection.getAsyncRemote();
 		send(WELCOME_MESSAGE);
 	}
 
@@ -75,7 +75,7 @@ public class EchoEndpoint {
 	 * @see TestServlet#RESPONSE_FORMAT
 	 */
 	void send(String message) {
-		sender.sendText(String.format(
+		connector.sendText(String.format(
 			TestServlet.RESPONSE_FORMAT + "\nconnection=%d",
 			message.replace('\n', ' '),
 			eventScopedProvider.get().hashCode(),
@@ -136,5 +136,5 @@ public class EchoEndpoint {
 
 
 
-	static final Logger log = Logger.getLogger(EchoEndpoint.class.getName());
+	static final Logger log = Logger.getLogger("pl.morgwai.base.servlet.guice.scopes.tests");
 }

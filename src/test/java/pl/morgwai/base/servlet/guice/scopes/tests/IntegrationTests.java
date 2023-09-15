@@ -15,9 +15,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.websocket.*;
 import javax.websocket.CloseReason.CloseCodes;
-import javax.websocket.DeploymentException;
-import javax.websocket.WebSocketContainer;
 
 import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
 import org.eclipse.jetty.websocket.javax.common.JavaxWebSocketContainer;
@@ -25,6 +24,7 @@ import org.junit.*;
 
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.tests.server.*;
+import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 import static org.junit.Assert.*;
 import static pl.morgwai.base.servlet.guice.scopes.tests.server.AsyncServlet.*;
@@ -203,26 +203,32 @@ public class IntegrationTests {
 
 
 	/**
-	 * Connects to a server endpoint at {@code url} and sends 1 test message.
-	 * Returns a list containing 2 messages received from the server: the initial welcome message
-	 * and the reply to the test message that was sent.
+	 * Connects to a server endpoint at {@code url} and depending on {@code sendTestMessage} sends 1
+	 * test message. Returns a list containing 2 messages received from the server: the initial
+	 * welcome message and either the reply to the test message that was sent or an
+	 * {@link RttReportingEndpoint RTT report}.
+	 * <p>
 	 * Each message is split into lines. Each message is expected to have the format defined in
 	 * {@link EchoEndpoint}. Both messages are expected to be sent from the same HTTP session scope
-	 * and the same websocket connection scope.
+	 * and the same websocket connection scope.</p>
 	 */
-	List<String[]> testSingleMessageToServerEndpoint(URI url) throws Exception {
+	List<String[]> testSingleSessionWithServerEndpoint(URI url, boolean sendTestMessage)
+			throws Exception {
 		final var testMessage = "test message for " + url;
 		final var replies = new ArrayList<String[]>(4);
 		final var testMessageSent = new CountDownLatch(1);
 		final var repliesReceived = new CountDownLatch(2);
 		final var testThread = Thread.currentThread();
-		final var endpoint = new ClientEndpoint(
+		final CloseReason[] closeReasonHolder = {null};
+		final var clientEndpoint = new ClientEndpoint(
 			(reply) -> {
+				if (replies.size() >= 2 && !sendTestMessage) return;  // extra pong
 				replies.add(reply.split("\n"));
 				repliesReceived.countDown();
 			},
 			(connection, error) -> {},
 			(connection, closeReason) -> {
+				closeReasonHolder[0] = closeReason;
 				if (closeReason.getCloseCode().getCode() != CloseCodes.NORMAL_CLOSURE.getCode()) {
 					// server endpoint error: interrupt testThread awaiting for replies (they will
 					// never arrive), but not before testMessage is sent as
@@ -234,22 +240,24 @@ public class IntegrationTests {
 				}
 			}
 		);
-		final var connection = clientWebsocketContainer.connectToServer(endpoint, null, url);
-		connection.getAsyncRemote().sendText(testMessage);
+		final var connection = clientWebsocketContainer.connectToServer(clientEndpoint, null, url);
+		if (sendTestMessage) connection.getAsyncRemote().sendText(testMessage);
 		testMessageSent.countDown();
 		try {
 			if ( !repliesReceived.await(2L, TimeUnit.SECONDS)) fail("timeout");
-		} catch (InterruptedException e) {
-			fail("server side error");
+			connection.close();
+			if ( !clientEndpoint.awaitClosure(2L, TimeUnit.SECONDS)) fail("timeout");
+		} catch (InterruptedException e) {  // interrupted by clientEndpoint.closeHandler above
+			fail("abnormal close code: " + closeReasonHolder[0].getCloseCode());
 		}
-		connection.close();
-		if ( !endpoint.awaitClosure(2L, TimeUnit.SECONDS)) fail("timeout");
 		assertEquals("reply should have 5 lines", 5, replies.get(0).length);
 		assertEquals("reply should have 5 lines", 5, replies.get(1).length);
 		assertEquals("onOpen reply should be a welcome",
 				EchoEndpoint.WELCOME_MESSAGE, replies.get(0)[0]);
-		assertEquals("2nd reply should be an echo",
-				testMessage, replies.get(1)[0]);
+		if (sendTestMessage) {
+			assertEquals("2nd reply should be an echo",
+					testMessage, replies.get(1)[0]);
+		}
 		assertEquals("session scoped object hash should remain the same",
 				replies.get(0)[3], replies.get(1)[3]);
 		assertEquals("connection scoped object hash should remain the same",
@@ -261,13 +269,14 @@ public class IntegrationTests {
 
 	/**
 	 * Returns a list containing 4 messages received from the server via 2 calls to
-	 * {@link #testSingleMessageToServerEndpoint(URI)} made via separate websocket connections.
-	 * All 4 messages are expected to be sent from the same HTTP session scope.
+	 * {@link #testSingleSessionWithServerEndpoint(URI, boolean)} made via separate websocket
+	 * connections. All 4 messages are expected to be sent from the same HTTP session scope.
 	 */
-	List<String[]> testServerEndpoint(String url) throws Exception {
+	List<String[]> test2SessionsWithServerEndpoint(String url, boolean sendTestMessage)
+			throws Exception {
 		final var uri = URI.create(url);
-		final var replies = testSingleMessageToServerEndpoint(uri);
-		replies.addAll(testSingleMessageToServerEndpoint(uri));
+		final var replies = testSingleSessionWithServerEndpoint(uri, sendTestMessage);
+		replies.addAll(testSingleSessionWithServerEndpoint(uri, sendTestMessage));
 		assertEquals("session scoped object hash should remain the same",
 				replies.get(0)[3], replies.get(2)[3]);
 		assertNotEquals("connection scoped object hash should change",
@@ -277,32 +286,50 @@ public class IntegrationTests {
 
 	@Test
 	public void testProgrammaticEndpoint() throws Exception {
-		testServerEndpoint(serverWebsocketUrl + APP_PATH + ProgrammaticEndpoint.PATH);
+		test2SessionsWithServerEndpoint(
+				serverWebsocketUrl + APP_PATH + ProgrammaticEndpoint.PATH, true);
 	}
 
 	@Test
 	public void testExtendingEndpoint() throws Exception {
-		testServerEndpoint(serverWebsocketUrl + APP_PATH + ExtendingEndpoint.PATH);
+		test2SessionsWithServerEndpoint(
+				serverWebsocketUrl + APP_PATH + ExtendingEndpoint.PATH, true);
 	}
 
 	@Test
 	public void testAnnotatedEndpoint() throws Exception {
-		testServerEndpoint(serverWebsocketUrl + APP_PATH + AnnotatedEndpoint.PATH);
+		test2SessionsWithServerEndpoint(
+				serverWebsocketUrl + APP_PATH + AnnotatedEndpoint.PATH, true);
+	}
+
+	@Test
+	public void testRttReportingEndpoint() throws Exception {
+		test2SessionsWithServerEndpoint(
+				serverWebsocketUrl + APP_PATH + RttReportingEndpoint.PATH, false);
 	}
 
 	@Test
 	public void testProgrammaticEndpointManualListener() throws Exception {
-		testServerEndpoint(serverWebsocketUrl + SECOND_APP_PATH + ProgrammaticEndpoint.PATH);
+		test2SessionsWithServerEndpoint(
+				serverWebsocketUrl + SECOND_APP_PATH + ProgrammaticEndpoint.PATH, true);
 	}
 
 	@Test
 	public void testExtendingEndpointManualListener() throws Exception {
-		testServerEndpoint(serverWebsocketUrl + SECOND_APP_PATH + ExtendingEndpoint.PATH);
+		test2SessionsWithServerEndpoint(
+				serverWebsocketUrl + SECOND_APP_PATH + ExtendingEndpoint.PATH, true);
 	}
 
 	@Test
 	public void testAnnotatedEndpointManualListener() throws Exception {
-		testServerEndpoint(serverWebsocketUrl + SECOND_APP_PATH + AnnotatedEndpoint.PATH);
+		test2SessionsWithServerEndpoint(
+				serverWebsocketUrl + SECOND_APP_PATH + AnnotatedEndpoint.PATH, true);
+	}
+
+	@Test
+	public void testRttReportingEndpointManualListener() throws Exception {
+		test2SessionsWithServerEndpoint(
+				serverWebsocketUrl + SECOND_APP_PATH + RttReportingEndpoint.PATH, false);
 	}
 
 
@@ -357,7 +384,7 @@ public class IntegrationTests {
 				requestScopedHashes.add(wrappedTargetedAsyncCtxResponses.get(1)[2]));
 
 		final var programmaticEndpointResponses =
-				testServerEndpoint(appWebsocketUrl + ProgrammaticEndpoint.TYPE);
+				test2SessionsWithServerEndpoint(appWebsocketUrl + ProgrammaticEndpoint.TYPE, true);
 		assertEquals("session scoped object hash should remain the same",
 				sessionScopedHash, programmaticEndpointResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
@@ -372,7 +399,7 @@ public class IntegrationTests {
 		connectionScopedHashes.add(programmaticEndpointResponses.get(2)[4]);
 
 		final var extendingEndpointResponses =
-				testServerEndpoint(appWebsocketUrl + ExtendingEndpoint.TYPE);
+				test2SessionsWithServerEndpoint(appWebsocketUrl + ExtendingEndpoint.TYPE, true);
 		assertEquals("session scoped object hash should remain the same",
 				sessionScopedHash, extendingEndpointResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
@@ -389,7 +416,7 @@ public class IntegrationTests {
 				connectionScopedHashes.add(extendingEndpointResponses.get(2)[4]));
 
 		final var annotatedEndpointResponses =
-				testServerEndpoint(appWebsocketUrl + AnnotatedEndpoint.TYPE);
+				test2SessionsWithServerEndpoint(appWebsocketUrl + AnnotatedEndpoint.TYPE, true);
 		assertEquals("session scoped object hash should remain the same",
 				sessionScopedHash, annotatedEndpointResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
@@ -485,6 +512,13 @@ public class IntegrationTests {
 
 
 
+	@BeforeClass
+	public static void setupEnv() {
+		System.setProperty(ServletContextListener.PING_INTERVAL_MILLIS_PROPERTY, "5");
+	}
+
+
+
 	/**
 	 * Change the below value if you need logging:<br/>
 	 * <code>INFO</code> will log server startup and shutdown diagnostics<br/>
@@ -492,7 +526,8 @@ public class IntegrationTests {
 	 */
 	static Level LOG_LEVEL = Level.WARNING;
 
-	static final Logger log = Logger.getLogger(IntegrationTests.class.getName());
+	static final Logger log = Logger.getLogger(IntegrationTests.class.getPackageName());
+	static final Logger pingerLog = Logger.getLogger(WebsocketPingerService.class.getName());
 
 	@BeforeClass
 	public static void setupLogging() {
@@ -501,6 +536,7 @@ public class IntegrationTests {
 					IntegrationTests.class.getPackageName() + ".level"));
 		} catch (Exception ignored) {}
 		log.setLevel(LOG_LEVEL);
+		pingerLog.setLevel(LOG_LEVEL);
 		for (final var handler: Logger.getLogger("").getHandlers()) handler.setLevel(LOG_LEVEL);
 	}
 }

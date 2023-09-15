@@ -27,6 +27,8 @@ public class ServletContextListener extends PingingServletContextListener {
 	public static final String WEBSOCKET_CONNECTION = "wsConnection";
 	public static final String HTTP_SESSION = "httpSession";
 
+	public static final String PING_INTERVAL_MILLIS_PROPERTY = "pingIntervalMillis";
+
 
 
 	@Override
@@ -85,11 +87,30 @@ public class ServletContextListener extends PingingServletContextListener {
 		);
 
 		addEnsureSessionFilter(WEBSOCKET_PATH + '*');
+
 		addEndpoint(ProgrammaticEndpoint.class, ProgrammaticEndpoint.PATH);
 		addServlet(
 			EchoWebsocketPageServlet.class.getSimpleName(),
 			EchoWebsocketPageServlet.class,
 			"/echo"
 		);
+
+		addEndpoint(RttReportingEndpoint.class, RttReportingEndpoint.PATH);
+		addServlet(
+			"RttReportingPageServlet",
+			ResourceServlet.class,
+			"/rttReporting"
+		).setInitParameter(
+			ResourceServlet.RESOURCE_PATH_PARAM,
+			"/rttReporting.html"
+		);
+	}
+
+
+
+	@Override
+	protected long getPingIntervalMillis() {
+		final var intervalFromProperty = System.getProperty(PING_INTERVAL_MILLIS_PROPERTY);
+		return intervalFromProperty != null ? Long.parseLong(intervalFromProperty) : 500L;
 	}
 }

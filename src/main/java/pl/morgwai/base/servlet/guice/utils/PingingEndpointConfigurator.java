@@ -31,6 +31,18 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 
 
 
+	/** An interface for {@code Endpoints} to get round-trip time reports upon receiving pongs. */
+	public interface RttObserver {
+
+		/**
+		 * Called by {@link javax.websocket.PongMessage}
+		 * {@link javax.websocket.MessageHandler handler} to report round-trip time in nanoseconds.
+		 */
+		void onPong(long rttNanos);
+	}
+
+
+
 	WebsocketPingerService pingerService;
 
 
@@ -87,7 +99,14 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 						break;
 					}
 				}
-				pingerService.addConnection(connection);
+				if (endpoint instanceof RttObserver) {
+					pingerService.addConnection(
+						connection,
+						(connection, rttNanos) -> ((RttObserver) endpoint).onPong(rttNanos)
+					);
+				} else {
+					pingerService.addConnection(connection);
+				}
 			} else if (isOnClose(method)) {
 				pingerService.removeConnection(connection);
 			}
