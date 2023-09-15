@@ -2,6 +2,8 @@
 package pl.morgwai.base.servlet.guice.scopes.tests.server;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.websocket.*;
 import javax.websocket.CloseReason.CloseCodes;
@@ -10,8 +12,6 @@ import javax.websocket.RemoteEndpoint.Async;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 
@@ -54,7 +54,7 @@ public class EchoEndpoint {
 			try {
 				connection.close(new CloseReason(CloseCodes.NORMAL_CLOSURE, "bye"));
 			} catch (IOException e) {
-				log.info("exception while closing websocket " + connection.getId(), e);
+				log.log(Level.INFO, "exception while closing websocket " + connection.getId(), e);
 			}
 		} else {
 			StringBuilder formattedMessageBuilder = new StringBuilder(message.length() + 10);
@@ -87,7 +87,7 @@ public class EchoEndpoint {
 
 
 	public void onError(Session connection, Throwable error) {
-		log.warn("error on connection " + connection.getId(), error);
+		log.log(Level.WARNING, "error on connection " + connection.getId(), error);
 		error.printStackTrace();
 		try {
 			connection.close(new CloseReason(CloseCodes.UNEXPECTED_CONDITION, error.toString()));
@@ -136,5 +136,5 @@ public class EchoEndpoint {
 
 
 
-	static final Logger log = LoggerFactory.getLogger(EchoEndpoint.class.getName());
+	static final Logger log = Logger.getLogger(EchoEndpoint.class.getName());
 }
