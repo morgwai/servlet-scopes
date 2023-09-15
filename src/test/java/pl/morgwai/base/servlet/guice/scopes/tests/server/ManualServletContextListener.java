@@ -44,7 +44,7 @@ public class ManualServletContextListener implements ServletContextListener {
 			final ServletContext appDeployment = initialization.getServletContext();
 			servletModule = new ServletModule(appDeployment);
 			final ServerContainer endpointContainer = ((ServerContainer)
-					appDeployment.getAttribute("javax.websocket.server.ServerContainer"));
+					appDeployment.getAttribute(ServerContainer.class.getName()));
 			appDeployment.addListener(new HttpSessionContext.SessionContextCreator());
 
 			final var executor = servletModule.newContextTrackingExecutor("testExecutor", 2);
