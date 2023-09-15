@@ -138,9 +138,10 @@ public class ManualServletContextListener implements ServletContextListener {
 					EchoWebsocketPageServlet.class.getSimpleName(), echoWebsocketPageServlet);
 			echoWebsocketPageServletRegistration.setAsyncSupported(true);
 			echoWebsocketPageServletRegistration.addMapping("/echo");
-		} catch (Throwable e) {
+		} catch (Exception e) {
 			e.printStackTrace();
-			System.exit(1);
+			throw new RuntimeException(
+					"couldn't deploy the app with ManualServletContextListener", e);
 		}
 	}
 
