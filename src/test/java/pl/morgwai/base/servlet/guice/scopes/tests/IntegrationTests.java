@@ -455,20 +455,30 @@ public class IntegrationTests {
 
 	@Test
 	public void testOnOpenWithoutSessionParamEndpoint() {
-		Logger.getLogger(GuiceServerEndpointConfigurator.class.getName()).setLevel(Level.OFF);
+		final var logger = Logger.getLogger(GuiceServerEndpointConfigurator.class.getName());
+		final var originalLevel = logger.getLevel();
+		logger.setLevel(Level.OFF);
 		try {
 			testOpenConnectionToServerEndpoint(OnOpenWithoutSessionParamEndpoint.TYPE);
 			fail("instantiation of OnOpenWithoutSessionParamEndpoint should throw an Exception");
-		} catch (Exception expected) {}
+		} catch (Exception expected) {
+		} finally {
+			logger.setLevel(originalLevel);
+		}
 	}
 
 	@Test
 	public void testPingingWithoutOnCloseEndpoint() {
-		Logger.getLogger(GuiceServerEndpointConfigurator.class.getName()).setLevel(Level.OFF);
+		final var logger = Logger.getLogger(GuiceServerEndpointConfigurator.class.getName());
+		final var originalLevel = logger.getLevel();
+		logger.setLevel(Level.OFF);
 		try {
 			testOpenConnectionToServerEndpoint(PingingWithoutOnCloseEndpoint.TYPE);
 			fail("instantiation of PingingWithoutOnCloseEndpoint should throw an Exception");
-		} catch (Exception expected) {}
+		} catch (Exception expected) {
+		} finally {
+			logger.setLevel(originalLevel);
+		}
 	}
 
 
@@ -533,6 +543,8 @@ public class IntegrationTests {
 	static Level LOG_LEVEL = Level.WARNING;
 
 	static final Logger log = Logger.getLogger(IntegrationTests.class.getPackageName());
+	static final Logger scopesLog =
+			Logger.getLogger(GuiceServerEndpointConfigurator.class.getPackageName());
 	static final Logger pingerLog = Logger.getLogger(WebsocketPingerService.class.getName());
 
 	@BeforeClass
@@ -542,6 +554,7 @@ public class IntegrationTests {
 					IntegrationTests.class.getPackageName() + ".level"));
 		} catch (Exception ignored) {}
 		log.setLevel(LOG_LEVEL);
+		scopesLog.setLevel(LOG_LEVEL);
 		pingerLog.setLevel(LOG_LEVEL);
 		for (final var handler: Logger.getLogger("").getHandlers()) handler.setLevel(LOG_LEVEL);
 	}

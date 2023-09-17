@@ -58,6 +58,10 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 		super.initialize(appDeployment);
 		pingerService = (WebsocketPingerService)
 				appDeployment.getAttribute(WebsocketPingerService.class.getName());
+		if (pingerService == null) {
+			throw new RuntimeException(
+					"no \"" + WebsocketPingerService.class.getName() + "\" deployment attribute");
+		}
 	}
 
 

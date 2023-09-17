@@ -5,8 +5,7 @@ import java.lang.annotation.Annotation;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
@@ -147,8 +146,13 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 */
 	protected void initialize(ServletContext appDeployment) {
 		injector = (Injector) appDeployment.getAttribute(Injector.class.getName());
-		containerCallContextTracker =
-				injector.getInstance(ServletModule.containerCallContextTrackerKey);
+		try {
+			containerCallContextTracker =
+					injector.getInstance(ServletModule.containerCallContextTrackerKey);
+		} catch (NullPointerException e) {
+			throw new RuntimeException(
+					"no \"" + Injector.class.getName() + "\" deployment attribute");
+		}
 	}
 
 
@@ -294,26 +298,47 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		if (this.appDeployment == null) {
 			// multiple threads initializing appDeployment reference concurrently in the same
 			// Configurator instance, will set exactly the same values
-			ServletContext appDeployment;
+			ServletContext appDeployment = null;
 			if (httpSession != null) {
 				appDeployment = ((HttpSession) httpSession).getServletContext();
 			} else {
 				final var requestPath = request.getRequestURI().getPath();
-				final var servletContextPath = requestPath.substring(
+				final var appDeploymentPath = requestPath.substring(
 						0, requestPath.lastIndexOf(config.getPath()));
-				appDeployment = appDeployments.get(servletContextPath).get();
+				final var appDeploymentRef = appDeployments.get(appDeploymentPath);
+				if (appDeploymentRef != null) appDeployment = appDeploymentRef.get();
 				if (appDeployment == null) {
-					final var message = "Could not find deployment for requestPath " + requestPath;
+					final var message = String.format(
+						NO_DEPLOYMENT_FOR_PATH,
+						requestPath,
+						(appDeploymentPath.isBlank() ? "[rootApp]" : appDeploymentPath)
+					);
 					log.severe(message);
 					System.err.println(message);
-					// pick first and hope for the best...
-					appDeployment = appDeployments.values().iterator().next().get();
+					try {
+						// pick first and hope for the best: this is guaranteed to work correctly
+						// only if this is the only app using this Configurator in the given
+						// ClassLoader (which is the default for standard war file deployments)
+						appDeployment = appDeployments.values().iterator().next().get();
+					} catch (NoSuchElementException e) {
+						final var message2 = String.format(NO_DEPLOYMENTS, requestPath);
+						log.severe(message2);
+						System.err.println(message2);
+						throw new RuntimeException(message2);
+					}
 				}
 			}
 			initialize(appDeployment);
 			this.appDeployment = appDeployment;
 		}
 	}
+
+	static final String NO_DEPLOYMENT_FOR_PATH = "could not find deployment for request path %s "
+			+ "(calculated app deployment path: %s ), "
+			+ "GuiceServerEndpointConfigurator.registerDeployment(...) probably wasn't called";
+	static final String NO_DEPLOYMENTS = "could not find *ANY* deployment when configuring "
+			+ "Endpoint for request path %s, "
+			+ "GuiceServerEndpointConfigurator.registerDeployment(...) probably wasn't called";
 
 
 
