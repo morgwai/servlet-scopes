@@ -231,10 +231,10 @@ public class IntegrationTests {
 				closeReasonHolder[0] = closeReason;
 				if (closeReason.getCloseCode().getCode() != CloseCodes.NORMAL_CLOSURE.getCode()) {
 					// server endpoint error: interrupt testThread awaiting for replies (they will
-					// never arrive), but not before testMessage is sent as
+					// probably never arrive), but not before testMessage is sent as
 					// getAsyncRemote.sendText(...) may clear interruption status.
 					try {
-						testMessageSent.await(500L, TimeUnit.MILLISECONDS);
+						var ignored = testMessageSent.await(500L, TimeUnit.MILLISECONDS);
 					} catch (InterruptedException ignored) {}
 					testThread.interrupt();
 				}
@@ -479,13 +479,19 @@ public class IntegrationTests {
 
 		final var endpoint = new ClientEndpoint(messages::add, null, null);
 		final var uri1 = URI.create(testAppWebsocketUrl);
-		clientWebsocketContainer.connectToServer(endpoint, null, uri1);
-		if ( !endpoint.awaitClosure(500L, TimeUnit.MILLISECONDS)) fail("timeout");
+		try (
+			final var ignored = clientWebsocketContainer.connectToServer(endpoint, null, uri1);
+		) {
+			if ( !endpoint.awaitClosure(500L, TimeUnit.MILLISECONDS)) fail("timeout");
+		}
 
 		final var endpoint2 = new ClientEndpoint(messages::add, null, null);
 		final var uri2 = URI.create(secondAppWebsocketUrl);
-		clientWebsocketContainer.connectToServer(endpoint2, null, uri2);
-		if ( !endpoint2.awaitClosure(500L, TimeUnit.MILLISECONDS)) fail("timeout");
+		try (
+			final var ignored = clientWebsocketContainer.connectToServer(endpoint2, null, uri2);
+		) {
+			if ( !endpoint2.awaitClosure(500L, TimeUnit.MILLISECONDS)) fail("timeout");
+		}
 
 		assertNotEquals("Endpoint Configurators of separate apps should have separate Injectors",
 				messages.get(0), messages.get(1));
