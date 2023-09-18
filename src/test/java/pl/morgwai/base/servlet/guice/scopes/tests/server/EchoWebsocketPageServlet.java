@@ -4,6 +4,7 @@ package pl.morgwai.base.servlet.guice.scopes.tests.server;
 import java.io.IOException;
 
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -29,6 +30,18 @@ public class EchoWebsocketPageServlet extends ResourceServlet {
 	 * server where the {@code Endpoint} given by {@link #TYPE_PARAM} is deployed.
 	 */
 	static final String PATH_PLACEHOLDER = "/websocket/path";
+
+
+
+	String appDeploymentPath;
+
+
+
+	@Override
+	public void init(ServletConfig config) throws ServletException {
+		super.init(config);
+		appDeploymentPath = config.getServletContext().getContextPath();
+	}
 
 
 
@@ -63,7 +76,7 @@ public class EchoWebsocketPageServlet extends ResourceServlet {
 	}
 
 	String replaceWebsocketPath(String input, String path) {
-		return input.replaceFirst(PATH_PLACEHOLDER, TestServer.APP_PATH + path);
+		return input.replaceFirst(PATH_PLACEHOLDER, appDeploymentPath + path);
 	}
 
 
