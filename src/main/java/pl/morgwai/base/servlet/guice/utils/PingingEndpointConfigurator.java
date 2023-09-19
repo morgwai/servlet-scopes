@@ -6,9 +6,9 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.HashSet;
 
-import javax.servlet.ServletContext;
-import javax.websocket.OnClose;
-import javax.websocket.Session;
+import jakarta.servlet.ServletContext;
+import jakarta.websocket.OnClose;
+import jakarta.websocket.Session;
 
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
@@ -35,8 +35,8 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 	public interface RttObserver {
 
 		/**
-		 * Called by {@link javax.websocket.PongMessage}
-		 * {@link javax.websocket.MessageHandler handler} to report round-trip time in nanoseconds.
+		 * Called by {@link jakarta.websocket.PongMessage}
+		 * {@link jakarta.websocket.MessageHandler handler} to report round-trip time in nanoseconds.
 		 */
 		void onPong(long rttNanos);
 	}

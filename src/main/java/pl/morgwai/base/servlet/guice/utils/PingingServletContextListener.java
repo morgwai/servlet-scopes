@@ -83,7 +83,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	/**
 	 * Overrides default configurator used by {@link #addEndpoint(Class, String)} to be a
 	 * {@link PingingEndpointConfigurator}. Stores {@link #pingerService} as a
-	 * {@link javax.servlet.ServletContext#setAttribute(String, Object) deployment attribute} under
+	 * {@link jakarta.servlet.ServletContext#setAttribute(String, Object) deployment attribute} under
 	 * {@link Class#getName() fully-qualified name} of {@link WebsocketPingerService} class.
 	 */
 	@Override

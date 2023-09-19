@@ -7,8 +7,8 @@ import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.websocket.*;
-import javax.websocket.MessageHandler.Whole;
+import jakarta.websocket.*;
+import jakarta.websocket.MessageHandler.Whole;
 
 
 
