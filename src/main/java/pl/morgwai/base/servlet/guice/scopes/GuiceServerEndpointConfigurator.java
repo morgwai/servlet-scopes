@@ -418,8 +418,10 @@ class EndpointDecorator implements InvocationHandler {
 		// contexts couldn't have been created: just call the method outside of contexts and hope
 		// for the best...
 		if (connectionCtx == null) {
-			log.warning(proxy.getClass().getSimpleName() + MANUAL_CALL_WARNING);
-			System.err.println(proxy.getClass().getSimpleName() + MANUAL_CALL_WARNING);
+			log.warning(proxy.getClass().getSimpleName() + '.' + method.getName()
+					+ MANUAL_CALL_WARNING);
+			System.err.println(proxy.getClass().getSimpleName() + '.' + method.getName()
+					+ MANUAL_CALL_WARNING);
 			return wrappedEndpoint.invoke(proxy, method, args);
 		}
 
