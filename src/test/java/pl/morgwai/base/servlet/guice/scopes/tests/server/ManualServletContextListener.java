@@ -14,7 +14,6 @@ import javax.websocket.server.ServerEndpointConfig;
 
 import com.google.inject.*;
 import com.google.inject.Module;
-import com.google.inject.name.Names;
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
@@ -53,24 +52,9 @@ public class ManualServletContextListener implements ServletContextListener {
 					appDeployment.getAttribute(ServerContainer.class.getName()));
 			appDeployment.addListener(new HttpSessionContext.SessionContextCreator());
 
-			final var executor = servletModule.newContextTrackingExecutor("testExecutor", 2);
 			final var modules = new LinkedList<Module>();
 			modules.add(servletModule);
-			modules.add((binder) -> {  // same as in ServletContextListener
-				binder.bind(ServletContextTrackingExecutor.class).toInstance(executor);
-				binder.bind(Service.class)
-					.annotatedWith(Names.named(CONTAINER_CALL))
-					.to(Service.class)
-					.in(servletModule.containerCallScope);
-				binder.bind(Service.class)
-					.annotatedWith(Names.named(WEBSOCKET_CONNECTION))
-					.to(Service.class)
-					.in(servletModule.websocketConnectionScope);
-				binder.bind(Service.class)
-					.annotatedWith(Names.named(HTTP_SESSION))
-					.to(Service.class)
-					.in(servletModule.httpSessionScope);
-			});
+			modules.add(new ServiceModule(servletModule));
 			final Injector injector = Guice.createInjector(modules);
 
 			final var requestCtxFilter = appDeployment.createFilter(RequestContextFilter.class);
