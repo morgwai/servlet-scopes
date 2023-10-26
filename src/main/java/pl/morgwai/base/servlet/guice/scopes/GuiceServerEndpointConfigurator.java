@@ -169,7 +169,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		try {
 			final var proxyClass = getProxyClass(endpointClass);
 			final EndpointT endpointProxy = super.getEndpointInstance(proxyClass);
-			final var endpointDecorator = new EndpointDecorator(
+			final var endpointDecorator = new EndpointProxyHandler(
 				getAdditionalDecorator(injector.getInstance(endpointClass)),
 				containerCallContextTracker
 			);
@@ -184,7 +184,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	static final String PROXY_DECORATOR_FIELD_NAME =
 			GuiceServerEndpointConfigurator.class.getPackageName().replace('.', '_')
-					+ "_endpoint_decorator";
+					+ "_invocationHandler";
 
 	/**
 	 * Exposed for proxy class pre-building in
@@ -201,7 +201,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	/**
 	 * Creates a dynamic proxy class that delegates calls to the associated
-	 * {@link EndpointDecorator} instance.
+	 * {@link EndpointProxyHandler} instance.
 	 */
 	<EndpointT> Class<? extends EndpointT> createProxyClass(Class<EndpointT> endpointClass) {
 		if ( !Endpoint.class.isAssignableFrom(endpointClass)) {
@@ -213,7 +213,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					+ endpointClass.getName().replace('.', '_'))
 			.defineField(
 					PROXY_DECORATOR_FIELD_NAME,
-					EndpointDecorator.class,
+					EndpointProxyHandler.class,
 					Visibility.PACKAGE_PRIVATE)
 			.method(ElementMatchers.any())
 					.intercept(InvocationHandlerAdapter.toField(PROXY_DECORATOR_FIELD_NAME));
@@ -363,7 +363,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
  * Executes each call to the wrapped {@code Endpoint} instance within the current
  * {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
  */
-class EndpointDecorator implements InvocationHandler {
+class EndpointProxyHandler implements InvocationHandler {
 
 
 
@@ -372,7 +372,7 @@ class EndpointDecorator implements InvocationHandler {
 
 
 
-	EndpointDecorator(
+	EndpointProxyHandler(
 		InvocationHandler endpointToWrap,
 		ContextTracker<ContainerCallContext> containerCallContextTracker
 	) {
@@ -443,7 +443,7 @@ class EndpointDecorator implements InvocationHandler {
 
 
 
-	static final Logger log = Logger.getLogger(EndpointDecorator.class.getName());
+	static final Logger log = Logger.getLogger(EndpointProxyHandler.class.getName());
 	static final String MANUAL_CALL_WARNING = ": calling manually methods of Endpoints that were "
 			+ "designed to run within contexts, may lead to an OutOfScopeException";
 }
