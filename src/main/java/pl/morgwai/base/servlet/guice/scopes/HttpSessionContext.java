@@ -30,8 +30,8 @@ public class HttpSessionContext extends InjectionContext {
 	public static class SessionContextCreator implements HttpSessionListener {
 
 		@Override
-		public void sessionCreated(HttpSessionEvent event) {
-			final var session = event.getSession();
+		public void sessionCreated(HttpSessionEvent creation) {
+			final var session = creation.getSession();
 			session.setAttribute(
 					HttpSessionContext.class.getName(), new HttpSessionContext(session));
 		}
