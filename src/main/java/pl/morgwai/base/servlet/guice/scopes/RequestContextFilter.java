@@ -13,15 +13,35 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 /**
- * Creates context for each newly incoming {@link HttpServletRequest} and transfers context when
- * requests are {@link javax.servlet.AsyncContext#dispatch(String) dispatched from AsyncContext} to
- * new threads.
+ * Creates {@link ServletRequestContext}s for newly incoming {@link HttpServletRequest}s and
+ * transfers {@code Contexts} for {@code Requests}
+ * {@link javax.servlet.AsyncContext#dispatch(String) dispatched from AsyncContext} to
+ * new {@code Threads}.
+ * <p>
+ * If an instance of this {@code Filter} is not created by Guice, then a reference to the
+ * {@link ContextTracker} must be set either
+ * {@link #setContainerCallContextTracker(ContextTracker) manually} or by requesting
+ * {@link com.google.inject.Injector#injectMembers(Object) Guice member injection}.<br/>
+ * This {@code Filter} should usually be installed at the beginning of the
+ * chain for all URL patterns for new and async {@code Requests}:
+ * {@link FilterRegistration#addMappingForUrlPatterns(java.util.EnumSet, boolean, String...)
+ * addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC), false, "/*")}.
+ * </p>
  */
 public class RequestContextFilter implements Filter {
 
 
 
-	@Inject ContextTracker<ContainerCallContext> containerCallContextTracker;
+	ContextTracker<ContainerCallContext> containerCallContextTracker;
+
+
+
+	@Inject
+	public void setContainerCallContextTracker(
+		ContextTracker<ContainerCallContext> containerCallContextTracker
+	) {
+		this.containerCallContextTracker = containerCallContextTracker;
+	}
 
 
 
@@ -29,9 +49,9 @@ public class RequestContextFilter implements Filter {
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 		final var ctx = request.getDispatcherType() == DispatcherType.REQUEST
-				? new ServletRequestContext(
+				? new ServletRequestContext(  // new request
 						(HttpServletRequest) request, containerCallContextTracker)
-				: (ServletRequestContext)
+				: (ServletRequestContext)  // async request dispatched from another thread
 						request.getAttribute(ServletRequestContext.class.getName());
 		try {
 			ctx.executeWithinSelf(() -> {
