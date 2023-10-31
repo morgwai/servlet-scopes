@@ -29,11 +29,12 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 /**
- * Obtains {@code Endpoint} instances from {@link Injector#getInstance(Class) Guice} and decorates
- * methods to run within websocket contexts. This way, all dependencies are injected and
- * {@link Scope}s from {@link ServletModule} ({@link ServletModule#containerCallScope},
- * {@link ServletModule#websocketConnectionScope} and {@link ServletModule#httpSessionScope}) work
- * properly.
+ * Obtains {@code Endpoint} instances from {@link Injector#getInstance(Class) Guice} and ensures
+ * their methods
+ * {@link WebsocketEventContext#executeWithinSelf(Runnable) run within websocket Contexts}.
+ * This way, all dependencies are injected and {@link Scope}s from {@link ServletModule}
+ * ({@link ServletModule#containerCallScope}, {@link ServletModule#websocketConnectionScope} and
+ * {@link ServletModule#httpSessionScope}) work properly.
  * <p>
  * To use this {@code Configurator} for programmatically added {@code Endpoints}, create an instance
  * using {@link #GuiceServerEndpointConfigurator(ServletContext)} and pass it to the

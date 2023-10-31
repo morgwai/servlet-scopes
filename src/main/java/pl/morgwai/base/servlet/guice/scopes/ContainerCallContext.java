@@ -10,18 +10,15 @@ import pl.morgwai.base.guice.scopes.TrackableContext;
 
 /**
  * Context of either an {@link ServletRequestContext HttpServletRequest} or a
- * {@link WebsocketEventContext websocket event}. Each instance corresponds to a single
- * container-initiated call to either one of {@link javax.servlet.Servlet}'s
- * {@code doXXX(...)} methods or to one of websocket {@code Endpoint}'s life-cycle methods (either
- * ones overriding one of {@link javax.websocket.Endpoint} methods or ones annotated with one
- * of {@link javax.websocket.OnOpen}, {@link javax.websocket.OnMessage},
- * {@link javax.websocket.OnError}, {@link javax.websocket.OnClose}).
+ * {@link WebsocketEventContext websocket event}.
+ * Each single container-invoked call either to one of {@link javax.servlet.Servlet}'s
+ * {@code doXXX(...)} methods or to one of websocket {@code Endpoint}'s event-handling methods
+ * {@link TrackableContext#executeWithinSelf(java.util.concurrent.Callable) runs within} its own
+ * separate instance of the appropriate subclass of {@code ContainerCallContext}.
  * <p>
- * Suitable for storing short-living objects, such as {@code EntityManager}s or DB transactions.</p>
- * <p>
- * Having a common super class for {@link ServletRequestContext} and {@link WebsocketEventContext}
- * allows to inject container-call scoped objects both in servlets and endpoints without a need for
- * 2 separate bindings.</p>
+ * Having a common base class for {@link ServletRequestContext} and {@link WebsocketEventContext}
+ * allows to provide {@link ServletModule#containerCallScope container-call scoped} objects both in
+ * {@link javax.servlet.Servlet}s and {@code Endpoints} without a need for 2 separate bindings.</p>
  * @see ServletModule#containerCallScope corresponding Scope
  */
 public abstract class ContainerCallContext extends TrackableContext<ContainerCallContext> {

@@ -10,25 +10,33 @@ import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
 /**
- * A {@link GuiceServletContextListener} that automatically registers and deregisters
- * {@code Endpoints} added with {@link #addEndpoint(Class, String)} to its associated
+ * Subclass of {@link GuiceServletContextListener} that automatically registers and deregisters
+ * {@code Endpoints} added with {@link #addEndpoint(Class, String)} to the associated
  * {@link WebsocketPingerService}.
  */
 public abstract class PingingServletContextListener extends GuiceServletContextListener {
 
 
 
+	/**
+	 * The app-wide pinger service to which {@link #addEndpoint(Class, String)} method registers
+	 * {@code Endpoints}. Initialized with the result of {@link #createPingerService()}.
+	 * <p>
+	 * The app-wide pinger service is also stored as a
+	 * {@link javax.servlet.ServletContext#getAttribute(String) deployment attribute} under
+	 * {@link Class#getName() fully-qualified name} of {@link WebsocketPingerService} class.</p>
+	 */
 	protected final WebsocketPingerService pingerService;
 
 
 
-	/** Allows subclasses to override pinger mode. By default {@code false}. */
+	/** Allows to override {@link #pingerService}'s mode. By default {@code false}. */
 	protected boolean isPingerInKeepAliveOnlyMode() {
 		return false;
 	}
 
 	/**
-	 * Allows subclasses to override ping interval.
+	 * Allows to override {@link #pingerService}'s {@code interval} param.
 	 * By default {@link WebsocketPingerService#DEFAULT_INTERVAL_SECONDS} converted to millis.
 	 */
 	protected long getPingIntervalMillis() {
@@ -36,23 +44,27 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	}
 
 	/**
-	 * Allows subclasses to override ping failure limit.
+	 * Allows to override {@link #pingerService}'s {@code failureLimit} param.
 	 * By default {@link WebsocketPingerService#DEFAULT_FAILURE_LIMIT}.
 	 */
 	protected int getPingFailureLimit() {
 		return WebsocketPingerService.DEFAULT_FAILURE_LIMIT;
 	}
 
-	/** Allows subclasses to override {@code synchronizeSending} flag. By default {@code false}. */
+	/**
+	 * Allows to override {@link #pingerService}'s {@code synchronizeSending} flag.
+	 * By default {@code false}.
+	 */
 	protected boolean shouldSynchronizePingSending() {
 		return false;
 	}
 
 	/**
-	 * Creates a {@link WebsocketPingerService}. Used in constructor to initialize
-	 * {@link #pingerService}. By default uses {@link #isPingerInKeepAliveOnlyMode()},
-	 * {@link #getPingIntervalMillis()} and {@link #getPingFailureLimit()} to configure the
-	 * returned service. May be overridden if non-standard customizations are required.
+	 * Creates {@link #pingerService the app-wide pinger service}. This method is called once in
+	 * {@link #PingingServletContextListener() the constructor}. By default it calls
+	 * {@link #isPingerInKeepAliveOnlyMode()}, {@link #getPingIntervalMillis()} and
+	 * {@link #getPingFailureLimit()} to configure the service. May be overridden if other
+	 * customizations are required.</p>
 	 */
 	protected WebsocketPingerService createPingerService() {
 		if (isPingerInKeepAliveOnlyMode()) {
@@ -73,6 +85,11 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 
+	/**
+	 * {@link #createPingerService() Creates the app-wide pinger service} and
+	 * {@link #addShutdownHook(Runnable) schedules} its {@link WebsocketPingerService#stop() stop}
+	 * during the app shutdown.
+	 */
 	public PingingServletContextListener() {
 		pingerService = createPingerService();
 		addShutdownHook(pingerService::stop);
@@ -81,8 +98,9 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 	/**
-	 * Overrides default configurator used by {@link #addEndpoint(Class, String)} to be a
-	 * {@link PingingEndpointConfigurator}. Stores {@link #pingerService} as a
+	 * Overrides {@link javax.websocket.server.ServerEndpointConfig.Configurator} used by
+	 * {@link #addEndpoint(Class, String)} to be a {@link PingingEndpointConfigurator}. Also stores
+	 * {@link #pingerService} as a
 	 * {@link javax.servlet.ServletContext#setAttribute(String, Object) deployment attribute} under
 	 * {@link Class#getName() fully-qualified name} of {@link WebsocketPingerService} class.
 	 */

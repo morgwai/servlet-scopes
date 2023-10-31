@@ -19,12 +19,12 @@ import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnOpen;
 
 
 /**
- * A {@link GuiceServerEndpointConfigurator} that additionally automatically registers and
- * deregisters {@code Endpoints} to its associated {@link WebsocketPingerService}. In addition to
- * usage instructions from the super class, annotated {@code Endpoints} <b>must</b> have a method
- * annotated with @{@link OnClose} and the app-wide {@link WebsocketPingerService} must be
- * {@link ServletContext#setAttribute(String, Object) stored as a deployment attribute} under
- * {@link Class#getName() fully-qualified name} of {@link WebsocketPingerService} class.
+ * Subclass of {@link GuiceServerEndpointConfigurator} that additionally automatically registers and
+ * deregisters {@code Endpoints} to its associated {@link WebsocketPingerService}.
+ * In addition to usage instructions from the super class, annotated {@code Endpoints} <b>must</b>
+ * have a method annotated with @{@link OnClose} and the app-wide {@link WebsocketPingerService}
+ * must be {@link ServletContext#setAttribute(String, Object) stored as a deployment attribute}
+ * under {@link Class#getName() fully-qualified name} of {@link WebsocketPingerService} class.
  * @see PingingServletContextListener
  */
 public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator {

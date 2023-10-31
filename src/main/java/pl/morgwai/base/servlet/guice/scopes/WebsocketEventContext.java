@@ -2,6 +2,7 @@
 package pl.morgwai.base.servlet.guice.scopes;
 
 import javax.servlet.http.HttpSession;
+import javax.websocket.*;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
@@ -10,16 +11,19 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 /**
  * Context of a single websocket event such as a connection creation/closure, a message arrival or
  * an error occurrence.
- * <p>
- * Each instance is associated with a single invocation of some endpoint life-cycle or
- * {@link javax.websocket.MessageHandler} method.
- * Specifically, all methods annotated with one of the websocket
- * annotations ({@link javax.websocket.OnOpen @OnOpen},
- * {@link javax.websocket.OnMessage @OnMessage}, {@link javax.websocket.OnError @OnError} and
- * {@link javax.websocket.OnClose @OnClose}), or overriding those of
- * {@link javax.websocket.Endpoint} or {@link javax.websocket.MessageHandler}s, are
- * executed within a separate new {@code WebsocketEventContext} instance.</p>
- * @see ContainerCallContext super class for more info
+ * Each container-invoked call to some {@code Endpoint} event-handling method or to a registered
+ * {@link MessageHandler} method {@link
+ * pl.morgwai.base.guice.scopes.TrackableContext#executeWithinSelf(java.util.concurrent.Callable)
+ * runs within} a separate instance of {@code WebsocketEventContext}. Specifically, all methods
+ * annotated with one of the websocket {@code Annotations} (&nbsp;{@link OnOpen @OnOpen},
+ * {@link OnMessage @OnMessage}, {@link OnError @OnError}, {@link OnClose @OnClose}&nbsp;), or
+ * overriding one of {@link Endpoint} methods
+ * (&nbsp;{@link Endpoint#onOpen(Session, EndpointConfig) onOpen(...)},
+ * {@link Endpoint#onClose(Session, CloseReason) onClose(...)},
+ * {@link Endpoint#onError(Session, Throwable) onError(...)}&nbsp;) or overriding one of
+ * {@link MessageHandler} methods
+ * (&nbsp;{@link MessageHandler.Whole#onMessage(Object) Whole.onMessage(message)},
+ * {@link MessageHandler.Partial#onMessage(Object, boolean) Partial.onMessage(...)}&nbsp;).
  */
 public class WebsocketEventContext extends ContainerCallContext {
 

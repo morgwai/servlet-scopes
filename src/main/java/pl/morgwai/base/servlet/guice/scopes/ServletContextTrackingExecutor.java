@@ -18,12 +18,13 @@ import pl.morgwai.base.utils.concurrent.TaskTrackingThreadPoolExecutor;
 
 
 /**
- * A {@link TaskTrackingThreadPoolExecutor} that wraps tasks with {@link ContextBoundRunnable}
- * decorator to automatically transfer contexts.
+ * {@link TaskTrackingThreadPoolExecutor} that wraps tasks with {@link ContextBoundRunnable}
+ * decorator to automatically transfer {@code Contexts}.
  * <p>
  * Instances should usually be created using
  * {@link ServletModule#newContextTrackingExecutor(String, int)
- * ServletModule.newContextTrackingExecutor(...)} helper methods family.</p>
+ * ServletModule.newContextTrackingExecutor(...)} helper methods family, so that they are
+ * automatically terminated at the app shutdown.</p>
  */
 public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecutor {
 

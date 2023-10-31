@@ -26,7 +26,10 @@ public class HttpSessionContext extends InjectionContext {
 
 
 
-	/** Registered in {@link GuiceServletContextListener}. */
+	/**
+	 * Creates {@link HttpSessionContext}s for newly created {@link HttpSession}s.
+	 * Registered in {@link GuiceServletContextListener}.
+	 */
 	public static class SessionContextCreator implements HttpSessionListener {
 
 		@Override

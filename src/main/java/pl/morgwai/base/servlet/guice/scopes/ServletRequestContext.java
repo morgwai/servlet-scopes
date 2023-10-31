@@ -9,7 +9,16 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 /**
- * Context of a {@link HttpServletRequest}.
+ * Context of an {@link HttpServletRequest}. Each {@link HttpServletRequest} processing {@link
+ * pl.morgwai.base.guice.scopes.TrackableContext#executeWithinSelf(java.util.concurrent.Callable)
+ * runs within} a separate instance of {@code ServletRequestContext}. Specifically
+ * {@link javax.servlet.Filter}s {@link
+ * javax.servlet.FilterRegistration#addMappingForServletNames(java.util.EnumSet, boolean, String...)
+ * registered} at the end of the {@link javax.servlet.FilterChain} (&nbsp;{@code true} passed as
+ * {@code isMatchAfter} param), the {@link javax.servlet.Servlet}'s {@link
+ * javax.servlet.Servlet#service(javax.servlet.ServletRequest, javax.servlet.ServletResponse)
+ * service(request, response) method} and the {@link javax.servlet.Servlet}'s appropriate
+ * {@code doXXX(request, response)} method.
  * <p>
  * Note: this context is transferred automatically to the new thread when
  * {@link javax.servlet.AsyncContext#dispatch(String) dispatching from AsyncContext}.</p>
