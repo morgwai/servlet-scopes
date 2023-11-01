@@ -33,7 +33,7 @@ public class ServletModule implements Module {
 	 * @see ContainerCallContext
 	 */
 	public final Scope containerCallScope =
-			new ContextScope<>("CONTAINER_CALL_SCOPE", containerCallContextTracker);
+			new ContextScope<>("containerCallScope", containerCallContextTracker);
 
 
 
@@ -51,7 +51,7 @@ public class ServletModule implements Module {
 	 * recommended for session-scoped objects to be {@link java.io.Serializable}.</p>
 	 */
 	public final Scope httpSessionScope = new InducedContextScope<>(
-		"HTTP_SESSION_SCOPE",
+		"httpSessionScope",
 		containerCallContextTracker,
 		ContainerCallContext::getHttpSessionContext
 	);
@@ -63,7 +63,7 @@ public class ServletModule implements Module {
 	 * (javax.websocket.Session)}.
 	 */
 	public final Scope websocketConnectionScope = new InducedContextScope<>(
-		"WEBSOCKET_CONNECTION_SCOPE",
+		"websocketConnectionScope",
 		containerCallContextTracker,
 		containerCallCtx -> {
 			try {
