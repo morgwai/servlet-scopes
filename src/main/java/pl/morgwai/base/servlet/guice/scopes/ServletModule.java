@@ -65,7 +65,14 @@ public class ServletModule implements Module {
 	public final Scope websocketConnectionScope = new InducedContextScope<>(
 		"WEBSOCKET_CONNECTION_SCOPE",
 		containerCallContextTracker,
-		containerCallCtx -> ((WebsocketEventContext) containerCallCtx).getConnectionContext()
+		containerCallCtx -> {
+			try {
+				return ((WebsocketEventContext) containerCallCtx).getConnectionContext();
+			} catch (ClassCastException e) {
+				throw new OutOfScopeException("cannot provide a websocketConnectionScope bound "
+						+ "object within a ServletRequestContext");
+			}
+		}
 	);
 
 
