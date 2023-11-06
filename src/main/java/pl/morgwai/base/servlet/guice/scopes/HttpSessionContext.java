@@ -36,11 +36,20 @@ public class HttpSessionContext extends InjectionContext {
 		public void sessionCreated(HttpSessionEvent creation) {
 			final var session = creation.getSession();
 			session.setAttribute(
-					HttpSessionContext.class.getName(), new HttpSessionContext(session));
+				HttpSessionContext.class.getName(),
+				new HttpSessionContext(session)
+			);
 		}
 	}
 
 
 
-	private static final long serialVersionUID = 7039954797806124124L;
+	/** Returns the {@code Context} of {@code session}. */
+	public static HttpSessionContext of(HttpSession session) {
+		return (HttpSessionContext) session.getAttribute(HttpSessionContext.class.getName());
+	}
+
+
+
+	private static final long serialVersionUID = -7578674102235759613L;
 }

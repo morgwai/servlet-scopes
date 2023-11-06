@@ -73,15 +73,17 @@ public class ServletModule implements Module {
 	public final Scope websocketConnectionScope = new InducedContextScope<>(
 		"websocketConnectionScope",
 		containerCallContextTracker,
-		containerCallCtx -> {
-			try {
-				return ((WebsocketEventContext) containerCallCtx).getConnectionContext();
-			} catch (ClassCastException e) {
-				throw new OutOfScopeException("cannot provide a websocketConnectionScope bound "
-						+ "object within a ServletRequestContext");
-			}
-		}
+		ServletModule::getWebsocketConnectionContext
 	);
+
+	static WebsocketConnectionContext getWebsocketConnectionContext(ContainerCallContext ctx) {
+		try {
+			return ((WebsocketEventContext) ctx).getConnectionContext();
+		} catch (ClassCastException e) {
+			throw new OutOfScopeException("cannot provide a websocketConnectionScope bound "
+					+ "object within a ServletRequestContext");
+		}
+	}
 
 
 
@@ -132,15 +134,13 @@ public class ServletModule implements Module {
 		binder.bind(allTrackersKey).toInstance(allTrackers);
 		binder.bind(ContextBinder.class).toInstance(contextBinder);
 		binder.bind(containerCallContextTrackerKey).toInstance(containerCallContextTracker);
-		binder.bind(ContainerCallContext.class)
-				.toProvider(containerCallContextTracker::getCurrentContext);
-
+		binder.bind(ContainerCallContext.class).toProvider(
+				containerCallContextTracker::getCurrentContext);
 		binder.bind(HttpSessionContext.class).toProvider(
-				() -> containerCallContextTracker.getCurrentContext().getHttpSessionContext());
+			() -> containerCallContextTracker.getCurrentContext().getHttpSessionContext()
+		);
 		binder.bind(WebsocketConnectionContext.class).toProvider(
-				() -> (((WebsocketEventContext) containerCallContextTracker.getCurrentContext())
-						.getConnectionContext()
-			)
+			() -> getWebsocketConnectionContext(containerCallContextTracker.getCurrentContext())
 		);
 	}
 

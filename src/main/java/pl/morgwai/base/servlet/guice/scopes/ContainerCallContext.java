@@ -3,6 +3,7 @@ package pl.morgwai.base.servlet.guice.scopes;
 
 import javax.servlet.http.*;
 
+import com.google.inject.OutOfScopeException;
 import pl.morgwai.base.guice.scopes.ContextTracker;
 import pl.morgwai.base.guice.scopes.TrackableContext;
 
@@ -33,14 +34,12 @@ public abstract class ContainerCallContext extends TrackableContext<ContainerCal
 	/** Returns context of {@link #getHttpSession() the session this request/event belongs to}. */
 	public HttpSessionContext getHttpSessionContext() {
 		try {
-			return (HttpSessionContext)
-					getHttpSession().getAttribute(HttpSessionContext.class.getName());
+			return HttpSessionContext.of(getHttpSession());
 		} catch (NullPointerException e) {
-			// result of a bug that will be fixed in development phase: don't check manually
-			// in production each time.
-			throw new RuntimeException("No session in call context. Consider either using a filter"
-					+ " that creates a session for every incoming request or using websocket"
-					+ " connection scope instead.");
+			throw new OutOfScopeException("no HttpSession present. See the javadoc for "
+					+ "ServletModule.httpSessionScope -> https://javadoc.io/doc/pl.morgwai."
+					+ "base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/"
+					+ "ServletModule.html#httpSessionScope");
 		}
 	}
 
