@@ -44,6 +44,5 @@ public class ServletRequestContext extends ContainerCallContext {
 	{
 		super(tracker);
 		this.request = request;
-		request.setAttribute(ServletRequestContext.class.getName(), this);
 	}
 }

@@ -47,16 +47,22 @@ public class RequestContextFilter implements Filter {
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
-		final var ctx = request.getDispatcherType() == DispatcherType.REQUEST
-				? new ServletRequestContext(  // new request
-						(HttpServletRequest) request, containerCallContextTracker)
-				: (ServletRequestContext)  // async request dispatched from another thread
-						request.getAttribute(ServletRequestContext.class.getName());
+		final ServletRequestContext ctx;
+		if (request.getDispatcherType() == DispatcherType.REQUEST) {
+			ctx = new ServletRequestContext(
+					(HttpServletRequest) request, containerCallContextTracker);
+			request.setAttribute(ServletRequestContext.class.getName(), ctx);
+		} else {  // async request dispatched from another thread
+			ctx = (ServletRequestContext)
+					request.getAttribute(ServletRequestContext.class.getName());
+		}
 		try {
-			ctx.executeWithinSelf(() -> {
-				chain.doFilter(request, response);
-				return null;
-			});
+			ctx.executeWithinSelf(
+				() -> {
+					chain.doFilter(request, response);
+					return null;
+				}
+			);
 		} catch (IOException | ServletException | RuntimeException e) {
 			throw e;
 		} catch (Exception neverHappens) {
