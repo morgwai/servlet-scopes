@@ -324,8 +324,11 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			GuiceServerEndpointConfigurator.registerDeployment(appDeployment);
 
 			addFilter(RequestContextFilter.class.getSimpleName(), RequestContextFilter.class)
-					.addMappingForUrlPatterns(
-							EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC), false, "/*");
+				.addMappingForUrlPatterns(
+					EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC),
+					false,
+					"/*"
+				);
 
 			for (var configurationHook: configurationHooks) configurationHook.call();
 			configureServletsFiltersEndpoints();
