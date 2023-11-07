@@ -1,7 +1,7 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
-import javax.servlet.http.*;
+import javax.servlet.http.HttpSession;
 
 import com.google.inject.OutOfScopeException;
 import pl.morgwai.base.guice.scopes.ContextTracker;

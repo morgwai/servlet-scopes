@@ -6,7 +6,8 @@ import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
 
-import com.google.inject.*;
+import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.google.inject.name.Named;
 
 import static pl.morgwai.base.servlet.guice.scopes.tests.server.ServletContextListener.*;

@@ -21,7 +21,6 @@ import javax.websocket.CloseReason.CloseCodes;
 import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
 import org.eclipse.jetty.websocket.javax.common.JavaxWebSocketContainer;
 import org.junit.*;
-
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.tests.server.*;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
@@ -30,7 +29,8 @@ import static org.junit.Assert.*;
 import static pl.morgwai.base.servlet.guice.scopes.tests.server.AsyncServlet.*;
 import static pl.morgwai.base.servlet.guice.scopes.tests.server.ServletContextListener
 		.WEBSOCKET_PATH;
-import static pl.morgwai.base.servlet.guice.scopes.tests.server.TestServer.*;
+import static pl.morgwai.base.servlet.guice.scopes.tests.server.TestServer.APP_PATH;
+import static pl.morgwai.base.servlet.guice.scopes.tests.server.TestServer.SECOND_APP_PATH;
 
 
 

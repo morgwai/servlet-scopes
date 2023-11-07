@@ -5,15 +5,15 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import javax.servlet.*;
 import javax.servlet.ServletContextListener;
+import javax.servlet.*;
 import javax.servlet.annotation.WebListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.websocket.server.ServerContainer;
 import javax.websocket.server.ServerEndpointConfig;
 
-import com.google.inject.*;
 import com.google.inject.Module;
+import com.google.inject.*;
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;

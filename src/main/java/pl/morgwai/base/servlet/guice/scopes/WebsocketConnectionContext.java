@@ -3,7 +3,7 @@ package pl.morgwai.base.servlet.guice.scopes;
 
 import javax.websocket.Session;
 
-import pl.morgwai.base.guice.scopes.*;
+import pl.morgwai.base.guice.scopes.InjectionContext;
 
 
 

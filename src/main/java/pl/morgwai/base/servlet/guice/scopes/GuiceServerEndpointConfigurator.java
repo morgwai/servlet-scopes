@@ -17,7 +17,8 @@ import javax.websocket.*;
 import javax.websocket.server.*;
 import javax.websocket.server.ServerEndpointConfig.Configurator;
 
-import com.google.inject.*;
+import com.google.inject.Injector;
+import com.google.inject.Scope;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
