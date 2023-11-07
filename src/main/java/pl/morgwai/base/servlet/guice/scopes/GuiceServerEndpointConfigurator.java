@@ -188,9 +188,13 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		}
 	}
 
+
+
 	static final String PROXY_DECORATOR_FIELD_NAME =
 			GuiceServerEndpointConfigurator.class.getPackageName().replace('.', '_')
 					+ "_invocationHandler";
+
+
 
 	/**
 	 * Exposed for proxy class pre-building in
@@ -204,6 +208,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	}
 
 	static final ConcurrentMap<Class<?>, Class<?>> proxyClasses = new ConcurrentHashMap<>();
+
+
 
 	/**
 	 * Creates a dynamic proxy class that delegates calls to the associated
@@ -266,6 +272,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					+ fugitiveMethodAnnotationTypes.iterator().next().getSimpleName());
 		}
 	}
+
+
 
 	/**
 	 * Returns a set of annotations of {@code Endpoint} lifecycle methods that are required to be
