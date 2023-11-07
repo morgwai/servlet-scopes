@@ -11,7 +11,7 @@ import pl.morgwai.base.guice.scopes.InjectionContext;
  * Context of an {@link HttpSession}.
  * @see ServletModule#httpSessionScope corresponding Scope
  */
-public class HttpSessionContext extends InjectionContext {
+public class HttpSessionContext extends InjectionContext implements HttpSessionActivationListener {
 
 
 
@@ -51,5 +51,25 @@ public class HttpSessionContext extends InjectionContext {
 
 
 
-	private static final long serialVersionUID = -7578674102235759613L;
+	/** Calls {@link #prepareForSerialization()}. */
+	@Override
+	public void sessionWillPassivate(HttpSessionEvent serialization) {
+		prepareForSerialization();
+	}
+
+
+
+	/** Calls {@link #restoreAfterDeserialization()} . */
+	@Override
+	public void sessionDidActivate(HttpSessionEvent deserialization) {
+		try {
+			restoreAfterDeserialization();
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+
+
+	private static final long serialVersionUID = 3922213799812986253L;
 }
