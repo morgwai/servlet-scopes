@@ -5,9 +5,9 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.websocket.*;
-import javax.websocket.CloseReason.CloseCodes;
-import javax.websocket.RemoteEndpoint.Async;
+import jakarta.websocket.*;
+import jakarta.websocket.CloseReason.CloseCodes;
+import jakarta.websocket.RemoteEndpoint.Async;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;

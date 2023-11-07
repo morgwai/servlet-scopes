@@ -5,10 +5,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.*;
 
-import javax.servlet.http.HttpServletResponse;
-import javax.websocket.CloseReason;
-import javax.websocket.CloseReason.CloseCodes;
-import javax.websocket.Session;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.websocket.CloseReason;
+import jakarta.websocket.CloseReason.CloseCodes;
+import jakarta.websocket.Session;
 
 import pl.morgwai.base.guice.scopes.ContextBoundRunnable;
 import pl.morgwai.base.guice.scopes.ContextTracker;
