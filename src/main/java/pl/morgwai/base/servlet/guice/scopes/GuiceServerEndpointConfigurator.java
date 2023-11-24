@@ -175,12 +175,12 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		try {
 			final var proxyClass = getProxyClass(endpointClass);
 			final EndpointT endpointProxy = super.getEndpointInstance(proxyClass);
-			final var endpointDecorator = new EndpointProxyHandler(
+			final var endpointProxyHandler = new EndpointProxyHandler(
 				getAdditionalDecorator(injector.getInstance(endpointClass)),
 				containerCallContextTracker
 			);
-			proxyClass.getDeclaredField(PROXY_DECORATOR_FIELD_NAME)
-					.set(endpointProxy, endpointDecorator);
+			proxyClass.getDeclaredField(INVOCATION_HANDLER_FIELD_NAME)
+					.set(endpointProxy, endpointProxyHandler);
 			return endpointProxy;
 		} catch (Exception e) {
 			log.log(Level.SEVERE, "Endpoint instantiation failed", e);
@@ -190,7 +190,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-	static final String PROXY_DECORATOR_FIELD_NAME =
+	static final String INVOCATION_HANDLER_FIELD_NAME =
 			GuiceServerEndpointConfigurator.class.getPackageName().replace('.', '_')
 					+ "_invocationHandler";
 
@@ -224,11 +224,11 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			.name(GuiceServerEndpointConfigurator.class.getPackageName() + ".ProxyFor_"
 					+ endpointClass.getName().replace('.', '_'))
 			.defineField(
-					PROXY_DECORATOR_FIELD_NAME,
+					INVOCATION_HANDLER_FIELD_NAME,
 					EndpointProxyHandler.class,
 					Visibility.PACKAGE_PRIVATE)
 			.method(ElementMatchers.any())
-					.intercept(InvocationHandlerAdapter.toField(PROXY_DECORATOR_FIELD_NAME));
+					.intercept(InvocationHandlerAdapter.toField(INVOCATION_HANDLER_FIELD_NAME));
 		final ServerEndpoint annotation = endpointClass.getAnnotation(ServerEndpoint.class);
 		if (annotation != null) proxyClassBuilder = proxyClassBuilder.annotateType(annotation);
 		try (
