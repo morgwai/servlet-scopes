@@ -65,8 +65,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * {@link #addFilter(String, Class, String...)}, {@link #addEndpoint(Class, String)} are
 	 * provided for the most common cases.</p>
 	 */
-	protected abstract void configureServletsFiltersEndpoints()
-			throws ServletException, DeploymentException;
+	protected abstract void configureServletsFiltersEndpoints() throws Exception;
 
 
 
