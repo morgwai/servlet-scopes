@@ -118,6 +118,17 @@ public class ServletModule implements Module {
 
 
 
+	static final TypeLiteral<ContextTracker<ContainerCallContext>> containerCallContextTrackerType =
+			new TypeLiteral<>() {};
+	static final TypeLiteral<List<ContextTracker<?>>> allTrackersType = new TypeLiteral<>() {};
+	/** {@code Key} of {@link #containerCallContextTracker}. */
+	public static final Key<ContextTracker<ContainerCallContext>> containerCallContextTrackerKey =
+			Key.get(containerCallContextTrackerType);
+	/** {@code Key} of {@link #allTrackers}. */
+	public static final Key<List<ContextTracker<?>>> allTrackersKey = Key.get(allTrackersType);
+
+
+
 	/**
 	 * Calls {@link Binder#disableCircularProxies()} if needed and creates infrastructure bindings.
 	 * Specifically binds the following:
@@ -143,17 +154,6 @@ public class ServletModule implements Module {
 			() -> getWebsocketConnectionContext(containerCallContextTracker.getCurrentContext())
 		);
 	}
-
-
-
-	static final TypeLiteral<ContextTracker<ContainerCallContext>> containerCallContextTrackerType =
-			new TypeLiteral<>() {};
-	static final TypeLiteral<List<ContextTracker<?>>> allTrackersType = new TypeLiteral<>() {};
-	/** {@code Key} of {@link #containerCallContextTracker}. */
-	public static final Key<ContextTracker<ContainerCallContext>> containerCallContextTrackerKey =
-			Key.get(containerCallContextTrackerType);
-	/** {@code Key} of {@link #allTrackers}. */
-	public static final Key<List<ContextTracker<?>>> allTrackersKey = Key.get(allTrackersType);
 
 
 

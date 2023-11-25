@@ -103,6 +103,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	static final ConcurrentMap<String, WeakReference<ServletContext>> appDeployments =
 			new ConcurrentHashMap<>(5);
 
+
+
 	/**
 	 * Registers {@code appDeployment} to be used by container-created
 	 * {@code GuiceServerEndpointConfigurator} instances.
@@ -114,6 +116,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	public static void registerDeployment(ServletContext appDeployment) {
 		appDeployments.put(appDeployment.getContextPath(), new WeakReference<>(appDeployment));
 	}
+
+
 
 	/**
 	 * Removes a reference to {@code appDeployment}.
@@ -137,11 +141,15 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	/** Necessary for {@link ServerEndpoint} annotated {@code Endpoints}. */
 	public GuiceServerEndpointConfigurator() {}
 
+
+
 	/** For {@link GuiceServletContextListener} managed instance. */
 	public GuiceServerEndpointConfigurator(ServletContext appDeployment) {
 		this.appDeployment = appDeployment;
 		initialize(appDeployment);
 	}
+
+
 
 	/**
 	 * Initializes this instance member fields with references from {@code appDeployment}

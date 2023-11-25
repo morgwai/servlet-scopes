@@ -40,6 +40,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 		return false;
 	}
 
+
+
 	/**
 	 * Allows to override {@link #pingerService}'s {@code interval} param.
 	 * By default {@link WebsocketPingerService#DEFAULT_INTERVAL_SECONDS} converted to millis.
@@ -50,6 +52,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	protected long getPingIntervalMillis() {
 		return WebsocketPingerService.DEFAULT_INTERVAL_SECONDS * 1000L;
 	}
+
+
 
 	/**
 	 * Allows to override {@link #pingerService}'s {@code failureLimit} param.
@@ -62,6 +66,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 		return WebsocketPingerService.DEFAULT_FAILURE_LIMIT;
 	}
 
+
+
 	/**
 	 * Allows to override {@link #pingerService}'s {@code synchronizeSending} flag.
 	 * By default {@code false}.
@@ -72,6 +78,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	protected boolean shouldSynchronizePingSending() {
 		return false;
 	}
+
+
 
 	/**
 	 * Creates {@link #pingerService the app-wide pinger service}. By default it calls

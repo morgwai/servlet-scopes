@@ -110,6 +110,8 @@ class WebsocketConnectionDecorator implements Session {
 		return wrappedConnection.equals(((WebsocketConnectionDecorator) other).wrappedConnection);
 	}
 
+
+
 	@Override
 	public int hashCode() {
 		return wrappedConnection.hashCode();

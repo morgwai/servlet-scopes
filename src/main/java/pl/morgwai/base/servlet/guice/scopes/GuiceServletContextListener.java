@@ -53,6 +53,23 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	protected abstract LinkedList<Module> configureInjections() throws Exception;
 
+
+
+	/**
+	 * Programmatically adds {@link Servlet}s, {@link Filter}s, websocket {@code Endpoints} and
+	 * performs any other setup required by the given app. Called at the end of
+	 * {@link #contextInitialized(ServletContextEvent)}, may use {@link #injector} (as well as
+	 * {@link #appDeployment} and {@link #endpointContainer}).
+	 * <p>
+	 * Convenience helper method families {@link #addServlet(String, Class, String...)},
+	 * {@link #addFilter(String, Class, String...)}, {@link #addEndpoint(Class, String)} are
+	 * provided for the most common cases.</p>
+	 */
+	protected abstract void configureServletsFiltersEndpoints()
+			throws ServletException, DeploymentException;
+
+
+
 	/**
 	 * Deployment reference for use in {@link #configureInjections()} and
 	 * {@link #configureServletsFiltersEndpoints()}.
@@ -95,36 +112,6 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	protected Injector createInjector(LinkedList<Module> modules) {
 		return Guice.createInjector(modules);
 	}
-
-
-
-	/**
-	 * Adds {@code configurationHook} to be called by
-	 * {@link #contextInitialized(ServletContextEvent)} right before
-	 * {@link #configureServletsFiltersEndpoints()}. This is intended for abstract subclasses to
-	 * hook in their stuff. Concrete {@code Listeners} should rather perform all their setup in
-	 * {@link #configureInjections()} and {@link #configureServletsFiltersEndpoints()}.
-	 */
-	protected void addConfigurationHook(Callable<Void> configurationHook) {
-		configurationHooks.add(configurationHook);
-	}
-
-	private final List<Callable<Void>> configurationHooks = new LinkedList<>();
-
-
-
-	/**
-	 * Programmatically adds {@link Servlet}s, {@link Filter}s, websocket {@code Endpoints} and
-	 * performs any other setup required by the given app. Called at the end of
-	 * {@link #contextInitialized(ServletContextEvent)}, may use {@link #injector} (as well as
-	 * {@link #appDeployment} and {@link #endpointContainer}).
-	 * <p>
-	 * Convenience helper method families {@link #addServlet(String, Class, String...)},
-	 * {@link #addFilter(String, Class, String...)}, {@link #addEndpoint(Class, String)} are
-	 * provided for the most common cases.</p>
-	 */
-	protected abstract void configureServletsFiltersEndpoints()
-			throws ServletException, DeploymentException;
 
 
 
@@ -293,6 +280,21 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
+	 * Adds {@code configurationHook} to be called by
+	 * {@link #contextInitialized(ServletContextEvent)} right before
+	 * {@link #configureServletsFiltersEndpoints()}. This is intended for abstract subclasses to
+	 * hook in their stuff. Concrete {@code Listeners} should rather perform all their setup in
+	 * {@link #configureInjections()} and {@link #configureServletsFiltersEndpoints()}.
+	 */
+	protected void addConfigurationHook(Callable<Void> configurationHook) {
+		configurationHooks.add(configurationHook);
+	}
+
+	private final List<Callable<Void>> configurationHooks = new LinkedList<>();
+
+
+
+	/**
 	 * Calls {@link #configureInjections()}, {@link #createInjector(LinkedList) creates the
 	 * app-wide Injector} and calls {@link #configureServletsFiltersEndpoints()}.
 	 * Also creates and installs all other infrastructure elements such as
@@ -344,6 +346,45 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
+	 * Returns the timeout in seconds for
+	 * {@link ServletModule#awaitTerminationOfAllExecutors(long, TimeUnit) termination of all
+	 * Executors} obtained from {@link #servletModule}. By default {@code 5} seconds.
+	 * <p>
+	 * This method is called by {@link #contextDestroyed(ServletContextEvent)} and may be overridden
+	 * if a different value needs to be used.</p>
+	 */
+	protected int getExecutorsTerminationTimeoutSeconds() { return 5; }
+
+
+
+	/**
+	 * Handles executors that failed to terminate in {@link #contextDestroyed(ServletContextEvent)}.
+	 * By default calls {@link java.util.concurrent.ExecutorService#shutdownNow() shutdownNow()} for
+	 * each executor and hopes for the best...
+	 * Subclasses may override this method to handle unterminated executors in a more specialized
+	 * way.
+	 */
+	protected void handleUnterminatedExecutors(
+		List<ServletContextTrackingExecutor> unterminatedExecutors
+	) {
+		for (var executor: unterminatedExecutors) executor.shutdownNow();
+	}
+
+
+
+	/**
+	 * Adds {@code shutdownHook} to be run at the end of
+	 * {@link #contextDestroyed(ServletContextEvent)}.
+	 */
+	protected void addShutdownHook(Runnable shutdownHook) {
+		shutdownHooks.add(shutdownHook);
+	}
+
+	private final List<Runnable> shutdownHooks = new LinkedList<>();
+
+
+
+	/**
 	 * {@link ServletModule#shutdownAllExecutors() Shutdowns} and
 	 * {@link ServletModule#awaitTerminationOfAllExecutors(long, TimeUnit) awaits termination all
 	 * Executors} created by {@link #servletModule}. If after the timeout returned by
@@ -367,42 +408,6 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		if ( !unterminatedExecutors.isEmpty()) handleUnterminatedExecutors(unterminatedExecutors);
 		for (var shutdownHook : shutdownHooks) shutdownHook.run();
 	}
-
-
-
-	/**
-	 * Returns the timeout in seconds for
-	 * {@link ServletModule#awaitTerminationOfAllExecutors(long, TimeUnit) termination of all
-	 * Executors} obtained from {@link #servletModule}. By default {@code 5} seconds.
-	 * <p>
-	 * This method is called by {@link #contextDestroyed(ServletContextEvent)} and may be overridden
-	 * if a different value needs to be used.</p>
-	 */
-	protected int getExecutorsTerminationTimeoutSeconds() { return 5; }
-
-	/**
-	 * Handles executors that failed to terminate in {@link #contextDestroyed(ServletContextEvent)}.
-	 * By default calls {@link java.util.concurrent.ExecutorService#shutdownNow() shutdownNow()} for
-	 * each executor and hopes for the best...
-	 * Subclasses may override this method to handle unterminated executors in a more specialized
-	 * way.
-	 */
-	protected void handleUnterminatedExecutors(
-			List<ServletContextTrackingExecutor> unterminatedExecutors) {
-		for (var executor: unterminatedExecutors) executor.shutdownNow();
-	}
-
-
-
-	/**
-	 * Adds {@code shutdownHook} to be run at the end of
-	 * {@link #contextDestroyed(ServletContextEvent)}.
-	 */
-	protected void addShutdownHook(Runnable shutdownHook) {
-		shutdownHooks.add(shutdownHook);
-	}
-
-	private final List<Runnable> shutdownHooks = new LinkedList<>();
 
 
 
