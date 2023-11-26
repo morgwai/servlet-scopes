@@ -103,21 +103,6 @@ public class ServletModule implements Module {
 
 
 
-	/** Set in {@link GuiceServletContextListener#contextInitialized(ServletContextEvent)}. */
-	ServletContext appDeployment;
-
-	/** For {@link GuiceServletContextListener#servletModule}. */
-	ServletModule() {}
-
-	/**
-	 * Creates a new module. For usage in apps that don't use {@link GuiceServletContextListener}.
-	 */
-	public ServletModule(ServletContext appDeployment) {
-		this.appDeployment = appDeployment;
-	}
-
-
-
 	static final TypeLiteral<ContextTracker<ContainerCallContext>> containerCallContextTrackerType =
 			new TypeLiteral<>() {};
 	static final TypeLiteral<List<ContextTracker<?>>> allTrackersType = new TypeLiteral<>() {};
@@ -126,6 +111,19 @@ public class ServletModule implements Module {
 			Key.get(containerCallContextTrackerType);
 	/** {@code Key} of {@link #allTrackers}. */
 	public static final Key<List<ContextTracker<?>>> allTrackersKey = Key.get(allTrackersType);
+
+	/** Set in {@link GuiceServletContextListener#contextInitialized(ServletContextEvent)}. */
+	ServletContext appDeployment;
+
+
+
+	/** Creates a new module. For use in apps that don't use {@link GuiceServletContextListener}. */
+	public ServletModule(ServletContext appDeployment) {
+		this.appDeployment = appDeployment;
+	}
+
+	/** For {@link GuiceServletContextListener#servletModule}. */
+	ServletModule() {}
 
 
 
