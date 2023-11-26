@@ -24,7 +24,7 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * the amount of necessary boilerplate will make your eyes burn and heart cry: you've been
  * warned ;-]
  */
-class WebsocketConnectionDecorator implements Session {
+class WebsocketConnectionProxy implements Session {
 
 
 
@@ -34,7 +34,7 @@ class WebsocketConnectionDecorator implements Session {
 
 	/**
 	 * Set by
-	 * {@link WebsocketConnectionContext#WebsocketConnectionContext(WebsocketConnectionDecorator)
+	 * {@link WebsocketConnectionContext#WebsocketConnectionContext(WebsocketConnectionProxy)
 	 * WebsocketConnectionContext's constructor}.
 	 */
 	void setConnectionCtx(WebsocketConnectionContext ctx) { this.connectionCtx = ctx; }
@@ -106,8 +106,8 @@ class WebsocketConnectionDecorator implements Session {
 	@Override
 	public boolean equals(Object other) {
 		if (other == null) return false;
-		if ( !WebsocketConnectionDecorator.class.isAssignableFrom(other.getClass())) return false;
-		return wrappedConnection.equals(((WebsocketConnectionDecorator) other).wrappedConnection);
+		if ( !WebsocketConnectionProxy.class.isAssignableFrom(other.getClass())) return false;
+		return wrappedConnection.equals(((WebsocketConnectionProxy) other).wrappedConnection);
 	}
 
 
@@ -119,7 +119,7 @@ class WebsocketConnectionDecorator implements Session {
 
 
 
-	WebsocketConnectionDecorator(
+	WebsocketConnectionProxy(
 		Session connection,
 		ContextTracker<ContainerCallContext> containerCallContextTracker
 	) {

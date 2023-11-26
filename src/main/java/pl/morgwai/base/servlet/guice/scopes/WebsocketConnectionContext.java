@@ -23,12 +23,12 @@ public class WebsocketConnectionContext extends InjectionContext {
 
 
 
-	final WebsocketConnectionDecorator connection;
+	final WebsocketConnectionProxy connection;
 	public Session getConnection() { return connection; }
 
 
 
-	WebsocketConnectionContext(WebsocketConnectionDecorator connection) {
+	WebsocketConnectionContext(WebsocketConnectionProxy connection) {
 		this.connection = connection;
 		connection.setConnectionCtx(this);
 	}

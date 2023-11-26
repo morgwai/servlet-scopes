@@ -134,7 +134,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	protected volatile ServletContext appDeployment;
 	protected Injector injector;
-	protected ContextTracker<ContainerCallContext> containerCallContextTracker;
+	protected ContextTracker<ContainerCallContext> ctxTracker;
 
 
 
@@ -161,11 +161,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	protected void initialize(ServletContext appDeployment) {
 		injector = (Injector) appDeployment.getAttribute(Injector.class.getName());
 		try {
-			containerCallContextTracker =
-					injector.getInstance(ServletModule.containerCallContextTrackerKey);
+			ctxTracker = injector.getInstance(ServletModule.containerCallContextTrackerKey);
 		} catch (NullPointerException e) {
 			throw new RuntimeException(
-					"no \"" + Injector.class.getName() + "\" deployment attribute");
+					"deployment attribute \"" + Injector.class.getName() + "\" not present");
 		}
 	}
 
@@ -185,7 +184,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			final EndpointT endpointProxy = super.getEndpointInstance(proxyClass);
 			final var endpointProxyHandler = new EndpointProxyHandler(
 				getAdditionalDecorator(injector.getInstance(endpointClass)),
-				containerCallContextTracker
+				ctxTracker
 			);
 			proxyClass.getDeclaredField(INVOCATION_HANDLER_FIELD_NAME)
 					.set(endpointProxy, endpointProxyHandler);
@@ -390,7 +389,7 @@ class EndpointProxyHandler implements InvocationHandler {
 
 
 	final InvocationHandler wrappedEndpoint;
-	final ContextTracker<ContainerCallContext> containerCallContextTracker;
+	final ContextTracker<ContainerCallContext> ctxTracker;
 
 
 
@@ -398,13 +397,14 @@ class EndpointProxyHandler implements InvocationHandler {
 		InvocationHandler endpointToWrap,
 		ContextTracker<ContainerCallContext> containerCallContextTracker
 	) {
-		wrappedEndpoint = endpointToWrap;
-		this.containerCallContextTracker = containerCallContextTracker;
+		this.wrappedEndpoint = endpointToWrap;
+		this.ctxTracker = containerCallContextTracker;
 	}
 
 
 
-	// the below 2 are created/retrieved when onOpen(...) call is intercepted
+	// the below 3 are created/retrieved when onOpen(...) call is intercepted
+	WebsocketConnectionProxy connectionProxy;
 	WebsocketConnectionContext connectionCtx;
 	HttpSession httpSession;
 
@@ -413,23 +413,25 @@ class EndpointProxyHandler implements InvocationHandler {
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
-		// replace the original wsConnection (Session) arg with a decorating wrapper
+		// replace the original wsConnection (Session) arg with a ctx-aware proxy
 		if (args != null) {
 			for (int i = 0; i < args.length; i++) {
 				if (args[i] instanceof Session) {
-					if (connectionCtx == null) {
+					if (connectionProxy == null) {
 						// the first call to this Endpoint instance that has a Session param (most
-						// commonly onOpen(...)) : decorate the intercepted Session, create a new
+						// commonly onOpen(...)) : proxy the intercepted Session, create a new
 						// connectionCtx, retrieve the HttpSession from userProperties
-						final var decoratedConnection = new WebsocketConnectionDecorator(
-								(Session) args[i], containerCallContextTracker);
-						final var userProperties = decoratedConnection.getUserProperties();
+						final var connection = (Session) args[i];
+						final var userProperties = connection.getUserProperties();
 						httpSession = (HttpSession) userProperties.get(HttpSession.class.getName());
-						connectionCtx = new WebsocketConnectionContext(decoratedConnection);
+						connectionProxy = new WebsocketConnectionProxy(connection, ctxTracker);
+						connectionCtx = new WebsocketConnectionContext(connectionProxy);
 						userProperties.put(
-								WebsocketConnectionContext.class.getName(), connectionCtx);
+							WebsocketConnectionContext.class.getName(),
+							connectionCtx
+						);
 					}
-					args[i] = connectionCtx.getConnection();
+					args[i] = connectionProxy;
 					break;
 				}
 			}
@@ -448,16 +450,14 @@ class EndpointProxyHandler implements InvocationHandler {
 		}
 
 		// execute the method within contexts
-		final var eventCtx =
-				new WebsocketEventContext(connectionCtx, httpSession, containerCallContextTracker);
-		return eventCtx.executeWithinSelf(
+		return new WebsocketEventContext(connectionCtx, httpSession, ctxTracker).executeWithinSelf(
 			() -> {
 				try {
 					return wrappedEndpoint.invoke(proxy, method, args);
 				} catch (Error | Exception e) {
 					throw e;
 				} catch (Throwable neverHappens) {
-					throw new Exception(neverHappens);  // result mis-designed invoke() signature
+					throw new Exception(neverHappens);  // result of mis-designed invoke() signature
 				}
 			}
 		);
