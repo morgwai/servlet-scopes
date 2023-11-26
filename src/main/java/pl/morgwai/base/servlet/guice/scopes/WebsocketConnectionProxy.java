@@ -6,7 +6,6 @@ import java.lang.reflect.ParameterizedType;
 import java.net.URI;
 import java.security.Principal;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpSession;
 import javax.websocket.*;
@@ -18,8 +17,8 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 /**
- * Decorates {@link MessageHandler}s passed to {@link #addMessageHandler(MessageHandler)} family
- * method with {@link WebsocketEventContext} tracking.
+ * Decorates {@link MessageHandler}s passed to {@link #addMessageHandler(MessageHandler)} method
+ * family with {@link WebsocketEventContext} tracking.
  * This is an internal class and users of the library don't need to deal with it directly. Also,
  * the amount of necessary boilerplate will make your eyes burn and heart cry: you've been
  * warned ;-]
@@ -29,7 +28,7 @@ class WebsocketConnectionProxy implements Session {
 
 
 	final Session wrappedConnection;
-	final ContextTracker<ContainerCallContext> containerCallContextTracker;
+	final ContextTracker<ContainerCallContext> ctxTracker;
 	final HttpSession httpSession;
 
 	/**
@@ -45,26 +44,32 @@ class WebsocketConnectionProxy implements Session {
 	@Override
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public void addMessageHandler(MessageHandler handler) {
-		final Class<?> messageClass;
-		final var implementedHandlerTypes = Arrays.stream(handler.getClass().getGenericInterfaces())
-			.filter(ParameterizedType.class::isInstance)
-			.map(ParameterizedType.class::cast)
-			.filter(
-				(parameterizedType) -> (
-					parameterizedType.getRawType().equals(MessageHandler.Whole.class)
-					|| parameterizedType.getRawType().equals(MessageHandler.Partial.class)
-				)
-			).collect(Collectors.toList());
-		try {
-			if (implementedHandlerTypes.size() != 1) throw new Exception();
-			messageClass = (Class<?>) implementedHandlerTypes.get(0).getActualTypeArguments()[0];
-		} catch (Exception e) {
-			throw new IllegalArgumentException("cannot determine handler type");
-		}
+		final var messageClass = getHandlerMessageClass(handler);
 		if (handler instanceof MessageHandler.Partial) {
 			addMessageHandler(messageClass, (MessageHandler.Partial) handler);
 		} else {
 			addMessageHandler(messageClass, (MessageHandler.Whole) handler);
+		}
+	}
+
+	static Class<?> getHandlerMessageClass(MessageHandler handler) {
+		try {
+			ParameterizedType handlerType = null;
+			for (final var implementedInterface: handler.getClass().getGenericInterfaces()) {
+				if ( !(implementedInterface instanceof ParameterizedType)) continue;
+				final var parameterizedInterface = (ParameterizedType) implementedInterface;
+				final var parameterizedInterfaceClass = parameterizedInterface.getRawType();
+				if (
+					parameterizedInterfaceClass.equals(MessageHandler.Whole.class)
+					|| parameterizedInterfaceClass.equals(MessageHandler.Partial.class)
+				) {
+					if (handlerType != null) throw new IllegalArgumentException();
+					handlerType = parameterizedInterface;
+				}
+			}
+			return (Class<?>) handlerType.getActualTypeArguments()[0];
+		} catch (IllegalArgumentException | NullPointerException | ClassCastException e) {
+			throw new IllegalArgumentException("cannot determine handler type");
 		}
 	}
 
@@ -92,13 +97,16 @@ class WebsocketConnectionProxy implements Session {
 
 	@Override
 	public Set<Session> getOpenSessions() {
-		Set<Session> result = new HashSet<>();
-		for (final var connection: wrappedConnection.getOpenSessions()) {
-			final var connectionCtx = (WebsocketConnectionContext)
-					connection.getUserProperties().get(WebsocketConnectionContext.class.getName());
-			result.add(connectionCtx.getConnection());
+		final var rawConnections = wrappedConnection.getOpenSessions();
+		final var proxies = new HashSet<Session>(rawConnections.size(), 1.0f);
+		for (final var connection: rawConnections) {
+			proxies.add(
+				((WebsocketConnectionContext) connection.getUserProperties().get(
+					WebsocketConnectionContext.class.getName()
+				)).getConnection()
+			);
 		}
-		return result;
+		return proxies;
 	}
 
 
@@ -124,7 +132,7 @@ class WebsocketConnectionProxy implements Session {
 		ContextTracker<ContainerCallContext> containerCallContextTracker
 	) {
 		this.wrappedConnection = connection;
-		this.containerCallContextTracker = containerCallContextTracker;
+		this.ctxTracker = containerCallContextTracker;
 		this.httpSession = (HttpSession)
 				wrappedConnection.getUserProperties().get(HttpSession.class.getName());
 	}
@@ -158,8 +166,8 @@ class WebsocketConnectionProxy implements Session {
 		final MessageHandler.Whole<T> wrappedHandler;
 
 		@Override public void onMessage(T message) {
-			new WebsocketEventContext(connectionCtx, httpSession, containerCallContextTracker)
-					.executeWithinSelf(() -> wrappedHandler.onMessage(message));
+			new WebsocketEventContext(connectionCtx, httpSession, ctxTracker).executeWithinSelf(
+					() -> wrappedHandler.onMessage(message));
 		}
 
 		WholeMessageHandlerDecorator(MessageHandler.Whole<T> toWrap) {
@@ -176,8 +184,8 @@ class WebsocketConnectionProxy implements Session {
 		final MessageHandler.Partial<T> wrappedHandler;
 
 		@Override public void onMessage(T message, boolean last) {
-			new WebsocketEventContext(connectionCtx, httpSession, containerCallContextTracker)
-					.executeWithinSelf(() -> wrappedHandler.onMessage(message, last));
+			new WebsocketEventContext(connectionCtx, httpSession, ctxTracker).executeWithinSelf(
+					() -> wrappedHandler.onMessage(message, last));
 		}
 
 		PartialMessageHandlerDecorator(MessageHandler.Partial<T> toWrap) {
