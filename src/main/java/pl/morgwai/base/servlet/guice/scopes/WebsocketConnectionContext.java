@@ -17,6 +17,9 @@ import pl.morgwai.base.guice.scopes.InjectionContext;
  * {@link javax.websocket.OnClose @OnClose}), or overriding those of
  * {@link javax.websocket.Endpoint} or of registered {@link javax.websocket.MessageHandler}s, are
  * executed within the same {@code WebsocketConnectionContext} instance.</p>
+ * <p>
+ * Instances are stored in {@link Session#getUserProperties() user properites} under
+ * {@link Class#getName() fully-qualified name} of {@code WebsocketConnectionContext} class.</p>
  * @see ServletModule#websocketConnectionScope corresponding Scope
  */
 public class WebsocketConnectionContext extends InjectionContext {
