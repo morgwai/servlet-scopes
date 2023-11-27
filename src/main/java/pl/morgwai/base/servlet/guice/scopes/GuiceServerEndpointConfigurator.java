@@ -442,10 +442,10 @@ class EndpointProxyHandler implements InvocationHandler {
 		// contexts couldn't have been created: just call the method outside of contexts and hope
 		// for the best...
 		if (connectionCtx == null) {
-			log.warning(proxy.getClass().getSimpleName() + '.' + method.getName()
-					+ MANUAL_CALL_WARNING);
-			System.err.println(proxy.getClass().getSimpleName() + '.' + method.getName()
-					+ MANUAL_CALL_WARNING);
+			final var manualCallWarningMessage =
+					proxy.getClass().getSimpleName() + '.' + method.getName() + MANUAL_CALL_WARNING;
+			log.warning(manualCallWarningMessage);
+			System.err.println(manualCallWarningMessage);
 			return wrappedEndpoint.invoke(proxy, method, args);
 		}
 
@@ -466,6 +466,6 @@ class EndpointProxyHandler implements InvocationHandler {
 
 
 	static final Logger log = Logger.getLogger(EndpointProxyHandler.class.getName());
-	static final String MANUAL_CALL_WARNING = ": calling manually methods of Endpoints that were "
+	static final String MANUAL_CALL_WARNING = ": calling manually methods of Endpoints, that were "
 			+ "designed to run within contexts, may lead to an OutOfScopeException";
 }
