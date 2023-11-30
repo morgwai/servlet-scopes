@@ -130,13 +130,18 @@ public class ServletModule implements Module {
 
 
 	/**
-	 * Calls {@link Binder#disableCircularProxies()} if needed and creates infrastructure bindings.
+	 * Creates infrastructure bindings.
 	 * Specifically binds the following:
 	 * <ul>
-	 *   <li>{@code List<ContextTracker<?>>} to {@link #allTrackers}</li>
-	 *   <li>{@link ContextBinder} to {@code new ContextBinder(allTrackers)}</li>
-	 *   <li>{@link ServletContext}</li>
-	 *   <li>Their respective types to {@link #containerCallContextTracker} and all 3 contexts</li>
+	 *   <li>{@link #allTrackersKey} to {@link #allTrackers}</li>
+	 *   <li>{@link ContextBinder} to {@link #contextBinder}</li>
+	 *   <li>{@link ServletContext} to {@link #appDeployment}</li>
+	 *   <li>{@link #containerCallContextTrackerKey} to {@link #containerCallContextTracker}</li>
+	 *   <li>
+	 *       {@link ContainerCallContext}, {@link WebsocketConnectionContext} and
+	 *       {@link HttpSessionContext} to {@link Provider}s returning instances current for the
+	 *       calling {@code Thread}
+	 *   </li>
 	 * </ul>
 	 */
 	@Override
