@@ -159,12 +159,14 @@ public class ServletModule implements Module {
 
 
 
+	final List<ServletContextTrackingExecutor> executors = new LinkedList<>();
+
+
+
 	/** List of all {@code Executors} created by this {@code Module}. */
 	public List<ServletContextTrackingExecutor> getExecutors() {
 		return Collections.unmodifiableList(executors);
 	}
-
-	final List<ServletContextTrackingExecutor> executors = new LinkedList<>();
 
 
 
@@ -181,6 +183,8 @@ public class ServletModule implements Module {
 		executors.add(executor);
 		return executor;
 	}
+
+
 
 	/**
 	 * Constructs a fixed size, context tracking executor that uses a {@link LinkedBlockingQueue} of
@@ -202,6 +206,8 @@ public class ServletModule implements Module {
 		executors.add(executor);
 		return executor;
 	}
+
+
 
 	/**
 	 * Constructs a fixed size, context tracking executor that uses {@code workQueue},
@@ -226,6 +232,8 @@ public class ServletModule implements Module {
 		executors.add(executor);
 		return executor;
 	}
+
+
 
 	/**
 	 * Constructs a context tracking executor.
@@ -267,6 +275,8 @@ public class ServletModule implements Module {
 		for (var executor: executors) executor.shutdown();
 	}
 
+
+
 	/**
 	 * {@link ServletContextTrackingExecutor#toAwaitableOfEnforcedTermination() Enforces
 	 * termination} of all executors obtained from this module.
@@ -283,6 +293,8 @@ public class ServletModule implements Module {
 			executors
 		);
 	}
+
+
 
 	/**
 	 * {@link ServletContextTrackingExecutor#toAwaitableOfTermination() Awaits for termination} of
@@ -301,6 +313,8 @@ public class ServletModule implements Module {
 		);
 	}
 
+
+
 	/**
 	 * {@link ServletContextTrackingExecutor#awaitTermination() Awaits for termination} of all
 	 * executors obtained from this module.
@@ -308,6 +322,8 @@ public class ServletModule implements Module {
 	public void awaitTerminationOfAllExecutors() throws InterruptedException {
 		for (var executor: executors) executor.awaitTermination();
 	}
+
+
 
 	/**
 	 * Creates {@link Awaitable.WithUnit} of
@@ -317,6 +333,8 @@ public class ServletModule implements Module {
 		shutdownAllExecutors();
 		return (timeout, unit) -> enforceTerminationOfAllExecutors(timeout, unit).isEmpty();
 	}
+
+
 
 	/**
 	 * Creates {@link Awaitable.WithUnit} of
