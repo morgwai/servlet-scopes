@@ -1,6 +1,7 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes.tests.tyrusserver;
 
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,17 +28,26 @@ public class InMemoryClusterContext extends ClusterContext {
 		}
 	}
 
+	static class SessionUserProperties {
+
+		final int nodeId;
+		final Map<String, Object> properties = new HashMap<>();
+
+		SessionUserProperties(int nodeId) {
+			this.nodeId = nodeId;
+		}
+	}
 
 
 	static final AtomicInteger sessionIdSequence = new AtomicInteger(0);
+	static final AtomicInteger connectionIdSequence = new AtomicInteger(0);
+
 	static final ConcurrentMap<String, Set<PathListener>> pathListeners = new ConcurrentHashMap<>();
 	static final ConcurrentMap<String, SessionEventListener> sessions = new ConcurrentHashMap<>();
 	static final ConcurrentMap<String, Set<String>> pathSessions = new ConcurrentHashMap<>();
 	static final ConcurrentMap<String, Map<DistributedMapKey, Object>> sessionSettings =
 			new ConcurrentHashMap<>();
-
-	static final AtomicInteger connectionIdSequence = new AtomicInteger(0);
-	static final ConcurrentMap<String, Map<String, Object>> sessionUserProperties =
+	static final ConcurrentMap<String, SessionUserProperties> sessionUserProperties =
 			new ConcurrentHashMap<>();
 
 	final int nodeId;
@@ -57,12 +67,18 @@ public class InMemoryClusterContext extends ClusterContext {
 
 
 
+	static final Object lock = new Object();
+
+
+
 	@Override
 	public void registerSessionListener(String endpointPath, SessionListener listener) {
-		pathListeners.computeIfAbsent(
-			endpointPath,
-			(ignored) -> ConcurrentHashMap.newKeySet()
-		).add(new PathListener(nodeId, listener));
+		synchronized (lock) {
+			pathListeners.computeIfAbsent(
+				endpointPath,
+				(ignored) -> ConcurrentHashMap.newKeySet()
+			).add(new PathListener(nodeId, listener));
+		}
 	}
 
 
@@ -73,16 +89,18 @@ public class InMemoryClusterContext extends ClusterContext {
 		String endpointPath,
 		SessionEventListener listener
 	) {
-		sessions.put(sessionId, listener);
-		pathSessions.computeIfAbsent(
-			endpointPath,
-			(ignored) -> ConcurrentHashMap.newKeySet()
-		).add(sessionId);
-		for (var pathListener: pathListeners.computeIfAbsent(
-			endpointPath,
-			(ignored) -> ConcurrentHashMap.newKeySet()
-		)) {
-			if (pathListener.nodeId != nodeId) pathListener.listener.onSessionOpened(sessionId);
+		synchronized (lock) {
+			sessions.put(sessionId, listener);
+			pathSessions.computeIfAbsent(
+				endpointPath,
+				(ignored) -> ConcurrentHashMap.newKeySet()
+			).add(sessionId);
+			for (var pathListener: pathListeners.computeIfAbsent(
+				endpointPath,
+				(ignored) -> ConcurrentHashMap.newKeySet()
+			)) {
+				if (pathListener.nodeId != nodeId) pathListener.listener.onSessionOpened(sessionId);
+			}
 		}
 	}
 
@@ -90,16 +108,19 @@ public class InMemoryClusterContext extends ClusterContext {
 
 	@Override
 	public void removeSession(String sessionId, String endpointPath) {
-		sessions.remove(sessionId);
-		pathSessions.computeIfAbsent(
-			endpointPath,
-			(ignored) -> ConcurrentHashMap.newKeySet()
-		).remove(sessionId);
-		for (var pathListener: pathListeners.computeIfAbsent(
-			endpointPath,
-			(ignored) -> ConcurrentHashMap.newKeySet()
-		)) {
-			if (pathListener.nodeId != nodeId) pathListener.listener.onSessionClosed(sessionId);
+		synchronized (lock) {
+			for (var pathListener : pathListeners.computeIfAbsent(
+				endpointPath,
+				(ignored) -> ConcurrentHashMap.newKeySet()
+			)) {
+				if (pathListener.nodeId != nodeId) pathListener.listener.onSessionClosed(sessionId);
+			}
+			sessions.remove(sessionId);
+			pathSessions.computeIfAbsent(
+				endpointPath,
+				(ignored) -> ConcurrentHashMap.newKeySet()
+			).remove(sessionId);
+			sessionSettings.remove(sessionId);
 		}
 	}
 
@@ -107,17 +128,21 @@ public class InMemoryClusterContext extends ClusterContext {
 
 	@Override
 	public Set<String> getRemoteSessionIds(String endpointPath) {
-		return pathSessions.computeIfAbsent(
-			endpointPath,
-			(ignored) -> ConcurrentHashMap.newKeySet()
-		);
+		synchronized (lock) {
+			return pathSessions.computeIfAbsent(
+				endpointPath,
+				(ignored) -> ConcurrentHashMap.newKeySet()
+			);
+		}
 	}
 
 
 
 	@Override
 	public boolean isSessionOpen(String sessionId, String endpointPath) {
-		return sessions.containsKey(sessionId);
+		synchronized (lock) {
+			return sessions.containsKey(sessionId);
+		}
 	}
 
 
@@ -141,10 +166,34 @@ public class InMemoryClusterContext extends ClusterContext {
 
 	@Override
 	public Map<String, Object> getDistributedUserProperties(String connectionId) {
-		return sessionUserProperties.computeIfAbsent(
+		final var properties = sessionUserProperties.computeIfAbsent(
 			connectionId,
-			(ignored) -> new ConcurrentHashMap<>()
+			(ignored) -> new SessionUserProperties(nodeId)
 		);
+		if (properties.nodeId == nodeId) return properties.properties;
+
+		final var serializedBytesOutput = new ByteArrayOutputStream(500);
+		try (
+			serializedBytesOutput;
+			final var serializedObjects = new ObjectOutputStream(serializedBytesOutput);
+		) {
+			serializedObjects.writeObject(properties.properties);
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+		try (
+			final var serializedBytesInput =
+					new ByteArrayInputStream(serializedBytesOutput.toByteArray());
+			final var serializedObjects = new ObjectInputStream(serializedBytesInput);
+		) {
+			@SuppressWarnings("unchecked")
+			final var deserializedProperties = (Map<String, Object>) serializedObjects.readObject();
+			return deserializedProperties;
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
 	}
 
 
