@@ -19,24 +19,86 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 /**
  * Decorates {@link MessageHandler}s passed to {@link #addMessageHandler(MessageHandler)} method
  * family with {@link WebsocketEventContext} tracking.
- * This is an internal class and users of the library don't need to deal with it directly. Also,
- * the amount of necessary boilerplate will make your eyes burn and heart cry: you've been
- * warned ;-]
  */
-class WebsocketConnectionProxy implements Session {
+public class WebsocketConnectionProxy implements Session {
 
 
 
-	final Session wrappedConnection;
-	final ContextTracker<ContainerCallContext> ctxTracker;
-	final HttpSession httpSession;
+	public Session getWrappedConnection() { return wrappedConnection; }
+	protected final Session wrappedConnection;
+	protected final ContextTracker<ContainerCallContext> ctxTracker;
+	protected final HttpSession httpSession;
+
+	private WebsocketConnectionContext connectionCtx;
+
+
+
+	static WebsocketConnectionProxy newInstance(
+		Session connection,
+		ContextTracker<ContainerCallContext> containerCallContextTracker
+	) {
+		return connection.getClass().getName().equals(TyrusConnectionProxy.TYRUS_SESSION_CLASS_NAME)
+				? new TyrusConnectionProxy(connection, containerCallContextTracker, false)
+				: new WebsocketConnectionProxy(connection, containerCallContextTracker, false);
+	}
+
+
+
+	protected WebsocketConnectionProxy(
+		Session connection,
+		ContextTracker<ContainerCallContext> containerCallContextTracker,
+		boolean remote
+	) {
+		this.wrappedConnection = connection;
+		this.ctxTracker = containerCallContextTracker;
+		this.httpSession = remote
+				? null
+				: (HttpSession)
+						wrappedConnection.getUserProperties().get(HttpSession.class.getName());
+	}
+
+
 
 	/**
-	 * Set by
+	 * Called by
 	 * {@link WebsocketConnectionContext#WebsocketConnectionContext(WebsocketConnectionProxy)
 	 * WebsocketConnectionContext's constructor}.
 	 */
-	WebsocketConnectionContext connectionCtx;
+	void setConnectionCtx(WebsocketConnectionContext ctx) {
+		assert this.connectionCtx == null : "connection context already set";
+		this.connectionCtx = ctx;
+		getUserProperties().put(
+			WebsocketConnectionContext.class.getName(),
+			ctx
+		);
+	}
+
+
+
+	@Override
+	public Set<Session> getOpenSessions() {
+		final var rawPeerConnections = wrappedConnection.getOpenSessions();
+		final var proxies = new HashSet<Session>(rawPeerConnections.size(), 1.0f);
+		for (final var peerConnection: rawPeerConnections) {
+			final var peerConnectionCtx = ((WebsocketConnectionContext)
+					peerConnection.getUserProperties()
+							.get(WebsocketConnectionContext.class.getName()));
+			if (peerConnectionCtx.getConnection() == null) {
+				// peerConnection from another cluster node, that supports userProperties clustering
+				peerConnectionCtx.connectionProxy =
+						new WebsocketConnectionProxy(peerConnection, ctxTracker, true);
+			}
+			proxies.add(peerConnectionCtx.getConnection());
+		}
+		return proxies;
+	}
+
+
+
+	@Override
+	public Map<String, Object> getUserProperties() {
+		return wrappedConnection.getUserProperties();
+	}
 
 
 
@@ -90,124 +152,6 @@ class WebsocketConnectionProxy implements Session {
 			messageClass,
 			new PartialMessageHandlerDecorator<>(handler)
 		);
-	}
-
-
-	// todo: don't cluster tyrus flag
-
-	boolean tyrus;
-
-	WebsocketConnectionProxy(
-		Session connection,
-		ContextTracker<ContainerCallContext> containerCallContextTracker
-	) {
-		this(connection, containerCallContextTracker, false);
-	}
-
-	WebsocketConnectionProxy(
-		Session connection,
-		ContextTracker<ContainerCallContext> containerCallContextTracker,
-		boolean remote
-	) {
-		this.wrappedConnection = connection;
-		this.ctxTracker = containerCallContextTracker;
-		this.httpSession = (HttpSession) (
-			remote ? null : wrappedConnection.getUserProperties().get(HttpSession.class.getName())
-		);
-		try {
-			wrappedConnection.getClass().getMethod("getDistributedProperties");
-			tyrus = true;
-		} catch (NoSuchMethodException e) {
-			tyrus = false;
-		}
-	}
-
-	/**
-	 * Called by
-	 * {@link WebsocketConnectionContext#WebsocketConnectionContext(WebsocketConnectionProxy)
-	 * WebsocketConnectionContext's constructor}.
-	 */
-	void setConnectionCtx(WebsocketConnectionContext ctx) {
-		this.connectionCtx = ctx;
-		getUserProperties().put(
-			WebsocketConnectionContext.class.getName(),
-			connectionCtx
-		);
-	}
-
-	@Override
-	public Set<Session> getOpenSessions() {
-		final var rawConnections = wrappedConnection.getOpenSessions();
-		final var proxies = new HashSet<Session>(rawConnections.size(), 1.0f);
-		for (final var connection: rawConnections) {
-			final var userProperties =
-					tyrus ? getDistributedProperties(connection) : connection.getUserProperties();
-			final var connectionCtx = ((WebsocketConnectionContext)
-					userProperties.get(WebsocketConnectionContext.class.getName()));
-			if (connectionCtx.getConnection() == null) {
-				// connection from another cluster node, that supports userProperties clustering
-				connectionCtx.connectionProxy = new WebsocketConnectionProxy(connection, ctxTracker, true);
-			}
-			proxies.add(connectionCtx.getConnection());
-		}
-		if ( !tyrus) return proxies;
-
-		try {
-			// Tyrus clustering
-			@SuppressWarnings("unchecked")
-			final var remoteSessions = (Collection<? extends Session>)
-					wrappedConnection
-						.getClass()
-						.getMethod("getRemoteSessions")
-						.invoke(wrappedConnection);
-			for (var remoteConnection: remoteSessions) {
-				final var connectionCtx = ((WebsocketConnectionContext)
-						getDistributedProperties(remoteConnection).get(WebsocketConnectionContext.class.getName()));
-				final var proxy = new WebsocketConnectionProxy(remoteConnection, ctxTracker, true);
-				connectionCtx.connectionProxy = proxy;
-				proxies.add(proxy);
-			}
-			return proxies;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	@Override public Map<String, Object> getUserProperties() {
-		if ( !tyrus) {
-			return wrappedConnection.getUserProperties();
-		} else {
-			return getDistributedProperties(wrappedConnection);
-		}
-	}
-
-	static Map<String, Object> getDistributedProperties(Session tyrusConnection) {
-		try {
-			@SuppressWarnings("unchecked")
-			final Map<String, Object> userProperties = (Map<String, Object>)
-					tyrusConnection
-						.getClass()
-						.getMethod("getDistributedProperties")
-						.invoke(tyrusConnection);
-			return userProperties;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-
-	@Override
-	public boolean equals(Object other) {
-		if (other == null) return false;
-		if ( !WebsocketConnectionProxy.class.isAssignableFrom(other.getClass())) return false;
-		return wrappedConnection.equals(((WebsocketConnectionProxy) other).wrappedConnection);
-	}
-
-
-
-	@Override
-	public int hashCode() {
-		return wrappedConnection.hashCode();
 	}
 
 
@@ -265,6 +209,22 @@ class WebsocketConnectionProxy implements Session {
 			super(toWrap);
 			this.wrappedHandler = toWrap;
 		}
+	}
+
+
+
+	@Override
+	public boolean equals(Object other) {
+		if (other == null) return false;
+		if ( !WebsocketConnectionProxy.class.isAssignableFrom(other.getClass())) return false;
+		return wrappedConnection.equals(((WebsocketConnectionProxy) other).wrappedConnection);
+	}
+
+
+
+	@Override
+	public int hashCode() {
+		return wrappedConnection.hashCode();
 	}
 
 
