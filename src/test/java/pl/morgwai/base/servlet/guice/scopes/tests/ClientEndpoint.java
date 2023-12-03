@@ -10,6 +10,8 @@ import java.util.logging.Logger;
 import javax.websocket.*;
 import javax.websocket.MessageHandler.Whole;
 
+import pl.morgwai.base.utils.concurrent.Awaitable;
+
 
 
 class ClientEndpoint extends Endpoint {
@@ -81,6 +83,12 @@ class ClientEndpoint extends Endpoint {
 
 	public boolean awaitClosure(long timeout, TimeUnit unit) throws InterruptedException {
 		return closureLatch.await(timeout, unit);
+	}
+
+
+
+	public Awaitable.WithUnit toAwaitableOfClosure() {
+		return closureLatch::await;
 	}
 
 

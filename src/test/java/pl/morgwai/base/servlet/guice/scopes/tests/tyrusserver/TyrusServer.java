@@ -27,7 +27,7 @@ public class TyrusServer extends org.glassfish.tyrus.server.Server {
 			"localhost",
 			port,
 			PATH,
-			Map.of(ClusterContext.CLUSTER_CONTEXT, clusterCtx),
+			clusterCtx == null ? null : Map.of(ClusterContext.CLUSTER_CONTEXT, clusterCtx),
 			BroadcastEndpoint.class
 		);
 		start();
