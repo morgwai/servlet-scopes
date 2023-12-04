@@ -2,6 +2,7 @@
 package pl.morgwai.base.servlet.guice.scopes;
 
 import java.io.IOException;
+import java.lang.annotation.*;
 import java.lang.reflect.ParameterizedType;
 import java.net.URI;
 import java.security.Principal;
@@ -13,6 +14,11 @@ import javax.websocket.RemoteEndpoint.Async;
 import javax.websocket.RemoteEndpoint.Basic;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
+import pl.morgwai.base.servlet.guice.scopes.WebsocketConnectionProxy.Factory.SupportedSessionType;
+
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static java.util.stream.Collectors.toMap;
 
 
 
@@ -21,6 +27,46 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * family with {@link WebsocketEventContext} tracking.
  */
 public class WebsocketConnectionProxy implements Session {
+
+
+
+	/**
+	 * {@link ServiceLoader SPI}-provided factory for proxies, that wrap specific implementation
+	 * of {@link Session} to enable its specific features. {@code Factory}'s supported
+	 * {@link Session} class must be indicated by annotating {@code Factory}'s class with a
+	 * {@link SupportedSessionType}.
+	 */
+	public interface Factory {
+
+		/** Indicates what type of {@link Session} given factory creates proxies for. */
+		@Retention(RUNTIME)
+		@Target(TYPE)
+		@interface SupportedSessionType {
+			String value();
+// todo:			Class<? extends Session> value();
+		}
+
+		WebsocketConnectionProxy newProxy(
+			Session connection,
+			ContextTracker<ContainerCallContext> containerCallContextTracker
+		);
+	}
+
+
+
+	static Map<Class<? extends Session>, Factory> proxyFactories =
+			ServiceLoader.load(Factory.class).stream()
+				.collect(toMap(
+					(provider) -> {
+						try {
+							return (Class<? extends Session>) Class.forName(provider.type().getAnnotation(SupportedSessionType.class).value());
+						} catch (ClassNotFoundException e) {
+							e.printStackTrace();
+							throw new RuntimeException(e);
+						}
+					},
+					ServiceLoader.Provider::get
+				));
 
 
 
@@ -33,17 +79,29 @@ public class WebsocketConnectionProxy implements Session {
 
 
 
+	/**
+	 * Asks {@link ServiceLoader SPI}-provided factory to create a new proxy for {@code connection}.
+	 * If there's no factory specific for the given {@link Session} implementation, uses
+	 * {@link #WebsocketConnectionProxy(Session, ContextTracker, boolean)}.
+	 */
 	static WebsocketConnectionProxy newInstance(
 		Session connection,
-		ContextTracker<ContainerCallContext> containerCallContextTracker
+		ContextTracker<ContainerCallContext> ctxTracker
 	) {
-		return connection.getClass().getName().equals(TyrusConnectionProxy.TYRUS_SESSION_CLASS_NAME)
-				? new TyrusConnectionProxy(connection, containerCallContextTracker, false)
-				: new WebsocketConnectionProxy(connection, containerCallContextTracker, false);
+		final var proxyFactory = proxyFactories.get(connection.getClass());
+		if (proxyFactory != null) return proxyFactory.newProxy(connection, ctxTracker);
+		return new WebsocketConnectionProxy(connection, ctxTracker, false);
 	}
 
 
 
+	/**
+	 * Constructs a new proxy for {@code connection}.
+	 * @param remote weather {@code connection} is a remote {@link Session} from another cluster
+	 *     node. In such case, there will be no attempt to retrieve {@link #httpSession} from
+	 *     {@link Session#getUserProperties() userProperties}. This is useful when creating proxies
+	 *     for remote {@link Session}s in {@link #getOpenSessions()} in a clustered environment.
+	 */
 	protected WebsocketConnectionProxy(
 		Session connection,
 		ContextTracker<ContainerCallContext> containerCallContextTracker,
@@ -51,10 +109,11 @@ public class WebsocketConnectionProxy implements Session {
 	) {
 		this.wrappedConnection = connection;
 		this.ctxTracker = containerCallContextTracker;
-		this.httpSession = remote
-				? null
-				: (HttpSession)
-						wrappedConnection.getUserProperties().get(HttpSession.class.getName());
+		this.httpSession = (HttpSession) (
+				remote
+					? null
+					: wrappedConnection.getUserProperties().get(HttpSession.class.getName())
+		);
 	}
 
 

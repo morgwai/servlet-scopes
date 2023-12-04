@@ -8,6 +8,7 @@ import java.util.*;
 import javax.websocket.Session;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
+import pl.morgwai.base.servlet.guice.scopes.WebsocketConnectionProxy.Factory.SupportedSessionType;
 
 
 
@@ -17,9 +18,20 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 class TyrusConnectionProxy extends WebsocketConnectionProxy {
 
 
-	// todo: spi
 
-	static final String TYRUS_SESSION_CLASS_NAME = "org.glassfish.tyrus.core.TyrusSession";
+	@SupportedSessionType("org.glassfish.tyrus.core.TyrusSession")
+	public static class Factory implements WebsocketConnectionProxy.Factory {
+
+		@Override
+		public WebsocketConnectionProxy newProxy(
+			Session connection,
+			ContextTracker<ContainerCallContext> containerCallContextTracker
+		) {
+			return new TyrusConnectionProxy(connection, containerCallContextTracker, false);
+		}
+	}
+
+
 
 	static final Method getRemoteSessions;
 	static final Method getDistributedProperties;
@@ -31,7 +43,7 @@ class TyrusConnectionProxy extends WebsocketConnectionProxy {
 		Method localGetDistributedProperties;
 		try {
 			localGetRemoteSessions = Class
-				.forName(TYRUS_SESSION_CLASS_NAME)
+				.forName("org.glassfish.tyrus.core.TyrusSession")
 				.getMethod("getRemoteSessions");
 			localGetDistributedProperties = Class
 				.forName("org.glassfish.tyrus.core.cluster.DistributedSession")
