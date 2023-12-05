@@ -14,7 +14,7 @@ import javax.websocket.RemoteEndpoint.Basic;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 
 
 
@@ -46,7 +46,7 @@ public class WebsocketConnectionProxy implements Session {
 
 	static Map<Class<? extends Session>, Factory> proxyFactories =
 			ServiceLoader.load(Factory.class).stream()
-				.collect(toMap(
+				.collect(toUnmodifiableMap(
 					(provider) -> provider.get().getSupportedConnectionType(),
 					ServiceLoader.Provider::get
 				));
