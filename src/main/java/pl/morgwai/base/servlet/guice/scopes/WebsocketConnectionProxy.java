@@ -42,8 +42,7 @@ public class WebsocketConnectionProxy implements Session {
 		@Retention(RUNTIME)
 		@Target(TYPE)
 		@interface SupportedSessionType {
-			String value();
-// todo:			Class<? extends Session> value();
+			Class<? extends Session> value();
 		}
 
 		WebsocketConnectionProxy newProxy(
@@ -57,14 +56,7 @@ public class WebsocketConnectionProxy implements Session {
 	static Map<Class<? extends Session>, Factory> proxyFactories =
 			ServiceLoader.load(Factory.class).stream()
 				.collect(toMap(
-					(provider) -> {
-						try {
-							return (Class<? extends Session>) Class.forName(provider.type().getAnnotation(SupportedSessionType.class).value());
-						} catch (ClassNotFoundException e) {
-							e.printStackTrace();
-							throw new RuntimeException(e);
-						}
-					},
+					(provider) -> provider.type().getAnnotation(SupportedSessionType.class).value(),
 					ServiceLoader.Provider::get
 				));
 
