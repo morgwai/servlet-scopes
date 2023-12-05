@@ -1,5 +1,5 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.scopes.tests;
+package pl.morgwai.base.servlet.guice.scopes.connectionproxy.tyrus;
 
 import java.io.IOException;
 import java.net.CookieManager;
@@ -19,7 +19,7 @@ import org.eclipse.jetty.websocket.javax.common.JavaxWebSocketContainer;
 import org.junit.*;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.ServletModule;
-import pl.morgwai.base.servlet.guice.scopes.tests.tyrusserver.*;
+import pl.morgwai.base.servlet.guice.scopes.connectionproxy.tyrus.server.*;
 import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
 import pl.morgwai.base.utils.concurrent.Awaitable;
 
@@ -36,8 +36,8 @@ public class TyrusClusteringTests {
 	org.eclipse.jetty.client.HttpClient wsHttpClient;
 	WebSocketContainer clientWebsocketContainer;
 
-	TyrusServer node1;
-	TyrusServer node2;
+	ServerNode node1;
+	ServerNode node2;
 
 	StandaloneWebsocketContainerServletContext appDeployment;
 
@@ -50,7 +50,7 @@ public class TyrusClusteringTests {
 		wsHttpClient.setCookieStore(cookieManager.getCookieStore());
 		clientWebsocketContainer = JavaxWebSocketClientContainerProvider.getContainer(wsHttpClient);
 
-		appDeployment  = new StandaloneWebsocketContainerServletContext(TyrusServer.PATH);
+		appDeployment  = new StandaloneWebsocketContainerServletContext(ServerNode.PATH);
 		final var servletModule = new ServletModule(appDeployment);
 		final var injector = Guice.createInjector(servletModule);
 		appDeployment.setAttribute(Injector.class.getName(), injector);
@@ -147,12 +147,12 @@ public class TyrusClusteringTests {
 	public void testTwoNodeCluster() throws DeploymentException, IOException, InterruptedException {
 		final var clusterCtx1 = new InMemoryClusterContext(1);
 		final var clusterCtx2 = new InMemoryClusterContext(2);
-		node1 = new TyrusServer(-1, clusterCtx1);
-		node2 = new TyrusServer(-1, clusterCtx2);
+		node1 = new ServerNode(-1, clusterCtx1);
+		node2 = new ServerNode(-1, clusterCtx2);
 		final var port1 = node1.getPort();
 		final var port2 = node2.getPort();
-		final var url1 = URL_PREFIX + port1 + TyrusServer.PATH + BroadcastEndpoint.PATH;
-		final var url2 = URL_PREFIX + port2 + TyrusServer.PATH + BroadcastEndpoint.PATH;
+		final var url1 = URL_PREFIX + port1 + ServerNode.PATH + BroadcastEndpoint.PATH;
+		final var url2 = URL_PREFIX + port2 + ServerNode.PATH + BroadcastEndpoint.PATH;
 		testBroadcast(url1, url2, url1);
 	}
 
@@ -160,9 +160,9 @@ public class TyrusClusteringTests {
 
 	@Test
 	public void testSingleServer() throws DeploymentException, IOException, InterruptedException {
-		node1 = new TyrusServer(-1, null);
+		node1 = new ServerNode(-1, null);
 		final var port = node1.getPort();
-		final var url = URL_PREFIX + port + TyrusServer.PATH + BroadcastEndpoint.PATH;
+		final var url = URL_PREFIX + port + ServerNode.PATH + BroadcastEndpoint.PATH;
 		testBroadcast(url, url);
 	}
 
