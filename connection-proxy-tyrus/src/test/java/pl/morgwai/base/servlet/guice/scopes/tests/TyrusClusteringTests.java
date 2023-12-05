@@ -29,7 +29,7 @@ import static org.junit.Assert.*;
 
 
 
-public class WebsocketClusteringTests {
+public class TyrusClusteringTests {
 
 
 
@@ -199,13 +199,13 @@ public class WebsocketClusteringTests {
 
 
 	static Level LOG_LEVEL = Level.WARNING;
-	static final Logger log = Logger.getLogger(WebsocketClusteringTests.class.getPackageName());
+	static final Logger log = Logger.getLogger(TyrusClusteringTests.class.getPackageName());
 
 	@BeforeClass
 	public static void setupLogging() {
 		try {
 			LOG_LEVEL = Level.parse(System.getProperty(
-					WebsocketClusteringTests.class.getPackageName() + ".level"));
+					TyrusClusteringTests.class.getPackageName() + ".level"));
 		} catch (Exception ignored) {}
 		log.setLevel(LOG_LEVEL);
 		for (final var handler: Logger.getLogger("").getHandlers()) handler.setLevel(LOG_LEVEL);

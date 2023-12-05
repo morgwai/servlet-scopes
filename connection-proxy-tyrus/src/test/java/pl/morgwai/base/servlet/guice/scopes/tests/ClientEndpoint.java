@@ -86,5 +86,5 @@ class ClientEndpoint extends Endpoint {
 
 
 
-	static final Logger log = Logger.getLogger(WebsocketClusteringTests.class.getName());
+	static final Logger log = Logger.getLogger(TyrusClusteringTests.class.getName());
 }
