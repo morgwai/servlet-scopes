@@ -2,7 +2,6 @@
 package pl.morgwai.base.servlet.guice.scopes;
 
 import java.io.IOException;
-import java.lang.annotation.*;
 import java.lang.reflect.ParameterizedType;
 import java.net.URI;
 import java.security.Principal;
@@ -14,10 +13,7 @@ import javax.websocket.RemoteEndpoint.Async;
 import javax.websocket.RemoteEndpoint.Basic;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
-import pl.morgwai.base.servlet.guice.scopes.WebsocketConnectionProxy.Factory.SupportedSessionType;
 
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static java.util.stream.Collectors.toMap;
 
 
@@ -31,24 +27,19 @@ public class WebsocketConnectionProxy implements Session {
 
 
 	/**
-	 * {@link ServiceLoader SPI}-provided factory for proxies, that wrap specific implementation
-	 * of {@link Session} to enable its specific features. {@code Factory}'s supported
-	 * {@link Session} class must be indicated by annotating {@code Factory}'s class with a
-	 * {@link SupportedSessionType}.
+	 * {@link ServiceLoader SPI}-provided factory for proxies, that wrap
+	 * {@link #getSupportedConnectionType() specific implementation} of {@link Session} to enable
+	 * its specific features.
 	 */
 	public interface Factory {
-
-		/** Indicates what type of {@link Session} given factory creates proxies for. */
-		@Retention(RUNTIME)
-		@Target(TYPE)
-		@interface SupportedSessionType {
-			Class<? extends Session> value();
-		}
 
 		WebsocketConnectionProxy newProxy(
 			Session connection,
 			ContextTracker<ContainerCallContext> containerCallContextTracker
 		);
+
+		/** Indicates what type of {@link Session} given factory creates proxies for. */
+		Class<? extends Session> getSupportedConnectionType();
 	}
 
 
@@ -56,7 +47,7 @@ public class WebsocketConnectionProxy implements Session {
 	static Map<Class<? extends Session>, Factory> proxyFactories =
 			ServiceLoader.load(Factory.class).stream()
 				.collect(toMap(
-					(provider) -> provider.type().getAnnotation(SupportedSessionType.class).value(),
+					(provider) -> provider.get().getSupportedConnectionType(),
 					ServiceLoader.Provider::get
 				));
 

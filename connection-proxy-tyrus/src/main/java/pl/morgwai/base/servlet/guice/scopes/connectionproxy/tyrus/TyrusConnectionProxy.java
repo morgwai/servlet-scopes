@@ -9,7 +9,6 @@ import org.glassfish.tyrus.core.TyrusSession;
 import org.glassfish.tyrus.core.cluster.DistributedSession;
 import pl.morgwai.base.guice.scopes.ContextTracker;
 import pl.morgwai.base.servlet.guice.scopes.*;
-import pl.morgwai.base.servlet.guice.scopes.WebsocketConnectionProxy.Factory.SupportedSessionType;
 
 
 
@@ -22,7 +21,6 @@ class TyrusConnectionProxy extends WebsocketConnectionProxy {
 
 
 
-	@SupportedSessionType(TyrusSession.class)
 	public static class Factory implements WebsocketConnectionProxy.Factory {
 
 		@Override
@@ -31,6 +29,11 @@ class TyrusConnectionProxy extends WebsocketConnectionProxy {
 			ContextTracker<ContainerCallContext> containerCallContextTracker
 		) {
 			return new TyrusConnectionProxy(connection, containerCallContextTracker, false);
+		}
+
+		@Override
+		public Class<? extends Session> getSupportedConnectionType() {
+			return TyrusSession.class;
 		}
 	}
 
