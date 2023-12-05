@@ -1,1 +1,1 @@
-pl.morgwai.base.servlet.guice.scopes.TyrusConnectionProxy$Factory
+pl.morgwai.base.servlet.guice.scopes.connectionproxy.tyrus.TyrusConnectionProxy$Factory

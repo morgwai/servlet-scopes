@@ -1,5 +1,5 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.scopes;
+package pl.morgwai.base.servlet.guice.scopes.connectionproxy.tyrus;
 
 import java.util.*;
 
@@ -8,6 +8,7 @@ import javax.websocket.Session;
 import org.glassfish.tyrus.core.TyrusSession;
 import org.glassfish.tyrus.core.cluster.DistributedSession;
 import pl.morgwai.base.guice.scopes.ContextTracker;
+import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.guice.scopes.WebsocketConnectionProxy.Factory.SupportedSessionType;
 
 
@@ -16,7 +17,6 @@ import pl.morgwai.base.servlet.guice.scopes.WebsocketConnectionProxy.Factory.Sup
  * todo
  */
 class TyrusConnectionProxy extends WebsocketConnectionProxy {
-
 
 
 
@@ -63,12 +63,7 @@ class TyrusConnectionProxy extends WebsocketConnectionProxy {
 
 		// remote connections from other nodes
 		for (var peerConnection: remotePeerConnections) {
-			final var peerConnectionCtx = ((WebsocketConnectionContext)
-					peerConnection.getDistributedProperties()
-							.get(WebsocketConnectionContext.class.getName()));
-			final var proxy = new TyrusConnectionProxy(peerConnection, ctxTracker, true);
-			peerConnectionCtx.connectionProxy = proxy;
-			proxies.add(proxy);
+			proxies.add(new TyrusConnectionProxy(peerConnection, ctxTracker, true));
 		}
 
 		return proxies;
