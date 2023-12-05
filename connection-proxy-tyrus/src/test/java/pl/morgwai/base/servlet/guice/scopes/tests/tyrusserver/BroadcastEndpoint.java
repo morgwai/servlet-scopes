@@ -15,7 +15,7 @@ import static pl.morgwai.base.servlet.guice.scopes.tests.tyrusserver.BroadcastEn
 
 
 
-@ServerEndpoint( value = PATH, configurator = GuiceServerEndpointConfigurator.class)
+@ServerEndpoint(value = PATH, configurator = GuiceServerEndpointConfigurator.class)
 public class BroadcastEndpoint {
 
 

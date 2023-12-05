@@ -84,8 +84,7 @@ public class WebsocketClusteringTests {
 
 
 
-	public void testBroadcast(String... paths)
-			throws DeploymentException, IOException {
+	public void testBroadcast(String... paths) throws DeploymentException, IOException {
 		final var broadcastMessage = "broadcast";
 		final var testMessageSent = new CountDownLatch(1);
 		final var messagesReceived = new CountDownLatch(2 * paths.length);
