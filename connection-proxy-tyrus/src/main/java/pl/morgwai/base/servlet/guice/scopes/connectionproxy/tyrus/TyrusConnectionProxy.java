@@ -14,7 +14,9 @@ import pl.morgwai.base.servlet.guice.scopes.WebsocketConnectionProxy.Factory.Sup
 
 
 /**
- * todo
+ * Merges remote {@link Session connections} from other cluster nodes obtained via
+ * {@link TyrusSession#getRemoteSessions()} into {@link #getOpenSessions()} and makes
+ * {@link #getUserProperties()} return {@link TyrusSession#getDistributedProperties()}.
  */
 class TyrusConnectionProxy extends WebsocketConnectionProxy {
 
@@ -44,6 +46,9 @@ class TyrusConnectionProxy extends WebsocketConnectionProxy {
 
 
 
+	/**
+	 * Union of {@link TyrusSession#getOpenSessions()} and {@link TyrusSession#getRemoteSessions()}.
+	 */
 	@Override
 	public Set<Session> getOpenSessions() {
 		@SuppressWarnings("unchecked")
@@ -71,6 +76,7 @@ class TyrusConnectionProxy extends WebsocketConnectionProxy {
 
 
 
+	/** {@link TyrusSession#getDistributedProperties()}. */
 	@Override
 	public Map<String, Object> getUserProperties() {
 		return ((DistributedSession) wrappedConnection).getDistributedProperties();
