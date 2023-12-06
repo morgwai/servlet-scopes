@@ -294,8 +294,8 @@ public class ServletModule implements Module {
 		return Awaitable.awaitMultiple(
 			timeout,
 			unit,
-			ServletContextTrackingExecutor::toAwaitableOfEnforcedTermination,
-			executors
+			executors.stream().map(Awaitable.entryMapper(
+					ServletContextTrackingExecutor::toAwaitableOfEnforcedTermination))
 		);
 	}
 
@@ -313,8 +313,8 @@ public class ServletModule implements Module {
 		return Awaitable.awaitMultiple(
 			timeout,
 			unit,
-			ServletContextTrackingExecutor::toAwaitableOfTermination,
-			executors
+			executors.stream().map(Awaitable.entryMapper(
+					ServletContextTrackingExecutor::toAwaitableOfTermination))
 		);
 	}
 
