@@ -120,8 +120,8 @@ public class TyrusClusteringTests {
 			"timeout",
 			Awaitable.awaitMultiple(
 				2L, TimeUnit.SECONDS,
-				ClientEndpoint::toAwaitableOfClosure,
-				Arrays.asList(clientEndpoints)
+				Arrays.stream(clientEndpoints)
+					.map(Awaitable.entryMapper(ClientEndpoint::toAwaitableOfClosure))
 			).isEmpty()
 		);
 
