@@ -11,7 +11,12 @@ import javax.servlet.descriptor.JspConfigDescriptor;
 
 
 
-/** todo */
+/**
+ * Fake {@link ServletContext} useful for storing attributes necessary to configure
+ * {@link pl.morgwai.base.servlet.guice.scopes.ServletModule} and
+ * {@link pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator} in standalone
+ * websocket container apps where there is no "real" {@link ServletContext}.
+ */
 public class StandaloneWebsocketContainerServletContext implements ServletContext {
 
 
