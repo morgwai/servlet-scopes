@@ -6,6 +6,7 @@ import java.util.Map;
 import javax.websocket.DeploymentException;
 
 import org.glassfish.tyrus.core.cluster.ClusterContext;
+import pl.morgwai.base.servlet.guice.scopes.tests.BroadcastEndpoint;
 
 
 

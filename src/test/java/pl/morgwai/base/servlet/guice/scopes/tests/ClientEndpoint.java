@@ -14,7 +14,7 @@ import pl.morgwai.base.utils.concurrent.Awaitable;
 
 
 
-class ClientEndpoint extends Endpoint {
+public class ClientEndpoint extends Endpoint {
 
 
 
@@ -93,5 +93,5 @@ class ClientEndpoint extends Endpoint {
 
 
 
-	static final Logger log = Logger.getLogger(IntegrationTests.class.getName());
+	static final Logger log = Logger.getLogger(ClientEndpoint.class.getName());
 }

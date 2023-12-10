@@ -20,6 +20,8 @@ import org.junit.*;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.ServletModule;
 import pl.morgwai.base.servlet.guice.scopes.connectionproxy.tyrus.server.*;
+import pl.morgwai.base.servlet.guice.scopes.tests.BroadcastEndpoint;
+import pl.morgwai.base.servlet.guice.scopes.tests.ClientEndpoint;
 import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
 import pl.morgwai.base.utils.concurrent.Awaitable;
 
@@ -170,6 +172,7 @@ public class TyrusClusteringTests {
 
 	static Level LOG_LEVEL = Level.WARNING;
 	static final Logger log = Logger.getLogger(TyrusClusteringTests.class.getPackageName());
+	static final Logger endpointLog = Logger.getLogger(ClientEndpoint.class.getPackageName());
 
 	@BeforeClass
 	public static void setupLogging() {
@@ -178,6 +181,7 @@ public class TyrusClusteringTests {
 					TyrusClusteringTests.class.getPackageName() + ".level"));
 		} catch (Exception ignored) {}
 		log.setLevel(LOG_LEVEL);
+		endpointLog.setLevel(LOG_LEVEL);
 		for (final var handler: Logger.getLogger("").getHandlers()) handler.setLevel(LOG_LEVEL);
 	}
 }

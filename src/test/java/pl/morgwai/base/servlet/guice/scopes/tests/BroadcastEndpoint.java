@@ -1,5 +1,5 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.scopes.connectionproxy.tyrus.server;
+package pl.morgwai.base.servlet.guice.scopes.tests;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -10,14 +10,11 @@ import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.server.ServerEndpoint;
 
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
-import pl.morgwai.base.servlet.guice.scopes.connectionproxy.tyrus.TyrusClusteringTests;
-
-import static pl.morgwai.base.servlet.guice.scopes.connectionproxy.tyrus.server.BroadcastEndpoint
-		.PATH;
 
 
 
-@ServerEndpoint(value = PATH, configurator = GuiceServerEndpointConfigurator.class)
+@ServerEndpoint(
+		value = BroadcastEndpoint.PATH, configurator = GuiceServerEndpointConfigurator.class)
 public class BroadcastEndpoint {
 
 
@@ -70,5 +67,5 @@ public class BroadcastEndpoint {
 
 
 
-	static final Logger log = Logger.getLogger(TyrusClusteringTests.class.getPackageName());
+	static final Logger log = Logger.getLogger(ClientEndpoint.class.getPackageName());
 }
