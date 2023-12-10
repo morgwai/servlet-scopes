@@ -6,7 +6,7 @@
 
 	<groupId>pl.morgwai.base</groupId>
 	<artifactId>servlet-scopes-connection-proxy-tyrus</artifactId>
-	<version>${servlet.scopes.version}</version>
+	<version>13.3-SNAPSHOT-javax</version><!--jakarta-->
 
 	<name>Tyrus connection proxy</name>
 	<description>Tyrus connection proxy for websocket scopes that provides unified access to clustered connections</description>
@@ -37,14 +37,13 @@
 		<maven.compiler.release>11</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<guice.version>6.0.0</guice.version><!--jakarta:<guice.version>7.0.0</guice.version>-->
-		<servlet.scopes.version>13.3-SNAPSHOT-javax</servlet.scopes.version><!--jakarta-->
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>pl.morgwai.base</groupId>
 			<artifactId>servlet-scopes</artifactId>
-			<version>${servlet.scopes.version}</version>
+			<version>${project.version}</version>
 		</dependency>
 
 		<dependency>
@@ -198,7 +197,7 @@
 					<javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
 					<overview>${basedir}/src/main/java/overview.html</overview>
 					<links>
-						<link>https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/${servlet.scopes.version}</link>
+						<link>https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/${project.version}</link>
 						<link>https://javadoc.io/doc/javax.websocket/javax.websocket-api/1.1</link>
 						<link>https://javadoc.io/doc/jakarta.websocket/jakarta.websocket-api/2.0.0</link>
 						<link>https://javadoc.io/doc/javax.servlet/javax.servlet-api/4.0.1</link>
@@ -207,7 +206,7 @@
 					<offlineLinks>
 						<!-- to setup offline javadoc generation run ./setup-offline-javadocs.sh -->
 						<offlineLink>
-							<url>https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/${servlet.scopes.version}</url>
+							<url>https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/${project.version}</url>
 							<location>${settings.localRepository}/pl/morgwai/base/servlet-utils/${servlet.utils.version}</location>
 						</offlineLink>
 						<offlineLink>
