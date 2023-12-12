@@ -13,7 +13,6 @@ import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 
 
 
-/** For {@link pl.morgwai.base.servlet.guice.scopes.tests.IntegrationTests#testAppSeparation()}. */
 @ServerEndpoint(
 	value = AppSeparationTestEndpoint.PATH,
 	configurator = GuiceServerEndpointConfigurator.class

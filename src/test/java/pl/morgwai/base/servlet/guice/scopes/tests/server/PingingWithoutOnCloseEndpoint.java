@@ -9,10 +9,6 @@ import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
 
 
 
-/**
- * For {@link
- * pl.morgwai.base.servlet.guice.scopes.tests.IntegrationTests#testPingingWithoutOnCloseEndpoint()}.
- */
 @ServerEndpoint(
 		value = PingingWithoutOnCloseEndpoint.PATH,
 		configurator = PingingEndpointConfigurator.class)

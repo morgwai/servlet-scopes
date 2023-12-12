@@ -8,11 +8,6 @@ import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 
 
 
-/**
- * For {@link
- *pl.morgwai.base.servlet.guice.scopes.tests.IntegrationTests#testOnOpenWithoutSessionParamEndpoint(
- * )}.
- */
 @ServerEndpoint(
 		value = OnOpenWithoutSessionParamEndpoint.PATH,
 		configurator = GuiceServerEndpointConfigurator.class)

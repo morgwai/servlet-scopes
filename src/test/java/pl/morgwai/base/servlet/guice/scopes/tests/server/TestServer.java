@@ -1,6 +1,12 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes.tests.server;
 
+import java.net.ServerSocket;
+import java.nio.channels.ServerSocketChannel;
+import java.util.Arrays;
+
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.NetworkConnector;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.websocket.javax.server.config.JavaxWebSocketServletContainerInitializer;
@@ -8,7 +14,8 @@ import org.eclipse.jetty.websocket.javax.server.config.JavaxWebSocketServletCont
 
 
 /** An embedded Jetty server with {@code Servlets} and {@code Endpoints} from this package. */
-public class TestServer extends org.eclipse.jetty.server.Server {
+public class TestServer extends org.eclipse.jetty.server.Server
+		implements pl.morgwai.base.servlet.guice.scopes.tests.Server {
 
 
 
@@ -17,7 +24,7 @@ public class TestServer extends org.eclipse.jetty.server.Server {
 
 
 
-	public TestServer(int port) {
+	public TestServer(int port) throws Exception {
 		super(port);
 
 		final var testAppHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
@@ -56,6 +63,30 @@ public class TestServer extends org.eclipse.jetty.server.Server {
 		appCollection.addHandler(testAppHandler);
 		appCollection.addHandler(secondAppHandler);
 		setHandler(appCollection);
+		start();
+	}
+
+
+
+	@Override
+	public int getPort() {
+		return Arrays.stream(getConnectors())
+			.filter(NetworkConnector.class::isInstance)
+			.findFirst()
+			.map(Connector::getTransport)
+			.map(ServerSocketChannel.class::cast)
+			.map(ServerSocketChannel::socket)
+			.map(ServerSocket::getLocalPort)
+			.orElseThrow();
+	}
+
+
+
+	@Override
+	public void stopz() throws Exception {
+		stop();
+		join();
+		destroy();
 	}
 
 
