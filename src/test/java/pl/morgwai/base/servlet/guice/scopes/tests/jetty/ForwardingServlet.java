@@ -1,5 +1,5 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.scopes.tests.server;
+package pl.morgwai.base.servlet.guice.scopes.tests.jetty;
 
 import java.io.IOException;
 
@@ -7,7 +7,7 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import static pl.morgwai.base.servlet.guice.scopes.tests.server.ServletContextListener.*;
+import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Service;
 
 
 
@@ -31,8 +31,8 @@ public class ForwardingServlet extends TestServlet {
 		}
 
 		// store scoped objects for verifyScoping(...)
-		request.setAttribute(CONTAINER_CALL, requestScopedProvider.get());
-		request.setAttribute(HTTP_SESSION, sessionScopedProvider.get());
+		request.setAttribute(Service.CONTAINER_CALL, requestScopedProvider.get());
+		request.setAttribute(Service.HTTP_SESSION, sessionScopedProvider.get());
 		verifyScoping(request, "the original container thread");
 		request.getRequestDispatcher("/" + AsyncServlet.class.getSimpleName())
 				.forward(request, response);

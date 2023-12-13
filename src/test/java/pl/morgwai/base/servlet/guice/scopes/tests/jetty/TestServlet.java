@@ -1,5 +1,5 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.scopes.tests.server;
+package pl.morgwai.base.servlet.guice.scopes.tests.jetty;
 
 import java.io.IOException;
 
@@ -9,8 +9,7 @@ import javax.servlet.http.*;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
-
-import static pl.morgwai.base.servlet.guice.scopes.tests.server.ServletContextListener.*;
+import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Service;
 
 
 
@@ -24,10 +23,10 @@ public abstract class TestServlet extends HttpServlet {
 
 
 
-	@Inject @Named(CONTAINER_CALL)
+	@Inject @Named(Service.CONTAINER_CALL)
 	Provider<Service> requestScopedProvider;
 
-	@Inject @Named(HTTP_SESSION)
+	@Inject @Named(Service.HTTP_SESSION)
 	Provider<Service> sessionScopedProvider;
 
 
@@ -42,8 +41,8 @@ public abstract class TestServlet extends HttpServlet {
 			throws ServletException {
 		try {
 			if (
-				request.getAttribute(CONTAINER_CALL) != requestScopedProvider.get()
-				|| request.getAttribute(HTTP_SESSION) != sessionScopedProvider.get()
+				request.getAttribute(Service.CONTAINER_CALL) != requestScopedProvider.get()
+				|| request.getAttribute(Service.HTTP_SESSION) != sessionScopedProvider.get()
 			) {
 				throw new ServletException(getClass().getSimpleName() + ": scoping failure on "
 						+ threadDesignation + " (" + Thread.currentThread().getName() + ')');

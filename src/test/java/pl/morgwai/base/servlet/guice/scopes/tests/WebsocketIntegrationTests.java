@@ -1,6 +1,7 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes.tests;
 
+import java.io.IOException;
 import java.net.CookieManager;
 import java.net.URI;
 import java.util.ArrayList;
@@ -10,21 +11,19 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.websocket.CloseReason;
+import javax.websocket.*;
 import javax.websocket.CloseReason.CloseCodes;
-import javax.websocket.WebSocketContainer;
 
 import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
 import org.eclipse.jetty.websocket.javax.common.JavaxWebSocketContainer;
 import org.junit.*;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
-import pl.morgwai.base.servlet.guice.scopes.tests.server.*;
+import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 import static org.junit.Assert.*;
-import static pl.morgwai.base.servlet.guice.scopes.tests.server.ServletContextListener
-		.WEBSOCKET_PATH;
-import static pl.morgwai.base.servlet.guice.scopes.tests.server.TestServer.APP_PATH;
+import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server.WEBSOCKET_PATH;
+import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server.APP_PATH;
 
 
 
@@ -61,6 +60,8 @@ public abstract class WebsocketIntegrationTests {
 
 
 	protected abstract Server createServer() throws Exception;
+
+	protected abstract boolean isHttpSessionAvailable();
 
 
 
@@ -133,8 +134,10 @@ public abstract class WebsocketIntegrationTests {
 			assertEquals("2nd reply should be an echo",
 					testMessage, replies.get(1)[0]);
 		}
-		assertEquals("session scoped object hash should remain the same",
-				replies.get(0)[3], replies.get(1)[3]);
+		if (isHttpSessionAvailable()) {
+			assertEquals("session scoped object hash should remain the same",
+					replies.get(0)[3], replies.get(1)[3]);
+		}
 		assertEquals("connection scoped object hash should remain the same",
 				replies.get(0)[4], replies.get(1)[4]);
 		assertNotEquals("event scoped object hash should change",
@@ -152,35 +155,46 @@ public abstract class WebsocketIntegrationTests {
 		final var uri = URI.create(url);
 		final var replies = testSingleSessionWithServerEndpoint(uri, sendTestMessage);
 		replies.addAll(testSingleSessionWithServerEndpoint(uri, sendTestMessage));
-		assertEquals("session scoped object hash should remain the same",
-				replies.get(0)[3], replies.get(2)[3]);
 		assertNotEquals("connection scoped object hash should change",
 				replies.get(0)[4], replies.get(2)[4]);
+		if (isHttpSessionAvailable()) {
+			assertEquals("session scoped object hash should remain the same",
+					replies.get(0)[3], replies.get(2)[3]);
+		}
 		return replies;
 	}
 
 	@Test
 	public void testProgrammaticEndpoint() throws Exception {
 		test2SessionsWithServerEndpoint(
-				serverWebsocketUrl + APP_PATH + ProgrammaticEndpoint.PATH, true);
-	}
-
-	@Test
-	public void testExtendingEndpoint() throws Exception {
-		test2SessionsWithServerEndpoint(
-				serverWebsocketUrl + APP_PATH + ExtendingEndpoint.PATH, true);
+			serverWebsocketUrl + APP_PATH + ProgrammaticEndpoint.PATH,
+			true
+		);
 	}
 
 	@Test
 	public void testAnnotatedEndpoint() throws Exception {
 		test2SessionsWithServerEndpoint(
-				serverWebsocketUrl + APP_PATH + AnnotatedEndpoint.PATH, true);
+			serverWebsocketUrl + APP_PATH + AnnotatedEndpoint.PATH,
+			true
+		);
 	}
 
 	@Test
 	public void testRttReportingEndpoint() throws Exception {
 		test2SessionsWithServerEndpoint(
-				serverWebsocketUrl + APP_PATH + RttReportingEndpoint.PATH, false);
+			serverWebsocketUrl + APP_PATH + RttReportingEndpoint.PATH,
+			false
+		);
+	}
+
+	/** Not all servers support it. */
+	@Test
+	public void testAnnotatedExtendingEndpoint() throws Exception {
+		test2SessionsWithServerEndpoint(
+			serverWebsocketUrl + APP_PATH + AnnotatedExtendingEndpoint.PATH,
+			true
+		);
 	}
 
 
@@ -190,17 +204,14 @@ public abstract class WebsocketIntegrationTests {
 	 * closes it immediately: intended for tests of invalid {@code Endpoint} classes that should
 	 * fail to instantiate.
 	 */
-	void testOpenConnectionToServerEndpoint(String type) throws Exception {
+	protected Session testOpenConnectionToServerEndpoint(String type) throws Exception {
 		final var url = URI.create(appWebsocketUrl + type);
 		final var endpoint = new ClientEndpoint(
 			(message) -> {},
-			(connection, error) -> {
-				log.log(Level.WARNING, "error on connection " + connection.getId(), error);
-			},
+			(connection, error) -> {},
 			(connection, closeReason) -> {}
 		);
-		final var connection = clientWebsocketContainer.connectToServer(endpoint, null, url);
-		connection.close();
+		return clientWebsocketContainer.connectToServer(endpoint, null, url);
 	}
 
 	@Test
@@ -208,12 +219,16 @@ public abstract class WebsocketIntegrationTests {
 		final var logger = Logger.getLogger(GuiceServerEndpointConfigurator.class.getName());
 		final var originalLevel = logger.getLevel();
 		logger.setLevel(Level.OFF);
+		Session connection = null;
 		try {
-			testOpenConnectionToServerEndpoint(OnOpenWithoutSessionParamEndpoint.TYPE);
+			connection = testOpenConnectionToServerEndpoint(OnOpenWithoutSessionParamEndpoint.TYPE);
 			fail("instantiation of OnOpenWithoutSessionParamEndpoint should throw an Exception");
 		} catch (Exception expected) {
 		} finally {
 			logger.setLevel(originalLevel);
+			try {
+				if (connection != null && connection.isOpen()) connection.close();
+			} catch (IOException ignored) {}
 		}
 	}
 
@@ -222,67 +237,24 @@ public abstract class WebsocketIntegrationTests {
 		final var logger = Logger.getLogger(GuiceServerEndpointConfigurator.class.getName());
 		final var originalLevel = logger.getLevel();
 		logger.setLevel(Level.OFF);
+		Session connection = null;
 		try {
-			testOpenConnectionToServerEndpoint(PingingWithoutOnCloseEndpoint.TYPE);
+			connection = testOpenConnectionToServerEndpoint(PingingWithoutOnCloseEndpoint.TYPE);
 			fail("instantiation of PingingWithoutOnCloseEndpoint should throw an Exception");
 		} catch (Exception expected) {
 		} finally {
 			logger.setLevel(originalLevel);
+			try {
+				if (connection != null && connection.isOpen()) connection.close();
+			} catch (IOException ignored) {}
 		}
 	}
-
-
-
-/*
-	public void testAppSeparation(String testAppWebsocketUrl, String secondAppWebsocketUrl)
-			throws InterruptedException, DeploymentException, IOException {
-		final var messages = new ArrayList<String>(2);
-
-		final var endpoint = new ClientEndpoint(messages::add, null, null);
-		final var uri1 = URI.create(testAppWebsocketUrl);
-		try (
-			final var ignored = clientWebsocketContainer.connectToServer(endpoint, null, uri1);
-		) {
-			if ( !endpoint.awaitClosure(500L, TimeUnit.MILLISECONDS)) fail("timeout");
-		}
-
-		final var endpoint2 = new ClientEndpoint(messages::add, null, null);
-		final var uri2 = URI.create(secondAppWebsocketUrl);
-		try (
-			final var ignored = clientWebsocketContainer.connectToServer(endpoint2, null, uri2);
-		) {
-			if ( !endpoint2.awaitClosure(500L, TimeUnit.MILLISECONDS)) fail("timeout");
-		}
-
-		assertNotEquals("Endpoint Configurators of separate apps should have separate Injectors",
-				messages.get(0), messages.get(1));
-	}
-
-	@Test
-	public void testAppSeparation() throws InterruptedException, DeploymentException, IOException {
-		testAppSeparation(
-			appWebsocketUrl + AppSeparationTestEndpoint.TYPE,
-			serverWebsocketUrl + TestServer.SECOND_APP_PATH
-					+ WEBSOCKET_PATH + AppSeparationTestEndpoint.TYPE
-		);
-	}
-
-	@Test
-	public void testAppSeparationNoSession()
-			throws InterruptedException, DeploymentException, IOException {
-		testAppSeparation(
-			serverWebsocketUrl + APP_PATH + NoSessionAppSeparationTestEndpoint.PATH,
-			serverWebsocketUrl + TestServer.SECOND_APP_PATH
-					+ NoSessionAppSeparationTestEndpoint.PATH
-		);
-	}
-*/
 
 
 
 	@BeforeClass
 	public static void setupProperties() {
-		System.setProperty(ServletContextListener.PING_INTERVAL_MILLIS_PROPERTY, "5");
+		System.setProperty(Server.PING_INTERVAL_MILLIS_PROPERTY, "50");
 	}
 
 
@@ -292,12 +264,14 @@ public abstract class WebsocketIntegrationTests {
 	 * <code>INFO</code> will log server startup and shutdown diagnostics<br/>
 	 * <code>FINE</code> will log every response/message received from the server.
 	 */
-	static Level LOG_LEVEL = Level.WARNING;
+	protected static Level LOG_LEVEL = Level.WARNING;
 
-	static final Logger log = Logger.getLogger(WebsocketIntegrationTests.class.getPackageName());
-	static final Logger scopesLog =
+	protected static final Logger log =
+			Logger.getLogger(WebsocketIntegrationTests.class.getPackageName());
+	protected static final Logger scopesLog =
 			Logger.getLogger(GuiceServerEndpointConfigurator.class.getPackageName());
-	static final Logger pingerLog = Logger.getLogger(WebsocketPingerService.class.getName());
+	protected static final Logger pingerLog =
+			Logger.getLogger(WebsocketPingerService.class.getName());
 
 	@BeforeClass
 	public static void setupLogging() {

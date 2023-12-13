@@ -1,5 +1,5 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.scopes.tests.server;
+package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -12,6 +12,7 @@ import javax.websocket.RemoteEndpoint.Async;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
+import pl.morgwai.base.servlet.guice.scopes.tests.jetty.TestServlet;
 
 
 
@@ -27,13 +28,13 @@ public class EchoEndpoint {
 
 	Session connection;
 
-	@Inject @Named(ServletContextListener.CONTAINER_CALL)
+	@Inject @Named(Service.CONTAINER_CALL)
 	Provider<Service> eventScopedProvider;
 
-	@Inject @Named(ServletContextListener.WEBSOCKET_CONNECTION)
+	@Inject @Named(Service.WEBSOCKET_CONNECTION)
 	Provider<Service> connectionScopedProvider;
 
-	@Inject @Named(ServletContextListener.HTTP_SESSION)
+	@Inject @Named(Service.HTTP_SESSION)
 	Provider<Service> httpSessionScopedProvider;
 
 	Async connector;

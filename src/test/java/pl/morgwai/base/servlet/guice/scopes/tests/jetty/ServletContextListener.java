@@ -1,5 +1,5 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.scopes.tests.server;
+package pl.morgwai.base.servlet.guice.scopes.tests.jetty;
 
 import java.util.LinkedList;
 
@@ -7,11 +7,8 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebListener;
 import javax.websocket.DeploymentException;
 
-import com.google.inject.Binder;
 import com.google.inject.Module;
-import com.google.inject.name.Names;
-import pl.morgwai.base.servlet.guice.scopes.ServletContextTrackingExecutor;
-import pl.morgwai.base.servlet.guice.scopes.ServletModule;
+import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 import pl.morgwai.base.servlet.guice.utils.PingingServletContextListener;
 
 
@@ -21,54 +18,10 @@ public class ServletContextListener extends PingingServletContextListener {
 
 
 
-	/** All {@code Endpoints} are deployed somewhere under this path. */
-	public static final String WEBSOCKET_PATH = "/websocket/";
-
-	// values for @Named corresponding to available Scopes
-	public static final String CONTAINER_CALL = "containerCall";
-	public static final String WEBSOCKET_CONNECTION = "wsConnection";
-	public static final String HTTP_SESSION = "httpSession";
-
-	public static final String PING_INTERVAL_MILLIS_PROPERTY = "pingIntervalMillis";
-
-
-
-	public static class ServiceModule implements Module {
-
-		final ServletModule servletModule;
-
-		public ServiceModule(ServletModule servletModule) {
-			this.servletModule = servletModule;
-		}
-
-		@Override
-		public void configure(Binder binder) {
-			final var executor = servletModule.newContextTrackingExecutor("testExecutor", 2);
-			// usually Executors are bound with some name, but in this app there's only 1
-			binder.bind(ServletContextTrackingExecutor.class).toInstance(executor);
-
-			// bind Service in 3 different scopes depending on the value of @Named
-			binder.bind(Service.class)
-				.annotatedWith(Names.named(CONTAINER_CALL))
-				.to(Service.class)
-				.in(servletModule.containerCallScope);
-			binder.bind(Service.class)
-				.annotatedWith(Names.named(WEBSOCKET_CONNECTION))
-				.to(Service.class)
-				.in(servletModule.websocketConnectionScope);
-			binder.bind(Service.class)
-				.annotatedWith(Names.named(HTTP_SESSION))
-				.to(Service.class)
-				.in(servletModule.httpSessionScope);
-		}
-	}
-
-
-
 	@Override
 	protected LinkedList<Module> configureInjections() {
 		final var modules = new LinkedList<Module>();
-		modules.add(new ServiceModule(servletModule));
+		modules.add(new ServiceModule(servletModule, true));
 		return modules;
 	}
 
@@ -102,7 +55,7 @@ public class ServletContextListener extends PingingServletContextListener {
 			"/" + TargetedServlet.class.getSimpleName()
 		);
 
-		addEnsureSessionFilter(WEBSOCKET_PATH + '*');
+		addEnsureSessionFilter(Server.WEBSOCKET_PATH + '*');
 
 		addEndpoint(ProgrammaticEndpoint.class, ProgrammaticEndpoint.PATH);
 		addServlet(
@@ -126,7 +79,7 @@ public class ServletContextListener extends PingingServletContextListener {
 
 	@Override
 	protected long getPingIntervalMillis() {
-		final var intervalFromProperty = System.getProperty(PING_INTERVAL_MILLIS_PROPERTY);
+		final var intervalFromProperty = System.getProperty(Server.PING_INTERVAL_MILLIS_PROPERTY);
 		return intervalFromProperty != null ? Long.parseLong(intervalFromProperty) : 500L;
 	}
 }

@@ -1,5 +1,5 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.scopes.tests.server;
+package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
@@ -11,13 +11,15 @@ import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator.RttObserv
 
 /** Extends {@link EchoEndpoint} and annotates lifecycle methods with websocket annotations. */
 @ServerEndpoint(
-		value = AnnotatedEndpoint.PATH, configurator = PingingEndpointConfigurator.class)
+	value = AnnotatedEndpoint.PATH,
+	configurator = PingingEndpointConfigurator.class
+)
 public class AnnotatedEndpoint extends EchoEndpoint implements RttObserver {
 
 
 
 	public static final String TYPE = "annotated";
-	public static final String PATH = ServletContextListener.WEBSOCKET_PATH + TYPE;
+	public static final String PATH = Server.WEBSOCKET_PATH + TYPE;
 
 
 

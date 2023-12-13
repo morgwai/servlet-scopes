@@ -1,5 +1,5 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.scopes.tests;
+package pl.morgwai.base.servlet.guice.scopes.tests.jetty;
 
 import java.io.IOException;
 import java.net.URI;
@@ -15,17 +15,17 @@ import javax.websocket.DeploymentException;
 
 import org.junit.Before;
 import org.junit.Test;
-import pl.morgwai.base.servlet.guice.scopes.tests.server.*;
+import pl.morgwai.base.servlet.guice.scopes.tests.*;
+import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 
 import static org.junit.Assert.*;
-import static pl.morgwai.base.servlet.guice.scopes.tests.server.AsyncServlet.*;
-import static pl.morgwai.base.servlet.guice.scopes.tests.server.ServletContextListener.WEBSOCKET_PATH;
-import static pl.morgwai.base.servlet.guice.scopes.tests.server.TestServer.APP_PATH;
-import static pl.morgwai.base.servlet.guice.scopes.tests.server.TestServer.SECOND_APP_PATH;
+import static pl.morgwai.base.servlet.guice.scopes.tests.jetty.AsyncServlet.*;
+import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server.APP_PATH;
+import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server.WEBSOCKET_PATH;
 
 
 
-public class JettyIntegrationTests extends WebsocketIntegrationTests {
+public class WebsocketAndServletJettyTests extends WebsocketIntegrationTests {
 
 
 
@@ -48,13 +48,20 @@ public class JettyIntegrationTests extends WebsocketIntegrationTests {
 
 	@Override
 	protected Server createServer() throws Exception {
-		final var server = new TestServer(0);
+		final var server = new WebsocketAndServletJetty(0);
 		final var port = server.getPort();
-		forwardingServletUrl = "http://localhost:" + port + APP_PATH + '/'
+		forwardingServletUrl = "http://localhost:" + port + Server.APP_PATH + '/'
 				+ ForwardingServlet.class.getSimpleName();
-		forwardingServletSecondAppUrl = "http://localhost:" + port + SECOND_APP_PATH + '/'
+		forwardingServletSecondAppUrl = "http://localhost:" + port + Server.SECOND_APP_PATH + '/'
 				+ ForwardingServlet.class.getSimpleName();
 		return server;
+	}
+
+
+
+	@Override
+	protected boolean isHttpSessionAvailable() {
+		return true;
 	}
 
 
@@ -173,25 +180,33 @@ public class JettyIntegrationTests extends WebsocketIntegrationTests {
 	@Test
 	public void testProgrammaticEndpointManualListener() throws Exception {
 		test2SessionsWithServerEndpoint(
-				serverWebsocketUrl + SECOND_APP_PATH + ProgrammaticEndpoint.PATH, true);
-	}
-
-	@Test
-	public void testExtendingEndpointManualListener() throws Exception {
-		test2SessionsWithServerEndpoint(
-				serverWebsocketUrl + SECOND_APP_PATH + ExtendingEndpoint.PATH, true);
+			serverWebsocketUrl + Server.SECOND_APP_PATH + ProgrammaticEndpoint.PATH,
+			true
+		);
 	}
 
 	@Test
 	public void testAnnotatedEndpointManualListener() throws Exception {
 		test2SessionsWithServerEndpoint(
-				serverWebsocketUrl + SECOND_APP_PATH + AnnotatedEndpoint.PATH, true);
+			serverWebsocketUrl + Server.SECOND_APP_PATH + AnnotatedEndpoint.PATH,
+			true
+		);
 	}
 
 	@Test
 	public void testRttReportingEndpointManualListener() throws Exception {
 		test2SessionsWithServerEndpoint(
-				serverWebsocketUrl + SECOND_APP_PATH + RttReportingEndpoint.PATH, false);
+			serverWebsocketUrl + Server.SECOND_APP_PATH + RttReportingEndpoint.PATH,
+			false
+		);
+	}
+
+	@Test
+	public void testExtendingEndpointManualListener() throws Exception {
+		test2SessionsWithServerEndpoint(
+			serverWebsocketUrl + Server.SECOND_APP_PATH + AnnotatedExtendingEndpoint.PATH,
+			true
+		);
 	}
 
 
@@ -260,8 +275,8 @@ public class JettyIntegrationTests extends WebsocketIntegrationTests {
 		connectionScopedHashes.add(programmaticEndpointResponses.get(0)[4]);
 		connectionScopedHashes.add(programmaticEndpointResponses.get(2)[4]);
 
-		final var extendingEndpointResponses =
-				test2SessionsWithServerEndpoint(appWebsocketUrl + ExtendingEndpoint.TYPE, true);
+		final var extendingEndpointResponses = test2SessionsWithServerEndpoint(
+				appWebsocketUrl + AnnotatedExtendingEndpoint.TYPE, true);
 		assertEquals("session scoped object hash should remain the same",
 				sessionScopedHash, extendingEndpointResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
@@ -325,7 +340,7 @@ public class JettyIntegrationTests extends WebsocketIntegrationTests {
 	public void testAppSeparation() throws InterruptedException, DeploymentException, IOException {
 		testAppSeparation(
 			appWebsocketUrl + AppSeparationTestEndpoint.TYPE,
-			serverWebsocketUrl + TestServer.SECOND_APP_PATH
+			serverWebsocketUrl + Server.SECOND_APP_PATH
 					+ WEBSOCKET_PATH + AppSeparationTestEndpoint.TYPE
 		);
 	}
@@ -334,20 +349,9 @@ public class JettyIntegrationTests extends WebsocketIntegrationTests {
 	public void testAppSeparationNoSession()
 			throws InterruptedException, DeploymentException, IOException {
 		testAppSeparation(
-			serverWebsocketUrl + APP_PATH + NoSessionAppSeparationTestEndpoint.PATH,
-			serverWebsocketUrl + TestServer.SECOND_APP_PATH
+			serverWebsocketUrl + Server.APP_PATH + NoSessionAppSeparationTestEndpoint.PATH,
+			serverWebsocketUrl + Server.SECOND_APP_PATH
 					+ NoSessionAppSeparationTestEndpoint.PATH
 		);
-	}
-
-
-
-	/*
-	 * Change the below value if you need logging:<br/>
-	 * <code>INFO</code> will log server startup and shutdown diagnostics<br/>
-	 * <code>FINE</code> will log every response/message received from the server.
-	 */
-	static {
-		WebsocketIntegrationTests.LOG_LEVEL = Level.WARNING;
 	}
 }

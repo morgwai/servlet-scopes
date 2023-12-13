@@ -85,7 +85,7 @@ public class ServletContextListener extends GuiceServletContextListener {
     }
 }
 ```
-Note: in cases where it is not possible to extend `GuiceServletContextListener`, all the configuration required to use `ServletModule` (with all its `Scopes` etc) and `GuiceServerEndpointConfigurator` / `PingingEndpointConfigurator`, can be done manually: see an example in [ManualServletContextListener](src/test/java/pl/morgwai/base/servlet/guice/scopes/tests/server/ManualServletContextListener.java).
+Note: in cases where it is not possible to extend `GuiceServletContextListener`, all the configuration required to use `ServletModule` (with all its `Scopes` etc) and `GuiceServerEndpointConfigurator` / `PingingEndpointConfigurator`, can be done manually: see an example in [ManualServletContextListener](src/test/java/pl/morgwai/base/servlet/guice/scopes/tests/servercommon/ManualServletContextListener.java).
 
 ### Using annotated `Endpoints`
 Note: for `GuiceServerEndpointConfigurator` to work, app's `ServletContextListener` still needs to extend either `GuiceServletContextListener` or `PingingServletContextListener` as in the example above, even if there are no programmatic `Servlet`s nor `Endpoint`s.

@@ -1,9 +1,10 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.scopes.tests.server;
+package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 
 import javax.websocket.*;
 
 import com.google.inject.Inject;
+import pl.morgwai.base.servlet.guice.scopes.tests.jetty.ServletContextListener;
 
 
 
@@ -16,7 +17,7 @@ public class ProgrammaticEndpoint extends Endpoint {
 
 
 	public static final String TYPE = "programmatic";
-	public static final String PATH = ServletContextListener.WEBSOCKET_PATH + TYPE;
+	public static final String PATH = Server.WEBSOCKET_PATH + TYPE;
 
 
 

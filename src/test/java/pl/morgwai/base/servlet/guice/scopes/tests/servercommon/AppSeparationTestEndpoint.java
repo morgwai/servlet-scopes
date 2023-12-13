@@ -1,5 +1,5 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.scopes.tests.server;
+package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 
 import java.io.IOException;
 
@@ -22,7 +22,7 @@ public class AppSeparationTestEndpoint {
 
 
 	public static final String TYPE = "separation";
-	public static final String PATH = ServletContextListener.WEBSOCKET_PATH + TYPE;
+	public static final String PATH = Server.WEBSOCKET_PATH + TYPE;
 
 	@Inject Injector injector;
 

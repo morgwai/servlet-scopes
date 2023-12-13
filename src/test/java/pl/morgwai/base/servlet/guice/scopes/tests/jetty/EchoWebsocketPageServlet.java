@@ -1,5 +1,5 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.scopes.tests.server;
+package pl.morgwai.base.servlet.guice.scopes.tests.jetty;
 
 import java.io.IOException;
 
@@ -7,6 +7,8 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 
 
 
@@ -58,8 +60,8 @@ public class EchoWebsocketPageServlet extends ResourceServlet {
 			case ProgrammaticEndpoint.TYPE:
 				filtered = replaceWebsocketPath(resource, ProgrammaticEndpoint.PATH);
 				break;
-			case ExtendingEndpoint.TYPE:
-				filtered = replaceWebsocketPath(resource, ExtendingEndpoint.PATH);
+			case AnnotatedExtendingEndpoint.TYPE:
+				filtered = replaceWebsocketPath(resource, AnnotatedExtendingEndpoint.PATH);
 				break;
 			case AnnotatedEndpoint.TYPE:
 				filtered = replaceWebsocketPath(resource, AnnotatedEndpoint.PATH);

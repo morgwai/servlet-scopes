@@ -1,5 +1,5 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.scopes.tests.server;
+package pl.morgwai.base.servlet.guice.scopes.tests.jetty;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -15,16 +15,15 @@ import javax.websocket.server.ServerEndpointConfig;
 import com.google.inject.Module;
 import com.google.inject.*;
 import pl.morgwai.base.servlet.guice.scopes.*;
+import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
-
-import static pl.morgwai.base.servlet.guice.scopes.tests.server.ServletContextListener.*;
 
 
 
 /**
  * A listener that does not extend {@link GuiceServletContextListener} and does exactly the same job
- * as {@link pl.morgwai.base.servlet.guice.scopes.tests.server.ServletContextListener} from this
+ * as {@link pl.morgwai.base.servlet.guice.scopes.tests.jetty.ServletContextListener} from this
  * package (that extends {@link pl.morgwai.base.servlet.guice.utils.PingingServletContextListener}).
  */
 @WebListener
@@ -40,7 +39,8 @@ public class ManualServletContextListener implements ServletContextListener {
 	@Override
 	public final void contextInitialized(ServletContextEvent initialization) {
 		try {
-			final var intervalFromProperty = System.getProperty(PING_INTERVAL_MILLIS_PROPERTY);
+			final var intervalFromProperty =
+					System.getProperty(Server.PING_INTERVAL_MILLIS_PROPERTY);
 			pingerService = new WebsocketPingerService(
 				intervalFromProperty != null ? Long.parseLong(intervalFromProperty) : 500L,
 				TimeUnit.MILLISECONDS,
@@ -54,7 +54,7 @@ public class ManualServletContextListener implements ServletContextListener {
 
 			final var modules = new LinkedList<Module>();
 			modules.add(servletModule);
-			modules.add(new ServiceModule(servletModule));
+			modules.add(new ServiceModule(servletModule, true));
 			final Injector injector = Guice.createInjector(modules);
 
 			final var requestCtxFilter = appDeployment.createFilter(RequestContextFilter.class);
@@ -112,7 +112,7 @@ public class ManualServletContextListener implements ServletContextListener {
 			);
 			ensureSessionFilterRegistration.setAsyncSupported(true);
 			ensureSessionFilterRegistration.addMappingForUrlPatterns(
-					null, false, WEBSOCKET_PATH + "*");
+					null, false, Server.WEBSOCKET_PATH + "*");
 
 			endpointContainer.addEndpoint(
 				ServerEndpointConfig.Builder
