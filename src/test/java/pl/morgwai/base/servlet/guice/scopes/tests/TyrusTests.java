@@ -1,10 +1,10 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.scopes.tests.tyrus;
+package pl.morgwai.base.servlet.guice.scopes.tests;
 
 import javax.websocket.Session;
 
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server;
-import pl.morgwai.base.servlet.guice.scopes.tests.WebsocketIntegrationTests;
+import pl.morgwai.base.servlet.guice.scopes.tests.tyrus.TyrusServer;
 
 
 

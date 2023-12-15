@@ -1,5 +1,5 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.scopes.tests.jetty;
+package pl.morgwai.base.servlet.guice.scopes.tests;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -12,7 +12,7 @@ import java.util.logging.Level;
 
 import org.junit.Before;
 import org.junit.Test;
-import pl.morgwai.base.servlet.guice.scopes.tests.MultiAppWebsocketTests;
+import pl.morgwai.base.servlet.guice.scopes.tests.jetty.*;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 
 import static org.junit.Assert.*;
