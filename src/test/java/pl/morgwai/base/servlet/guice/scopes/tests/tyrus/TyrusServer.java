@@ -111,7 +111,8 @@ public class TyrusServer implements Server {
 				OnOpenWithoutSessionParamEndpoint.class,
 				PingingWithoutOnCloseEndpoint.class,
 				AppSeparationTestEndpoint.class,
-				NoSessionAppSeparationTestEndpoint.class
+				NoSessionAppSeparationTestEndpoint.class,
+				BroadcastEndpoint.class
 			);
 		}
 	}

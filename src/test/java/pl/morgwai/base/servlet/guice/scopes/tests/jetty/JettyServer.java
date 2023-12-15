@@ -39,6 +39,7 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 				websocketContainer.addEndpoint(PingingWithoutOnCloseEndpoint.class);
 				websocketContainer.addEndpoint(AppSeparationTestEndpoint.class);
 				websocketContainer.addEndpoint(NoSessionAppSeparationTestEndpoint.class);
+				websocketContainer.addEndpoint(BroadcastEndpoint.class);
 			}
 		);
 

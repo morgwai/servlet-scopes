@@ -1,5 +1,5 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.scopes.tests;
+package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -14,7 +14,9 @@ import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 
 
 @ServerEndpoint(
-		value = BroadcastEndpoint.PATH, configurator = GuiceServerEndpointConfigurator.class)
+	value = BroadcastEndpoint.PATH,
+	configurator = GuiceServerEndpointConfigurator.class
+)
 public class BroadcastEndpoint {
 
 
@@ -67,5 +69,5 @@ public class BroadcastEndpoint {
 
 
 
-	static final Logger log = Logger.getLogger(ClientEndpoint.class.getPackageName());
+	static final Logger log = Logger.getLogger(BroadcastEndpoint.class.getPackageName());
 }

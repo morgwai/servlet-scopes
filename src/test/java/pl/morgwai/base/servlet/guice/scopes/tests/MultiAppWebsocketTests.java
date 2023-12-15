@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.websocket.DeploymentException;
 
+import org.junit.Before;
 import org.junit.Test;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 
@@ -24,9 +25,8 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 
 
 
-	@Override
-	public void setup() throws Exception {
-		super.setup();
+	@Before
+	public void setupSecondApp() {
 		secondAppWebsocketUrl = ((MultiAppServer) server).getSecondAppWebsocketUrl();
 	}
 
@@ -86,6 +86,8 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 				messages.get(0), messages.get(1));
 	}
 
+
+
 	@Test
 	public void testAppSeparation() throws InterruptedException, DeploymentException, IOException {
 		testAppSeparation(
@@ -93,6 +95,8 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 			secondAppWebsocketUrl + AppSeparationTestEndpoint.PATH
 		);
 	}
+
+
 
 	@Test
 	public void testAppSeparationNoSession()

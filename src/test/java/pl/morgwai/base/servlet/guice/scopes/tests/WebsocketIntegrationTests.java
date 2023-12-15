@@ -2,7 +2,6 @@
 package pl.morgwai.base.servlet.guice.scopes.tests;
 
 import java.io.IOException;
-import java.net.CookieManager;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,61 +13,47 @@ import java.util.logging.Logger;
 import javax.websocket.*;
 import javax.websocket.CloseReason.CloseCodes;
 
-import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
-import org.eclipse.jetty.websocket.javax.common.JavaxWebSocketContainer;
 import org.junit.*;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
-import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 import static org.junit.Assert.*;
 import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server.WEBSOCKET_PATH;
 
 
 
-public abstract class WebsocketIntegrationTests {
+public abstract class WebsocketIntegrationTests extends WebsocketTestBase {
 
 
 
-	protected CookieManager cookieManager;
-	protected org.eclipse.jetty.client.HttpClient wsHttpClient;
-	protected WebSocketContainer clientWebsocketContainer;
 	protected Server server;
 	protected String appWebsocketUrl;
 
 
 
-	/**
-	 * Creates {@link #server}, {@link #clientWebsocketContainer} and calculates
-	 * {@link #appWebsocketUrl}.
-	 */
+	protected abstract Server createServer() throws Exception;
+	protected abstract boolean isHttpSessionAvailable();
+
+
+
 	@Before
-	public void setup() throws Exception {
-		cookieManager = new CookieManager();
-		wsHttpClient = new org.eclipse.jetty.client.HttpClient();
-		wsHttpClient.setCookieStore(cookieManager.getCookieStore());
-		clientWebsocketContainer = JavaxWebSocketClientContainerProvider.getContainer(wsHttpClient);
+	public void setupServer() throws Exception {
 		server = createServer();
 		appWebsocketUrl = server.getAppWebsocketUrl();
 	}
 
 
 
-	protected abstract Server createServer() throws Exception;
-
-	protected abstract boolean isHttpSessionAvailable();
-
-
-
-	/** Shutdowns {@link #clientWebsocketContainer} and {@link #server}. */
 	@After
-	public void shutdown() throws Exception {
-		final var jettyWsContainer = ((JavaxWebSocketContainer) clientWebsocketContainer);
-		jettyWsContainer.stop();
-		jettyWsContainer.destroy();
-		wsHttpClient.stop();
-		wsHttpClient.destroy();
+	public void stopServer() throws Exception {
 		server.stopz();
+	}
+
+
+
+	@BeforeClass
+	public static void setupProperties() {
+		System.setProperty(Server.PING_INTERVAL_MILLIS_PROPERTY, "50");
 	}
 
 
@@ -140,6 +125,8 @@ public abstract class WebsocketIntegrationTests {
 		return replies;
 	}
 
+
+
 	/**
 	 * Returns a list containing 4 messages received from the server via 2 calls to
 	 * {@link #testSingleSessionWithServerEndpoint(URI, boolean)} made via separate websocket
@@ -158,6 +145,8 @@ public abstract class WebsocketIntegrationTests {
 		}
 		return replies;
 	}
+
+
 
 	@Test
 	public void testProgrammaticEndpoint() throws Exception {
@@ -197,6 +186,8 @@ public abstract class WebsocketIntegrationTests {
 		return clientWebsocketContainer.connectToServer(endpoint, null, url);
 	}
 
+
+
 	@Test
 	public void testOnOpenWithoutSessionParamEndpoint() {
 		final var logger = Logger.getLogger(GuiceServerEndpointConfigurator.class.getName());
@@ -214,6 +205,8 @@ public abstract class WebsocketIntegrationTests {
 			} catch (IOException ignored) {}
 		}
 	}
+
+
 
 	@Test
 	public void testPingingWithoutOnCloseEndpoint() {
@@ -235,36 +228,9 @@ public abstract class WebsocketIntegrationTests {
 
 
 
-	@BeforeClass
-	public static void setupProperties() {
-		System.setProperty(Server.PING_INTERVAL_MILLIS_PROPERTY, "50");
-	}
-
-
-
-	/**
-	 * Change the below value if you need logging:<br/>
-	 * <code>INFO</code> will log server startup and shutdown diagnostics<br/>
-	 * <code>FINE</code> will log every response/message received from the server.
-	 */
-	protected static Level LOG_LEVEL = Level.WARNING;
-
-	protected static final Logger log =
-			Logger.getLogger(WebsocketIntegrationTests.class.getPackageName());
-	protected static final Logger scopesLog =
-			Logger.getLogger(GuiceServerEndpointConfigurator.class.getPackageName());
-	protected static final Logger pingerLog =
-			Logger.getLogger(WebsocketPingerService.class.getName());
-
-	@BeforeClass
-	public static void setupLogging() {
-		try {
-			LOG_LEVEL = Level.parse(System.getProperty(
-					WebsocketIntegrationTests.class.getPackageName() + ".level"));
-		} catch (Exception ignored) {}
-		log.setLevel(LOG_LEVEL);
-		scopesLog.setLevel(LOG_LEVEL);
-		pingerLog.setLevel(LOG_LEVEL);
-		for (final var handler: Logger.getLogger("").getHandlers()) handler.setLevel(LOG_LEVEL);
+	@Test
+	public void testBroadcast() throws DeploymentException, IOException, InterruptedException {
+		final var url = appWebsocketUrl + BroadcastEndpoint.PATH;
+		BroadcastingTests.testBroadcast(clientWebsocketContainer, url, url);
 	}
 }
