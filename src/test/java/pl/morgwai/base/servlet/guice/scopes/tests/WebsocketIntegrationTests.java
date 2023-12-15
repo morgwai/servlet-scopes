@@ -23,7 +23,6 @@ import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 import static org.junit.Assert.*;
 import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server.WEBSOCKET_PATH;
-import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server.APP_PATH;
 
 
 
@@ -35,15 +34,13 @@ public abstract class WebsocketIntegrationTests {
 	protected org.eclipse.jetty.client.HttpClient wsHttpClient;
 	protected WebSocketContainer clientWebsocketContainer;
 	protected Server server;
-	protected int port;
-	protected String serverWebsocketUrl;
 	protected String appWebsocketUrl;
 
 
 
 	/**
-	 * Creates {@link #server}, {@link #clientWebsocketContainer} and calculates helper URL prefixes
-	 * ({@link #serverWebsocketUrl}, {@link #appWebsocketUrl}).
+	 * Creates {@link #server}, {@link #clientWebsocketContainer} and calculates
+	 * {@link #appWebsocketUrl}.
 	 */
 	@Before
 	public void setup() throws Exception {
@@ -52,9 +49,7 @@ public abstract class WebsocketIntegrationTests {
 		wsHttpClient.setCookieStore(cookieManager.getCookieStore());
 		clientWebsocketContainer = JavaxWebSocketClientContainerProvider.getContainer(wsHttpClient);
 		server = createServer();
-		port = server.getPort();
-		serverWebsocketUrl = "ws://localhost:" + port;
-		appWebsocketUrl = serverWebsocketUrl + APP_PATH + WEBSOCKET_PATH;
+		appWebsocketUrl = server.getAppWebsocketUrl();
 	}
 
 
@@ -166,35 +161,23 @@ public abstract class WebsocketIntegrationTests {
 
 	@Test
 	public void testProgrammaticEndpoint() throws Exception {
-		test2SessionsWithServerEndpoint(
-			serverWebsocketUrl + APP_PATH + ProgrammaticEndpoint.PATH,
-			true
-		);
+		test2SessionsWithServerEndpoint(appWebsocketUrl + ProgrammaticEndpoint.PATH, true);
 	}
 
 	@Test
 	public void testAnnotatedEndpoint() throws Exception {
-		test2SessionsWithServerEndpoint(
-			serverWebsocketUrl + APP_PATH + AnnotatedEndpoint.PATH,
-			true
-		);
+		test2SessionsWithServerEndpoint(appWebsocketUrl + AnnotatedEndpoint.PATH, true);
 	}
 
 	@Test
 	public void testRttReportingEndpoint() throws Exception {
-		test2SessionsWithServerEndpoint(
-			serverWebsocketUrl + APP_PATH + RttReportingEndpoint.PATH,
-			false
-		);
+		test2SessionsWithServerEndpoint(appWebsocketUrl + RttReportingEndpoint.PATH, false);
 	}
 
 	/** Not all servers support it. */
 	@Test
 	public void testAnnotatedExtendingEndpoint() throws Exception {
-		test2SessionsWithServerEndpoint(
-			serverWebsocketUrl + APP_PATH + AnnotatedExtendingEndpoint.PATH,
-			true
-		);
+		test2SessionsWithServerEndpoint(appWebsocketUrl + AnnotatedExtendingEndpoint.PATH, true);
 	}
 
 
@@ -205,7 +188,7 @@ public abstract class WebsocketIntegrationTests {
 	 * fail to instantiate.
 	 */
 	protected Session testOpenConnectionToServerEndpoint(String type) throws Exception {
-		final var url = URI.create(appWebsocketUrl + type);
+		final var url = URI.create(appWebsocketUrl + WEBSOCKET_PATH + type);
 		final var endpoint = new ClientEndpoint(
 			(message) -> {},
 			(connection, error) -> {},

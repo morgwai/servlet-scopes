@@ -13,10 +13,11 @@ import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 
 /** An embedded Jetty server with {@code Servlets} and {@code Endpoints} from this package. */
 public class WebsocketAndServletJetty extends org.eclipse.jetty.server.Server
-		implements Server {
+		implements MultiAppServer {
 
 
 
+	public int getPort() { return port; }
 	final int port;
 
 
@@ -43,7 +44,7 @@ public class WebsocketAndServletJetty extends org.eclipse.jetty.server.Server
 
 		final var secondAppHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		secondAppHandler.setDisplayName("secondApp");
-		secondAppHandler.setContextPath(Server.SECOND_APP_PATH);
+		secondAppHandler.setContextPath(MultiAppServer.SECOND_APP_PATH);
 		secondAppHandler.addEventListener(new ManualServletContextListener());
 		JavaxWebSocketServletContainerInitializer.configure(
 			secondAppHandler,
@@ -72,8 +73,15 @@ public class WebsocketAndServletJetty extends org.eclipse.jetty.server.Server
 
 
 	@Override
-	public int getPort() {
-		return port;
+	public String getAppWebsocketUrl() {
+		return "ws://localhost:" + port + Server.APP_PATH;
+	}
+
+
+
+	@Override
+	public String getSecondAppWebsocketUrl() {
+		return "ws://localhost:" + port + MultiAppServer.SECOND_APP_PATH;
 	}
 
 

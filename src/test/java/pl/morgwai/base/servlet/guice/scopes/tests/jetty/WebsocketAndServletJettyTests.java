@@ -1,31 +1,26 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes.tests.jetty;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.HashSet;
+import java.util.List;
 import java.util.logging.Level;
-
-import javax.websocket.DeploymentException;
 
 import org.junit.Before;
 import org.junit.Test;
-import pl.morgwai.base.servlet.guice.scopes.tests.*;
+import pl.morgwai.base.servlet.guice.scopes.tests.MultiAppWebsocketTests;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 
 import static org.junit.Assert.*;
 import static pl.morgwai.base.servlet.guice.scopes.tests.jetty.AsyncServlet.*;
-import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server.APP_PATH;
-import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server.WEBSOCKET_PATH;
 
 
 
-public class WebsocketAndServletJettyTests extends WebsocketIntegrationTests {
+public class WebsocketAndServletJettyTests extends MultiAppWebsocketTests {
 
 
 
@@ -47,13 +42,13 @@ public class WebsocketAndServletJettyTests extends WebsocketIntegrationTests {
 
 
 	@Override
-	protected Server createServer() throws Exception {
+	protected MultiAppServer createServer() throws Exception {
 		final var server = new WebsocketAndServletJetty(0);
 		final var port = server.getPort();
 		forwardingServletUrl = "http://localhost:" + port + Server.APP_PATH + '/'
 				+ ForwardingServlet.class.getSimpleName();
-		forwardingServletSecondAppUrl = "http://localhost:" + port + Server.SECOND_APP_PATH + '/'
-				+ ForwardingServlet.class.getSimpleName();
+		forwardingServletSecondAppUrl = "http://localhost:" + port + MultiAppServer.SECOND_APP_PATH
+				+ '/' + ForwardingServlet.class.getSimpleName();
 		return server;
 	}
 
@@ -177,40 +172,6 @@ public class WebsocketAndServletJettyTests extends WebsocketIntegrationTests {
 
 
 
-	@Test
-	public void testProgrammaticEndpointManualListener() throws Exception {
-		test2SessionsWithServerEndpoint(
-			serverWebsocketUrl + Server.SECOND_APP_PATH + ProgrammaticEndpoint.PATH,
-			true
-		);
-	}
-
-	@Test
-	public void testAnnotatedEndpointManualListener() throws Exception {
-		test2SessionsWithServerEndpoint(
-			serverWebsocketUrl + Server.SECOND_APP_PATH + AnnotatedEndpoint.PATH,
-			true
-		);
-	}
-
-	@Test
-	public void testRttReportingEndpointManualListener() throws Exception {
-		test2SessionsWithServerEndpoint(
-			serverWebsocketUrl + Server.SECOND_APP_PATH + RttReportingEndpoint.PATH,
-			false
-		);
-	}
-
-	@Test
-	public void testExtendingEndpointManualListener() throws Exception {
-		test2SessionsWithServerEndpoint(
-			serverWebsocketUrl + Server.SECOND_APP_PATH + AnnotatedExtendingEndpoint.PATH,
-			true
-		);
-	}
-
-
-
 	/** Performs all the above positive tests in 1 session to check for undesired interactions. */
 	@Test
 	public void testAllInOne() throws Exception {
@@ -261,7 +222,7 @@ public class WebsocketAndServletJettyTests extends WebsocketIntegrationTests {
 				requestScopedHashes.add(wrappedTargetedAsyncCtxResponses.get(1)[2]));
 
 		final var programmaticEndpointResponses =
-				test2SessionsWithServerEndpoint(appWebsocketUrl + ProgrammaticEndpoint.TYPE, true);
+				test2SessionsWithServerEndpoint(appWebsocketUrl + ProgrammaticEndpoint.PATH, true);
 		assertEquals("session scoped object hash should remain the same",
 				sessionScopedHash, programmaticEndpointResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
@@ -276,7 +237,7 @@ public class WebsocketAndServletJettyTests extends WebsocketIntegrationTests {
 		connectionScopedHashes.add(programmaticEndpointResponses.get(2)[4]);
 
 		final var extendingEndpointResponses = test2SessionsWithServerEndpoint(
-				appWebsocketUrl + AnnotatedExtendingEndpoint.TYPE, true);
+				appWebsocketUrl + AnnotatedExtendingEndpoint.PATH, true);
 		assertEquals("session scoped object hash should remain the same",
 				sessionScopedHash, extendingEndpointResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
@@ -293,7 +254,7 @@ public class WebsocketAndServletJettyTests extends WebsocketIntegrationTests {
 				connectionScopedHashes.add(extendingEndpointResponses.get(2)[4]));
 
 		final var annotatedEndpointResponses =
-				test2SessionsWithServerEndpoint(appWebsocketUrl + AnnotatedEndpoint.TYPE, true);
+				test2SessionsWithServerEndpoint(appWebsocketUrl + AnnotatedEndpoint.PATH, true);
 		assertEquals("session scoped object hash should remain the same",
 				sessionScopedHash, annotatedEndpointResponses.get(0)[3]);
 		assertTrue("call scoped object hash should change",
@@ -308,50 +269,5 @@ public class WebsocketAndServletJettyTests extends WebsocketIntegrationTests {
 				connectionScopedHashes.add(annotatedEndpointResponses.get(0)[4]));
 		assertTrue("connection scoped object hash should change",
 				connectionScopedHashes.add(annotatedEndpointResponses.get(2)[4]));
-	}
-
-
-
-	public void testAppSeparation(String testAppWebsocketUrl, String secondAppWebsocketUrl)
-			throws InterruptedException, DeploymentException, IOException {
-		final var messages = new ArrayList<String>(2);
-
-		final var endpoint = new ClientEndpoint(messages::add, null, null);
-		final var uri1 = URI.create(testAppWebsocketUrl);
-		try (
-			final var ignored = clientWebsocketContainer.connectToServer(endpoint, null, uri1);
-		) {
-			if ( !endpoint.awaitClosure(500L, TimeUnit.MILLISECONDS)) fail("timeout");
-		}
-
-		final var endpoint2 = new ClientEndpoint(messages::add, null, null);
-		final var uri2 = URI.create(secondAppWebsocketUrl);
-		try (
-			final var ignored = clientWebsocketContainer.connectToServer(endpoint2, null, uri2);
-		) {
-			if ( !endpoint2.awaitClosure(500L, TimeUnit.MILLISECONDS)) fail("timeout");
-		}
-
-		assertNotEquals("Endpoint Configurators of separate apps should have separate Injectors",
-				messages.get(0), messages.get(1));
-	}
-
-	@Test
-	public void testAppSeparation() throws InterruptedException, DeploymentException, IOException {
-		testAppSeparation(
-			appWebsocketUrl + AppSeparationTestEndpoint.TYPE,
-			serverWebsocketUrl + Server.SECOND_APP_PATH
-					+ WEBSOCKET_PATH + AppSeparationTestEndpoint.TYPE
-		);
-	}
-
-	@Test
-	public void testAppSeparationNoSession()
-			throws InterruptedException, DeploymentException, IOException {
-		testAppSeparation(
-			serverWebsocketUrl + Server.APP_PATH + NoSessionAppSeparationTestEndpoint.PATH,
-			serverWebsocketUrl + Server.SECOND_APP_PATH
-					+ NoSessionAppSeparationTestEndpoint.PATH
-		);
 	}
 }

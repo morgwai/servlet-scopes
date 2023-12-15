@@ -10,8 +10,7 @@ public interface Server {
 	String WEBSOCKET_PATH = "/websocket/";
 	String PING_INTERVAL_MILLIS_PROPERTY = "pingIntervalMillis";
 	String APP_PATH = "/test";
-	String SECOND_APP_PATH = "";  // root app
 
-	int getPort();
+	String getAppWebsocketUrl();
 	void stopz() throws Exception;
 }

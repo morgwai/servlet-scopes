@@ -25,6 +25,7 @@ public class Tyrus implements Server {
 
 
 
+	final String deploymentPath;
 	final StandaloneWebsocketContainerServletContext appDeployment;
 	final WebsocketPingerService pingerService;
 	final org.glassfish.tyrus.server.Server tyrus;
@@ -32,6 +33,7 @@ public class Tyrus implements Server {
 
 
 	public Tyrus(int port, String deploymentPath) throws DeploymentException {
+		this.deploymentPath = deploymentPath;
 		appDeployment  = new StandaloneWebsocketContainerServletContext(deploymentPath);
 
 		final var servletModule = new ServletModule(appDeployment);
@@ -64,8 +66,8 @@ public class Tyrus implements Server {
 
 
 	@Override
-	public int getPort() {
-		return tyrus.getPort();
+	public String getAppWebsocketUrl() {
+		return "ws://localhost:" + tyrus.getPort() + deploymentPath;
 	}
 
 
