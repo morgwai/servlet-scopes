@@ -20,7 +20,7 @@ import static pl.morgwai.base.servlet.guice.scopes.tests.jetty.AsyncServlet.*;
 
 
 
-public class WebsocketAndServletJettyTests extends MultiAppWebsocketTests {
+public class JettyTests extends MultiAppWebsocketTests {
 
 
 
@@ -43,7 +43,7 @@ public class WebsocketAndServletJettyTests extends MultiAppWebsocketTests {
 
 	@Override
 	protected MultiAppServer createServer() throws Exception {
-		final var server = new WebsocketAndServletJetty(0);
+		final var server = new JettyServer(0);
 		final var port = server.getPort();
 		forwardingServletUrl = "http://localhost:" + port + Server.APP_PATH + '/'
 				+ ForwardingServlet.class.getSimpleName();

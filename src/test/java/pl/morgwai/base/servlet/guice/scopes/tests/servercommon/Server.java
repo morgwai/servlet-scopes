@@ -3,7 +3,7 @@ package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 
 
 
-/** Either a Jetty or Tyrus or other. */
+/** Either a Jetty or TyrusServer or other. */
 public interface Server {
 
 	/** All {@code Endpoints} are deployed somewhere under this path (relative to deployment). */

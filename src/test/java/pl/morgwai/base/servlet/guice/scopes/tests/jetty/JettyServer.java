@@ -12,7 +12,7 @@ import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 
 
 /** An embedded Jetty server with {@code Servlets} and {@code Endpoints} from this package. */
-public class WebsocketAndServletJetty extends org.eclipse.jetty.server.Server
+public class JettyServer extends org.eclipse.jetty.server.Server
 		implements MultiAppServer {
 
 
@@ -22,7 +22,7 @@ public class WebsocketAndServletJetty extends org.eclipse.jetty.server.Server
 
 
 
-	public WebsocketAndServletJetty(int port) throws Exception {
+	public JettyServer(int port) throws Exception {
 		super(port);
 
 		final var testAppHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
@@ -104,7 +104,7 @@ public class WebsocketAndServletJetty extends org.eclipse.jetty.server.Server
 				port = Integer.parseInt(System.getenv(PORT_ENVVAR));
 			} catch (Exception ignored) {}
 		}
-		final var server = new WebsocketAndServletJetty(port);
+		final var server = new JettyServer(port);
 		server.setStopAtShutdown(true);
 		server.start();
 		server.join();

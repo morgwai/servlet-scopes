@@ -21,7 +21,7 @@ import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
 
-public class Tyrus implements Server {
+public class TyrusServer implements Server {
 
 
 
@@ -32,7 +32,7 @@ public class Tyrus implements Server {
 
 
 
-	public Tyrus(int port, String deploymentPath) throws DeploymentException {
+	public TyrusServer(int port, String deploymentPath) throws DeploymentException {
 		this.deploymentPath = deploymentPath;
 		appDeployment  = new StandaloneWebsocketContainerServletContext(deploymentPath);
 

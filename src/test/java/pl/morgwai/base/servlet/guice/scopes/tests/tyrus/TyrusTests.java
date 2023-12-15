@@ -14,7 +14,7 @@ public class TyrusTests extends WebsocketIntegrationTests {
 
 	@Override
 	protected Server createServer() throws Exception {
-		return new Tyrus(-1, Server.APP_PATH);
+		return new TyrusServer(-1, Server.APP_PATH);
 	}
 
 
@@ -28,7 +28,7 @@ public class TyrusTests extends WebsocketIntegrationTests {
 
 	@Override
 	protected Session testOpenConnectionToServerEndpoint(String type) throws Exception {
-		// Tyrus reports error only after send attempt and not even right away...
+		// TyrusServer reports error only after send attempt and not even right away...
 		final var connection = super.testOpenConnectionToServerEndpoint(type);
 		Thread.sleep(100L);
 		connection.getBasicRemote().sendText("yo");
@@ -37,7 +37,7 @@ public class TyrusTests extends WebsocketIntegrationTests {
 
 
 
-	/** Tyrus does not support it. */
+	/** TyrusServer does not support it. */
 	@Override
 	public void testAnnotatedExtendingEndpoint() {}
 }
