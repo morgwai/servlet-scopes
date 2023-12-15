@@ -109,7 +109,9 @@ public class TyrusServer implements Server {
 			return Set.of(
 				AnnotatedEndpoint.class,
 				OnOpenWithoutSessionParamEndpoint.class,
-				PingingWithoutOnCloseEndpoint.class
+				PingingWithoutOnCloseEndpoint.class,
+				AppSeparationTestEndpoint.class,
+				NoSessionAppSeparationTestEndpoint.class
 			);
 		}
 	}

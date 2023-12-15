@@ -1,20 +1,20 @@
-// Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes.tests.tyrus;
 
 import javax.websocket.Session;
 
+import pl.morgwai.base.servlet.guice.scopes.tests.MultiAppWebsocketTests;
+import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.MultiAppServer;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server;
-import pl.morgwai.base.servlet.guice.scopes.tests.WebsocketIntegrationTests;
 
 
 
-public class TyrusTests extends WebsocketIntegrationTests {
+public class MultiAppTyrusTests extends MultiAppWebsocketTests {
 
 
 
 	@Override
-	protected Server createServer() throws Exception {
-		return new TyrusServer(-1, Server.APP_PATH);
+	protected MultiAppServer createServer() throws Exception {
+		return new TwoNodeTyrusFarm(-1, -1, Server.APP_PATH, MultiAppServer.SECOND_APP_PATH);
 	}
 
 
@@ -40,4 +40,10 @@ public class TyrusTests extends WebsocketIntegrationTests {
 	/** TyrusServer does not support it. */
 	@Override
 	public void testAnnotatedExtendingEndpoint() {}
+
+
+
+	/** TyrusServer does not support it. */
+	@Override
+	public void testAnnotatedExtendingEndpointOnSecondApp() {}
 }
