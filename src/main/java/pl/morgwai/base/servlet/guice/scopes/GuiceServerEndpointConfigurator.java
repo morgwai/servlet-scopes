@@ -424,12 +424,8 @@ class EndpointProxyHandler implements InvocationHandler {
 						final var connection = (Session) args[i];
 						final var userProperties = connection.getUserProperties();
 						httpSession = (HttpSession) userProperties.get(HttpSession.class.getName());
-						connectionProxy = new WebsocketConnectionProxy(connection, ctxTracker);
+						connectionProxy = WebsocketConnectionProxy.newProxy(connection, ctxTracker);
 						connectionCtx = new WebsocketConnectionContext(connectionProxy);
-						userProperties.put(
-							WebsocketConnectionContext.class.getName(),
-							connectionCtx
-						);
 					}
 					args[i] = connectionProxy;
 					break;

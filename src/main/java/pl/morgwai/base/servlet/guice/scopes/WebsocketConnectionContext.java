@@ -26,13 +26,27 @@ public class WebsocketConnectionContext extends InjectionContext {
 
 
 
-	final WebsocketConnectionProxy connection;
-	public Session getConnection() { return connection; }
+	/**
+	 * Set by {@link #WebsocketConnectionContext(WebsocketConnectionProxy) constructor} and by
+	 * {@link WebsocketConnectionProxy#getOpenSessions()} when remote connections from other cluster
+	 * nodes are fetched.
+	 */
+	transient WebsocketConnectionProxy connectionProxy;
 
 
 
-	WebsocketConnectionContext(WebsocketConnectionProxy connection) {
-		this.connection = connection;
-		connection.setConnectionCtx(this);
+	public Session getConnection() {
+		return connectionProxy;
 	}
+
+
+
+	WebsocketConnectionContext(WebsocketConnectionProxy connectionProxy) {
+		this.connectionProxy = connectionProxy;
+		connectionProxy.setConnectionCtx(this);
+	}
+
+
+
+	private static final long serialVersionUID = -3426641069769956104L;
 }

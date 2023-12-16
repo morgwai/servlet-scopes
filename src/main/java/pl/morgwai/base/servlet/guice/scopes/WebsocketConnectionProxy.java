@@ -14,30 +14,131 @@ import javax.websocket.RemoteEndpoint.Basic;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
+import static java.util.stream.Collectors.toUnmodifiableMap;
+
 
 
 /**
  * Decorates {@link MessageHandler}s passed to {@link #addMessageHandler(MessageHandler)} method
  * family with {@link WebsocketEventContext} tracking.
- * This is an internal class and users of the library don't need to deal with it directly. Also,
- * the amount of necessary boilerplate will make your eyes burn and heart cry: you've been
- * warned ;-]
  */
-class WebsocketConnectionProxy implements Session {
+public class WebsocketConnectionProxy implements Session {
 
 
-
-	final Session wrappedConnection;
-	final ContextTracker<ContainerCallContext> ctxTracker;
-	final HttpSession httpSession;
 
 	/**
-	 * Set by
+	 * {@link ServiceLoader SPI}-provided factory for proxies, that wrap
+	 * {@link #getSupportedConnectionType() specific implementation} of {@link Session} to enable
+	 * its specific features.
+	 */
+	public interface Factory {
+
+		WebsocketConnectionProxy newProxy(
+			Session connection,
+			ContextTracker<ContainerCallContext> ctxTracker
+		);
+
+		/** Indicates what type of {@link Session} given factory creates proxies for. */
+		Class<? extends Session> getSupportedConnectionType();
+	}
+
+
+
+	static Map<Class<? extends Session>, Factory> proxyFactories =
+			ServiceLoader.load(Factory.class).stream()
+				.collect(toUnmodifiableMap(
+					(provider) -> provider.get().getSupportedConnectionType(),
+					ServiceLoader.Provider::get
+				));
+
+
+
+	public Session getWrappedConnection() { return wrappedConnection; }
+	protected final Session wrappedConnection;
+	protected final ContextTracker<ContainerCallContext> ctxTracker;
+	protected final HttpSession httpSession;
+
+	private WebsocketConnectionContext connectionCtx;
+
+
+
+	/**
+	 * Asks {@link ServiceLoader SPI}-provided factory to create a new proxy for {@code connection}.
+	 * If there's no factory specific for the given {@link Session} implementation, uses
+	 * {@link #WebsocketConnectionProxy(Session, ContextTracker, boolean)}.
+	 */
+	static WebsocketConnectionProxy newProxy(
+		Session connection,
+		ContextTracker<ContainerCallContext> ctxTracker
+	) {
+		final var proxyFactory = proxyFactories.get(connection.getClass());
+		if (proxyFactory != null) return proxyFactory.newProxy(connection, ctxTracker);
+		return new WebsocketConnectionProxy(connection, ctxTracker, false);
+	}
+
+
+
+	/**
+	 * Constructs a new proxy for {@code connection}.
+	 * @param remote weather {@code connection} is a remote {@link Session} from another cluster
+	 *     node. In such case, there will be no attempt to retrieve {@link #httpSession} from
+	 *     {@link Session#getUserProperties() userProperties}. This is useful when creating proxies
+	 *     for remote {@link Session}s in {@link #getOpenSessions()} in a clustered environment.
+	 */
+	protected WebsocketConnectionProxy(
+		Session connection,
+		ContextTracker<ContainerCallContext> containerCallContextTracker,
+		boolean remote
+	) {
+		this.wrappedConnection = connection;
+		this.ctxTracker = containerCallContextTracker;
+		this.httpSession = (HttpSession) (
+			remote ? null : wrappedConnection.getUserProperties().get(HttpSession.class.getName())
+		);
+	}
+
+
+
+	/**
+	 * Called by
 	 * {@link WebsocketConnectionContext#WebsocketConnectionContext(WebsocketConnectionProxy)
 	 * WebsocketConnectionContext's constructor}.
 	 */
-	void setConnectionCtx(WebsocketConnectionContext ctx) { this.connectionCtx = ctx; }
-	WebsocketConnectionContext connectionCtx;
+	void setConnectionCtx(WebsocketConnectionContext ctx) {
+		assert this.connectionCtx == null : "connection context already set";
+		this.connectionCtx = ctx;
+		getUserProperties().put(
+			WebsocketConnectionContext.class.getName(),
+			ctx
+		);
+	}
+
+
+
+	@Override
+	public Set<Session> getOpenSessions() {
+		final var rawPeerConnections = wrappedConnection.getOpenSessions();
+		final var proxies = new HashSet<Session>(rawPeerConnections.size(), 1.0f);
+		for (final var peerConnection: rawPeerConnections) {
+			final var peerConnectionCtx = ((WebsocketConnectionContext)
+					peerConnection.getUserProperties()
+							.get(WebsocketConnectionContext.class.getName()));
+			if (peerConnectionCtx.getConnection() == null) {
+				// peerConnection from another cluster node, that supports userProperties clustering
+				peerConnectionCtx.connectionProxy =
+						new WebsocketConnectionProxy(peerConnection, ctxTracker, true);
+			}
+			proxies.add(peerConnectionCtx.getConnection());
+		}
+		return proxies;
+	}
+
+
+
+	@Override
+	public Map<String, Object> getUserProperties() {
+		return wrappedConnection.getUserProperties();
+	}
 
 
 
@@ -95,50 +196,6 @@ class WebsocketConnectionProxy implements Session {
 
 
 
-	@Override
-	public Set<Session> getOpenSessions() {
-		final var rawConnections = wrappedConnection.getOpenSessions();
-		final var proxies = new HashSet<Session>(rawConnections.size(), 1.0f);
-		for (final var connection: rawConnections) {
-			proxies.add(
-				((WebsocketConnectionContext) connection.getUserProperties().get(
-					WebsocketConnectionContext.class.getName()
-				)).getConnection()
-			);
-		}
-		return proxies;
-	}
-
-
-
-	@Override
-	public boolean equals(Object other) {
-		if (other == null) return false;
-		if ( !WebsocketConnectionProxy.class.isAssignableFrom(other.getClass())) return false;
-		return wrappedConnection.equals(((WebsocketConnectionProxy) other).wrappedConnection);
-	}
-
-
-
-	@Override
-	public int hashCode() {
-		return wrappedConnection.hashCode();
-	}
-
-
-
-	WebsocketConnectionProxy(
-		Session connection,
-		ContextTracker<ContainerCallContext> containerCallContextTracker
-	) {
-		this.wrappedConnection = connection;
-		this.ctxTracker = containerCallContextTracker;
-		this.httpSession = (HttpSession)
-				wrappedConnection.getUserProperties().get(HttpSession.class.getName());
-	}
-
-
-
 	static abstract class MessageHandlerDecorator implements MessageHandler {
 
 		final MessageHandler wrappedHandler;
@@ -192,6 +249,22 @@ class WebsocketConnectionProxy implements Session {
 			super(toWrap);
 			this.wrappedHandler = toWrap;
 		}
+	}
+
+
+
+	@Override
+	public boolean equals(Object other) {
+		if (other == null) return false;
+		if ( !WebsocketConnectionProxy.class.isAssignableFrom(other.getClass())) return false;
+		return wrappedConnection.equals(((WebsocketConnectionProxy) other).wrappedConnection);
+	}
+
+
+
+	@Override
+	public int hashCode() {
+		return wrappedConnection.hashCode();
 	}
 
 
@@ -265,10 +338,6 @@ class WebsocketConnectionProxy implements Session {
 
 	@Override public Map<String, String> getPathParameters() {
 		return wrappedConnection.getPathParameters();
-	}
-
-	@Override public Map<String, Object> getUserProperties() {
-		return wrappedConnection.getUserProperties();
 	}
 
 	@Override public Principal getUserPrincipal() { return wrappedConnection.getUserPrincipal(); }

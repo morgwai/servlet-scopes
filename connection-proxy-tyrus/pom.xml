@@ -5,11 +5,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>pl.morgwai.base</groupId>
-	<artifactId>servlet-scopes</artifactId>
+	<artifactId>servlet-scopes-connection-proxy-tyrus</artifactId>
 	<version>13.3-SNAPSHOT-javax</version><!--jakarta-->
 
-	<name>Servlet and Websocket Guice Scopes</name>
-	<description>containerCallScope (either a HttpServletRequest or a websocket endpoint event), websocketConnectionScope (javax.websocket.Session) and httpSessionScope</description>
+	<name>Tyrus connection proxy</name>
+	<description>Tyrus connection proxy for websocket scopes that provides unified access to clustered connections</description>
 	<url>https://github.com/morgwai/servlet-scopes</url>
 
 	<licenses>
@@ -36,36 +36,28 @@
 	<properties>
 		<maven.compiler.release>11</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<guice.scopes.version>9.2</guice.scopes.version>
-		<utils.version>3.2</utils.version>
-		<servlet.utils.version>4.0</servlet.utils.version>
 		<guice.version>6.0.0</guice.version><!--jakarta:<guice.version>7.0.0</guice.version>-->
 	</properties>
 
 	<dependencies>
 		<dependency>
+			<groupId>pl.morgwai.base</groupId>
+			<artifactId>servlet-scopes</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<dependency>
 			<groupId>com.google.inject</groupId>
 			<artifactId>guice</artifactId>
 			<version>${guice.version}</version>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>pl.morgwai.base</groupId>
-			<artifactId>guice-context-scopes</artifactId>
-			<version>${guice.scopes.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>pl.morgwai.base</groupId>
-			<artifactId>java-utils</artifactId>
-			<version>${utils.version}</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy</artifactId>
 			<version>[1.14.6,)</version>
-			<optional>true</optional>
+			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -82,9 +74,10 @@
 			</activation>
 			<dependencies>
 				<dependency>
-					<groupId>pl.morgwai.base</groupId>
-					<artifactId>servlet-utils</artifactId>
-					<version>${servlet.utils.version}-javax</version>
+					<groupId>org.glassfish.tyrus</groupId>
+					<artifactId>tyrus-core</artifactId>
+					<version>[1.21,1.999]</version>
+					<scope>provided</scope>
 				</dependency>
 				<dependency>
 					<groupId>javax.servlet</groupId>
@@ -98,15 +91,10 @@
 					<version>1.1</version>
 					<scope>provided</scope>
 				</dependency>
-				<dependency>
-					<groupId>org.eclipse.jetty</groupId>
-					<artifactId>jetty-servlet</artifactId>
-					<version>[10.0.7,10.999.0]</version>
-					<scope>test</scope>
-				</dependency>
+
 				<dependency>
 					<groupId>org.eclipse.jetty.websocket</groupId>
-					<artifactId>websocket-javax-server</artifactId>
+					<artifactId>websocket-javax-client</artifactId>
 					<version>[10.0.7,10.999.0]</version>
 					<scope>test</scope>
 				</dependency>
@@ -131,9 +119,16 @@
 			</activation>
 			<dependencies>
 				<dependency>
-					<groupId>pl.morgwai.base</groupId>
-					<artifactId>servlet-utils</artifactId>
-					<version>${servlet.utils.version}-jakarta</version>
+					<groupId>jakarta.annotation</groupId>
+					<artifactId>jakarta.annotation-api</artifactId>
+					<version>2.1.1</version>
+				</dependency>
+
+				<dependency>
+					<groupId>org.glassfish.tyrus</groupId>
+					<artifactId>tyrus-core</artifactId>
+					<version>[2.0.5,2.0.999]</version>
+					<scope>provided</scope>
 				</dependency>
 				<dependency>
 					<groupId>jakarta.servlet</groupId>
@@ -147,20 +142,10 @@
 					<version>2.0.0</version>
 					<scope>provided</scope>
 				</dependency>
-				<dependency>
-					<groupId>jakarta.annotation</groupId>
-					<artifactId>jakarta.annotation-api</artifactId>
-					<version>2.1.1</version>
-				</dependency>
-				<dependency>
-					<groupId>org.eclipse.jetty</groupId>
-					<artifactId>jetty-servlet</artifactId>
-					<version>[11.0.7,11.999.0]</version>
-					<scope>test</scope>
-				</dependency>
+
 				<dependency>
 					<groupId>org.eclipse.jetty.websocket</groupId>
-					<artifactId>websocket-jakarta-server</artifactId>
+					<artifactId>websocket-jakarta-client</artifactId>
 					<version>[11.0.7,11.999.0]</version>
 					<scope>test</scope>
 				</dependency>
@@ -195,34 +180,6 @@
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-shade-plugin</artifactId>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>shade</goal>
-						</goals>
-						<configuration>
-							<artifactSet>
-								<includes>
-									<include>net.bytebuddy:byte-buddy</include>
-								</includes>
-							</artifactSet>
-							<relocations>
-								<relocation>
-									<pattern>net.bytebuddy</pattern>
-									<shadedPattern>pl.morgwai.base.servlet.guice.scopes.net.bytebuddy</shadedPattern>
-								</relocation>
-							</relocations>
-							<shadedArtifactAttached>true</shadedArtifactAttached>
-							<shadedClassifierName>shadedbytebuddy</shadedClassifierName>
-							<minimizeJar>true</minimizeJar>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
 				<executions>
 					<execution>
@@ -240,10 +197,7 @@
 					<javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
 					<overview>${basedir}/src/main/java/overview.html</overview>
 					<links>
-						<link>https://javadoc.io/doc/pl.morgwai.base/guice-context-scopes/${guice.scopes.version}</link>
-						<link>https://javadoc.io/doc/pl.morgwai.base/java-utils/${utils.version}</link>
-						<link>https://javadoc.io/doc/pl.morgwai.base/servlet-utils/${servlet.utils.version}-javax</link><!--jakarta-->
-						<link>https://google.github.io/guice/api-docs/${guice.version}/javadoc</link>
+						<link>https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/${project.version}</link>
 						<link>https://javadoc.io/doc/javax.websocket/javax.websocket-api/1.1</link>
 						<link>https://javadoc.io/doc/jakarta.websocket/jakarta.websocket-api/2.0.0</link>
 						<link>https://javadoc.io/doc/javax.servlet/javax.servlet-api/4.0.1</link>
@@ -252,20 +206,8 @@
 					<offlineLinks>
 						<!-- to setup offline javadoc generation run ./setup-offline-javadocs.sh -->
 						<offlineLink>
-							<url>https://javadoc.io/doc/pl.morgwai.base/guice-context-scopes/${guice.scopes.version}</url>
-							<location>${settings.localRepository}/pl/morgwai/base/guice-context-scopes/${guice.scopes.version}</location>
-						</offlineLink>
-						<offlineLink>
-							<url>https://javadoc.io/doc/pl.morgwai.base/java-utils/${utils.version}</url>
-							<location>${settings.localRepository}/pl/morgwai/base/java-utils/${utils.version}</location>
-						</offlineLink>
-						<offlineLink>
-							<url>https://javadoc.io/doc/pl.morgwai.base/servlet-utils/${servlet.utils.version}-javax</url><!--jakarta-->
-							<location>${settings.localRepository}/pl/morgwai/base/servlet-utils/${servlet.utils.version}-javax</location><!--jakarta-->
-						</offlineLink>
-						<offlineLink>
-							<url>https://google.github.io/guice/api-docs/${guice.version}/javadoc</url>
-							<location>${settings.localRepository}/com/google/inject/guice/${guice.version}</location>
+							<url>https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/${project.version}</url>
+							<location>${settings.localRepository}/pl/morgwai/base/servlet-scopes/${project.version}</location>
 						</offlineLink>
 						<offlineLink>
 							<url>https://javadoc.io/doc/javax.websocket/javax.websocket-api/1.1</url>

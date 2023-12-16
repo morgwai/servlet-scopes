@@ -10,9 +10,11 @@ import java.util.logging.Logger;
 import javax.websocket.*;
 import javax.websocket.MessageHandler.Whole;
 
+import pl.morgwai.base.utils.concurrent.Awaitable;
 
 
-class ClientEndpoint extends Endpoint {
+
+public class ClientEndpoint extends Endpoint {
 
 
 
@@ -85,5 +87,11 @@ class ClientEndpoint extends Endpoint {
 
 
 
-	static final Logger log = Logger.getLogger(IntegrationTests.class.getName());
+	public Awaitable.WithUnit toAwaitableOfClosure() {
+		return closureLatch::await;
+	}
+
+
+
+	static final Logger log = Logger.getLogger(ClientEndpoint.class.getName());
 }
