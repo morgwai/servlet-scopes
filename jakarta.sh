@@ -7,6 +7,11 @@ fi;
 
 sed -E -e 's#(\t*).*<!--jakarta:(.*)-->#\1\2#' \
 	-e 's#(.*)javax(.*)<!--jakarta-->#\1jakarta\2#' \
+	<bom/pom.xml >bom/pom.jakarta.xml &&
+mv bom/pom.jakarta.xml bom/pom.xml &&
+
+sed -E -e 's#(\t*).*<!--jakarta:(.*)-->#\1\2#' \
+	-e 's#(.*)javax(.*)<!--jakarta-->#\1jakarta\2#' \
 	<pom.xml >pom.jakarta.xml &&
 mv pom.jakarta.xml pom.xml &&
 
