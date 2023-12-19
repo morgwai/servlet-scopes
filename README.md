@@ -125,7 +125,13 @@ There are 2 builds available:
 - "default" build does not include any shaded dependencies and dependency on `byte-buddy` is marked as `optional`. This is useful for apps that also depend on `byte-buddy` and need to save space (`byte-buddy` is over 3MB in size). Note that the version provided by the app needs to be compatible with the version that `servlet-scopes` depends on (in regard to features used by `servlet-scopes`). If this is not the case, then `shadedbytebuddy` build should be used.
 
 
+## EXTENSIONS
+
+[Tyrus connection proxy that provides unified, websocket API compliant access to clustered websocket connections and properties](connection-proxy-tyrus)
+
+
 ## EXAMPLES
+
 [a trivial sample app built from the test code](sample).
 
 

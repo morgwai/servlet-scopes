@@ -12,8 +12,8 @@
 	<artifactId>servlet-scopes-connection-proxy-tyrus</artifactId>
 
 	<name>Tyrus connection proxy</name>
-	<description>Tyrus connection proxy for websocket scopes that provides unified access to clustered connections</description>
-	<url>https://github.com/morgwai/servlet-scopes</url>
+	<description>Tyrus connection proxy for websocket scopes that provides unified, websocket API compliant access to clustered websocket connections</description>
+	<url>https://github.com/morgwai/servlet-scopes/connection-proxy-tyrus</url>
 
 	<dependencies>
 		<dependency>
