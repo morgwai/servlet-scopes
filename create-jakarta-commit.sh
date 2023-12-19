@@ -13,4 +13,4 @@ version="$(git log -1 --oneline --pretty=%B | sed -e 's#release ##' -e 's#-javax
 ./jakarta.sh && git add --all && git commit -m "release ${version}-jakarta" &&
 git tag -u 5B5AE744CAD124534DBF0B9369DA23D16BE1A728 \
 		-m "v${version}-jakarta" "v${version}-jakarta" &&
-./mvnw clean install && ( cd sample; ./mvnw clean package; cd .. )
+./mvn-all.sh
