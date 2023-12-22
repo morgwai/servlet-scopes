@@ -62,6 +62,8 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 		appCollection.addHandler(testAppHandler);
 		appCollection.addHandler(secondAppHandler);
 		setHandler(appCollection);
+
+		setStopAtShutdown(true);
 		start();
 		this.port = Arrays.stream(getConnectors())
 			.filter(NetworkConnector.class::isInstance)
@@ -106,10 +108,9 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 			} catch (Exception ignored) {}
 		}
 		final var server = new JettyServer(port);
-		server.setStopAtShutdown(true);
-		server.start();
 		server.join();
 		server.destroy();
+		System.out.println("exiting, bye!");
 	}
 
 	public static final String PORT_ENVVAR = "SCOPES_SAMPLE_PORT";
