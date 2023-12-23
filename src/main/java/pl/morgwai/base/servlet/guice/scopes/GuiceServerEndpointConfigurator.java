@@ -127,7 +127,13 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * it must be called manually in apps that don't use it.</p>
 	 */
 	public static void deregisterDeployment(ServletContext appDeployment) {
-		appDeployments.remove(appDeployment.getContextPath()).clear();
+		final var deregisteredDeployment = appDeployments.remove(appDeployment.getContextPath());
+		if (deregisteredDeployment != null) {
+			deregisteredDeployment.clear();
+		} else {
+			log.warning("attempting to deregister unregistered deployment with path "
+					+ appDeployment.getContextPath());
+		}
 	}
 
 
