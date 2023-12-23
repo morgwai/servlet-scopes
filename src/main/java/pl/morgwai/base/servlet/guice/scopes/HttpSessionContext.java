@@ -15,7 +15,7 @@ public class HttpSessionContext extends InjectionContext implements HttpSessionA
 
 
 
-	final HttpSession session;
+	private transient HttpSession session;
 	public HttpSession getSession() { return session; }
 
 
@@ -62,6 +62,8 @@ public class HttpSessionContext extends InjectionContext implements HttpSessionA
 	/** Calls {@link #restoreAfterDeserialization()} . */
 	@Override
 	public void sessionDidActivate(HttpSessionEvent deserialization) {
+		if (session != null) return;
+		session = deserialization.getSession();
 		try {
 			restoreAfterDeserialization();
 		} catch (ClassNotFoundException e) {
@@ -71,5 +73,5 @@ public class HttpSessionContext extends InjectionContext implements HttpSessionA
 
 
 
-	private static final long serialVersionUID = 3922213799812986253L;
+	private static final long serialVersionUID = -5568715924650410076L;
 }
