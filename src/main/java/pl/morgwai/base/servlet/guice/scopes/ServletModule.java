@@ -78,9 +78,9 @@ public class ServletModule implements Module {
 	);
 
 	static final Function<ContainerCallContext, WebsocketConnectionContext>
-	getWebsocketConnectionContext = (ctx) -> {
+	getWebsocketConnectionContext = (eventCtx) -> {
 		try {
-			return ((WebsocketEventContext) ctx).getConnectionContext();
+			return ((WebsocketEventContext) eventCtx).getConnectionContext();
 		} catch (ClassCastException e) {
 			throw new OutOfScopeException("cannot provide a websocketConnectionScope bound "
 					+ "object within a ServletRequestContext");
