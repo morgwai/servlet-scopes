@@ -19,6 +19,8 @@ import javax.websocket.server.ServerEndpointConfig.Configurator;
 import com.google.inject.Module;
 import com.google.inject.*;
 
+import static pl.morgwai.base.servlet.guice.scopes.HttpSessionContext.CUSTOM_SERIALIZATION_PARAM;
+
 
 
 /**
@@ -333,6 +335,12 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 			for (var configurationHook: configurationHooks) configurationHook.call();
 			configureServletsFiltersEndpoints();
+			if (appDeployment.getAttribute(CUSTOM_SERIALIZATION_PARAM) == null) {
+				appDeployment.setAttribute(
+					CUSTOM_SERIALIZATION_PARAM,
+					Boolean.parseBoolean(appDeployment.getInitParameter(CUSTOM_SERIALIZATION_PARAM))
+				);
+			}
 			log.info(deploymentName + " deployed successfully");
 		} catch (Exception e) {
 			final var message = "could not deploy " + deploymentName;

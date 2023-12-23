@@ -15,6 +15,7 @@ import org.eclipse.jetty.server.NetworkConnector;
 import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServletContextListener;
+import pl.morgwai.base.servlet.guice.scopes.HttpSessionContext;
 
 
 
@@ -37,7 +38,12 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 
 
 
-	public JettyNode(int port, String nodeId, SessionDataStore sessionStore) throws Exception {
+	public JettyNode(
+		int port,
+		String nodeId,
+		SessionDataStore sessionStore,
+		boolean customSerialization
+	) throws Exception {
 		super(port);
 		new DefaultSessionIdManager(this).setWorkerName(nodeId);
 
@@ -45,6 +51,10 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 		testAppHandler.setDisplayName("testApp");
 		testAppHandler.setContextPath(APP_PATH);
 		testAppHandler.setInitParameter(NODE_ID_ATTRIBUTE, nodeId);
+		testAppHandler.setInitParameter(
+			HttpSessionContext.CUSTOM_SERIALIZATION_PARAM,
+			String.valueOf(customSerialization)
+		);
 		testAppHandler.addEventListener(new ServletContextListener());
 		setHandler(testAppHandler);
 
@@ -165,7 +175,9 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 		sessionStore.setGracePeriodSec(10);
 		sessionStore.setSavePeriodSec(0);
 
-		final var node = new JettyNode(port, nodeId, sessionStore);
+		final var customSerialization = args.length > 3 && Boolean.parseBoolean(args[3]);
+
+		final var node = new JettyNode(port, nodeId, sessionStore, customSerialization);
 		node.join();
 		node.destroy();
 		System.out.println("exiting, bye!");

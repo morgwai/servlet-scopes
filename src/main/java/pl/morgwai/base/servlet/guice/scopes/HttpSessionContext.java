@@ -1,6 +1,8 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
+import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
 import javax.servlet.http.*;
 
 import pl.morgwai.base.guice.scopes.InjectionContext;
@@ -9,19 +11,32 @@ import pl.morgwai.base.guice.scopes.InjectionContext;
 
 /**
  * Context of an {@link HttpSession}.
+ * <p>
+ * <b>NOTE:</b> If the servlet container being used uses mechanism other than the standard
+ * {@link java.io.Serializable Java Serialization} to persist/replicate {@link HttpSession}s, then
+ * a deployment {@link ServletContext#setInitParameter(String, String) init-param} named
+ * {@value #CUSTOM_SERIALIZATION_PARAM} must be set to {@code "true"} either in {@code web.xml} or
+ * programmatically before any request is served (for example in
+ * {@link javax.servlet.ServletContextListener#contextInitialized(ServletContextEvent)}).</p>
  * @see ServletModule#httpSessionScope corresponding Scope
  */
 public class HttpSessionContext extends InjectionContext implements HttpSessionActivationListener {
 
 
 
-	private transient HttpSession session;
 	public HttpSession getSession() { return session; }
+	private transient HttpSession session;
+
+	public static final String CUSTOM_SERIALIZATION_PARAM =
+			"pl.morgwai.base.servlet.guice.scopes.HttpSessionContext.customSerialization";
+	final boolean customSerialization;
 
 
 
 	HttpSessionContext(HttpSession session) {
 		this.session = session;
+		this.customSerialization = Boolean.parseBoolean(
+				session.getServletContext().getInitParameter(CUSTOM_SERIALIZATION_PARAM));
 	}
 
 
@@ -51,27 +66,35 @@ public class HttpSessionContext extends InjectionContext implements HttpSessionA
 
 
 
-	/** Calls {@link #prepareForSerialization()}. */
+	/**
+	 * Calls {@link #prepareForSerialization()} if {@value #CUSTOM_SERIALIZATION_PARAM}
+	 * {@link javax.servlet.ServletContext#getInitParameter(String) init-param} is {@code true}.
+	 */
 	@Override
 	public void sessionWillPassivate(HttpSessionEvent serialization) {
-		prepareForSerialization();
+		if (customSerialization) prepareForSerialization();
 	}
 
 
 
-	/** Calls {@link #restoreAfterDeserialization()} . */
+	/**
+	 * Calls {@link #restoreAfterDeserialization()} if {@value #CUSTOM_SERIALIZATION_PARAM}
+	 * {@link javax.servlet.ServletContext#getInitParameter(String) init-param} is {@code true}.
+	 */
 	@Override
 	public void sessionDidActivate(HttpSessionEvent deserialization) {
 		if (session != null) return;
 		session = deserialization.getSession();
-		try {
-			restoreAfterDeserialization();
-		} catch (ClassNotFoundException e) {
-			throw new RuntimeException(e);
+		if (customSerialization) {
+			try {
+				restoreAfterDeserialization();
+			} catch (ClassNotFoundException e) {
+				throw new RuntimeException(e);
+			}
 		}
 	}
 
 
 
-	private static final long serialVersionUID = -5568715924650410076L;
+	private static final long serialVersionUID = -7919669682504906435L;
 }

@@ -61,9 +61,12 @@ public class HttpSessionContextReplicationTests {
 
 
 
-	public void testHttpSessionContextReplication(SessionDataStore store1, SessionDataStore store2)
-			throws Exception {
-		node1 = new JettyNode(0, NODE1_ID, store1);
+	public void testHttpSessionContextReplication(
+		SessionDataStore store1,
+		SessionDataStore store2,
+		boolean customSerialization
+	) throws Exception {
+		node1 = new JettyNode(0, NODE1_ID, store1, customSerialization);
 		final var url1 = URL_PREFIX + node1.getPort() + APP_PATH + NODE_INFO_SERVLET_PATH;
 		final var request1 = HttpRequest.newBuilder(URI.create(url1))
 			.GET()
@@ -73,7 +76,7 @@ public class HttpSessionContextReplicationTests {
 		responseNode1.load(httpClient.send(request1, BodyHandlers.ofInputStream()).body());
 		node1.stop();
 
-		node2 = new JettyNode(0, NODE2_ID, store2);
+		node2 = new JettyNode(0, NODE2_ID, store2, customSerialization);
 		final var url2 = URL_PREFIX + node2.getPort() + APP_PATH + NODE_INFO_SERVLET_PATH;
 		final var request2 = HttpRequest.newBuilder(URI.create(url2))
 			.GET()
@@ -103,10 +106,25 @@ public class HttpSessionContextReplicationTests {
 	}
 
 	@Test
-	public void testHttpSessionContextReplicationWithFileStore() throws Exception {
+	public void testHttpSessionContextReplicationWithFileStoreAndStandardSerialization()
+			throws Exception {
 		final var sessionFolder = temporaryFolder.getRoot();
 		testHttpSessionContextReplication(
-				createFileSessionStore(sessionFolder), createFileSessionStore(sessionFolder));
+			createFileSessionStore(sessionFolder),
+			createFileSessionStore(sessionFolder),
+			false
+		);
+	}
+
+	@Test
+	public void testHttpSessionContextReplicationWithFileStoreAndCustomSerialization()
+			throws Exception {
+		final var sessionFolder = temporaryFolder.getRoot();
+		testHttpSessionContextReplication(
+			createFileSessionStore(sessionFolder),
+			createFileSessionStore(sessionFolder),
+			true
+		);
 	}
 
 

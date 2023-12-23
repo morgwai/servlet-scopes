@@ -85,6 +85,8 @@ public class ServletContextListener extends GuiceServletContextListener {
     }
 }
 ```
+**NOTE:** If the servlet container being used uses mechanism other than the standard Java Serialization to persist/replicate `HttpSession`s, then a deployment [init-param](https://javadoc.io/static/jakarta.servlet/jakarta.servlet-api/5.0.0/jakarta/servlet/ServletContext.html#setInitParameter-java.lang.String-java.lang.String-) named `pl.morgwai.base.servlet.guice.scopes.HttpSessionContext.customSerialization` must be set to `true` either in `web.xml` or programmatically before any request is served (for example in `ServletContextListener.contextInitialized(event)`).
+
 Note: in cases where it is not possible to extend `GuiceServletContextListener`, all the configuration required to use `ServletModule` (with all its `Scopes` etc) and `GuiceServerEndpointConfigurator` / `PingingEndpointConfigurator`, can be done manually: see an example in [ManualServletContextListener](src/test/java/pl/morgwai/base/servlet/guice/scopes/tests/jetty/ManualServletContextListener.java).
 
 ### Using annotated `Endpoints`
