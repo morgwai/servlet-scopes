@@ -15,19 +15,68 @@ import javax.servlet.descriptor.JspConfigDescriptor;
  * Fake {@link ServletContext} useful for storing attributes necessary to configure
  * {@link pl.morgwai.base.servlet.guice.scopes.ServletModule} and
  * {@link pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator} in standalone
- * websocket container apps where there is no "real" {@link ServletContext}.
+ * websocket container apps where there is no "real" {@link ServletContext}. Most methods throw
+ * {@link UnsupportedOperationException} except the below:
+ * <ul>
+ *     <li>{@link #getContextPath()}</li>
+ *     <li>{@link #getServletContextName()}</li>
+ *     <li>{@link #getVirtualServerName()}</li>
+ *     <li>{@link #getAttribute(String)}</li>
+ *     <li>{@link #getAttributeNames()}</li>
+ *     <li>{@link #setAttribute(String, Object)}</li>
+ *     <li>{@link #removeAttribute(String)}</li>
+ *     <li>{@link #getInitParameter(String)}</li>
+ *     <li>{@link #getInitParameterNames()}</li>
+ *     <li>{@link #setInitParameter(String, String)}</li>
+ * </ul>
  */
 public class StandaloneWebsocketContainerServletContext implements ServletContext {
 
 
 
 	final String contextPath;
+	final String servletContextName;
+	final String virtualServerName;
 	final Map<String, Object> attributes = new HashMap<>(5);
+	final Map<String, String> initParams = new HashMap<>(5);
 
 
 
+	/**
+	 * Calls {@link #StandaloneWebsocketContainerServletContext(String, String, String)
+	 * this(contextPath, "app at " + contextPath, null)}.
+	 */
 	public StandaloneWebsocketContainerServletContext(String contextPath) {
+		this(contextPath, "app at " + contextPath, null);
+	}
+
+
+
+	/**
+	 * Calls {@link #StandaloneWebsocketContainerServletContext(String, String, String)
+	 * this(contextPath, servletContextName, null)}.
+	 */
+	public StandaloneWebsocketContainerServletContext(String contextPath, String servletContextName)
+	{
+		this(contextPath, servletContextName, null);
+	}
+
+
+
+	/**
+	 * Initializes values to be returned by the corresponding methods.
+	 * @param contextPath value returned by {@link #getContextPath()}.
+	 * @param servletContextName value returned by {@link #getServletContextName()}.
+	 * @param virtualServerName value returned by {@link #getVirtualServerName()}.
+	 */
+	public StandaloneWebsocketContainerServletContext(
+		String contextPath,
+		String servletContextName,
+		String virtualServerName
+	) {
 		this.contextPath = contextPath;
+		this.servletContextName = servletContextName;
+		this.virtualServerName = virtualServerName;
 	}
 
 
@@ -35,6 +84,20 @@ public class StandaloneWebsocketContainerServletContext implements ServletContex
 	@Override
 	public String getContextPath() {
 		return contextPath;
+	}
+
+
+
+	@Override
+	public String getServletContextName() {
+		return servletContextName;
+	}
+
+
+
+	@Override
+	public String getVirtualServerName() {
+		return virtualServerName;
 	}
 
 
@@ -63,6 +126,28 @@ public class StandaloneWebsocketContainerServletContext implements ServletContex
 	@Override
 	public void removeAttribute(String name) {
 		attributes.remove(name);
+	}
+
+
+
+	@Override
+	public String getInitParameter(String name) {
+		return initParams.get(name);
+	}
+
+
+
+	@Override
+	public Enumeration<String> getInitParameterNames() {
+		return Collections.enumeration(initParams.keySet());
+	}
+
+
+
+	@Override public boolean setInitParameter(String name, String value) {
+		if (initParams.containsKey(name)) return false;
+		initParams.put(name, value);
+		return true;
 	}
 
 
@@ -101,14 +186,6 @@ public class StandaloneWebsocketContainerServletContext implements ServletContex
 	}
 	@Override public String getRealPath(String path) { throw new UnsupportedOperationException(); }
 	@Override public String getServerInfo() { throw new UnsupportedOperationException(); }
-	@Override
-	public String getInitParameter(String name) { throw new UnsupportedOperationException(); }
-	@Override
-	public Enumeration<String> getInitParameterNames() { throw new UnsupportedOperationException();}
-	@Override public boolean setInitParameter(String name, String value) {
-		throw new UnsupportedOperationException();
-	}
-	@Override public String getServletContextName() { throw new UnsupportedOperationException(); }
 	@Override public Dynamic addServlet(String servletName, String className) {
 		throw new UnsupportedOperationException();
 	}
@@ -178,7 +255,6 @@ public class StandaloneWebsocketContainerServletContext implements ServletContex
 	@Override public ClassLoader getClassLoader() { throw new UnsupportedOperationException(); }
 	@Override
 	public void declareRoles(String... roleNames) { throw new UnsupportedOperationException(); }
-	@Override public String getVirtualServerName() { throw new UnsupportedOperationException(); }
 	@Override public int getSessionTimeout() { throw new UnsupportedOperationException(); }
 	@Override
 	public void setSessionTimeout(int sessionTimeout) { throw new UnsupportedOperationException(); }
