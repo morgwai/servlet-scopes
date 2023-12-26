@@ -12,8 +12,8 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.eclipse.jetty.server.session.FileSessionDataStore;
-import org.eclipse.jetty.server.session.SessionDataStore;
+import org.eclipse.jetty.server.session.*;
+import org.eclipse.jetty.server.session.JDBCSessionDataStore.SessionTableSchema;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import pl.morgwai.base.servlet.guice.scopes.tests.jetty.JettyNode;
@@ -61,12 +61,14 @@ public class HttpSessionContextReplicationTests {
 
 
 
-	public void testHttpSessionContextReplication(
+	void testHttpSessionContextReplication(
 		SessionDataStore store1,
 		SessionDataStore store2,
+		boolean startNode2rightAway,
 		boolean customSerialization
 	) throws Exception {
 		node1 = new JettyNode(0, NODE1_ID, store1, customSerialization);
+		if (startNode2rightAway) node2 = new JettyNode(0, NODE2_ID, store2, customSerialization);
 		final var url1 = URL_PREFIX + node1.getPort() + APP_PATH + NODE_INFO_SERVLET_PATH;
 		final var request1 = HttpRequest.newBuilder(URI.create(url1))
 			.GET()
@@ -76,7 +78,7 @@ public class HttpSessionContextReplicationTests {
 		responseNode1.load(httpClient.send(request1, BodyHandlers.ofInputStream()).body());
 		node1.stop();
 
-		node2 = new JettyNode(0, NODE2_ID, store2, customSerialization);
+		if (node2 == null) node2 = new JettyNode(0, NODE2_ID, store2, customSerialization);
 		final var url2 = URL_PREFIX + node2.getPort() + APP_PATH + NODE_INFO_SERVLET_PATH;
 		final var request2 = HttpRequest.newBuilder(URI.create(url2))
 			.GET()
@@ -97,6 +99,31 @@ public class HttpSessionContextReplicationTests {
 				NODE2_ID, responseNode2.getProperty(NON_SERIALIZABLE_CONTEXT_NODE_ID_PROPERTY));
 	}
 
+
+
+	@Test
+	public void testHttpSessionContextReplicationWithFileStoreAndStandardSerialization()
+			throws Exception {
+		testHttpSessionContextReplicationWithFileStore(false);
+	}
+
+	@Test
+	public void testHttpSessionContextReplicationWithFileStoreAndCustomSerialization()
+			throws Exception {
+		testHttpSessionContextReplicationWithFileStore(true);
+	}
+
+	void testHttpSessionContextReplicationWithFileStore(boolean customSerialization)
+			throws Exception {
+		final var sessionFolder = temporaryFolder.getRoot();
+		testHttpSessionContextReplication(
+			createFileSessionStore(sessionFolder),
+			createFileSessionStore(sessionFolder),
+			false,
+			customSerialization
+		);
+	}
+
 	SessionDataStore createFileSessionStore(File sessionFolder) {
 		final var sessionStore = new FileSessionDataStore();
 		sessionStore.setStoreDir(sessionFolder);
@@ -105,26 +132,41 @@ public class HttpSessionContextReplicationTests {
 		return sessionStore;
 	}
 
+
+
 	@Test
-	public void testHttpSessionContextReplicationWithFileStoreAndStandardSerialization()
+	public void testHttpSessionContextReplicationWithJdbcStoreAndStandardSerialization()
 			throws Exception {
-		final var sessionFolder = temporaryFolder.getRoot();
-		testHttpSessionContextReplication(
-			createFileSessionStore(sessionFolder),
-			createFileSessionStore(sessionFolder),
-			false
-		);
+		testHttpSessionContextReplicationWithJdbcStore(false);
 	}
 
 	@Test
-	public void testHttpSessionContextReplicationWithFileStoreAndCustomSerialization()
+	public void testHttpSessionContextReplicationWithJdbcStoreAndCustomSerialization()
 			throws Exception {
-		final var sessionFolder = temporaryFolder.getRoot();
+		testHttpSessionContextReplicationWithJdbcStore(true);
+	}
+
+	void testHttpSessionContextReplicationWithJdbcStore(boolean customSerialization)
+			throws Exception {
+		final var adaptor = new DatabaseAdaptor();
+		final var driver = new org.h2.Driver();
+		adaptor.setDriverInfo(driver, "jdbc:h2:mem:servlet-scopes-test-sessions;DB_CLOSE_DELAY=-1");
 		testHttpSessionContextReplication(
-			createFileSessionStore(sessionFolder),
-			createFileSessionStore(sessionFolder),
-			true
+			createJdbcSessionStore(adaptor),
+			createJdbcSessionStore(adaptor),
+			true,
+			customSerialization
 		);
+	}
+
+	SessionDataStore createJdbcSessionStore(DatabaseAdaptor adaptor) {
+		final var schema = new SessionTableSchema();
+		final var sessionStore = new JDBCSessionDataStore();
+		sessionStore.setDatabaseAdaptor(adaptor);
+		sessionStore.setSessionTableSchema(schema);
+		sessionStore.setGracePeriodSec(10);
+		sessionStore.setSavePeriodSec(0);
+		return sessionStore;
 	}
 
 
