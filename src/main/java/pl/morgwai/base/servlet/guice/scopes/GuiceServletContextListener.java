@@ -313,6 +313,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 					? nameFromDescriptor
 					: appDeployment.getContextPath().isEmpty()
 							? "rootApp" : "app at " + appDeployment.getContextPath();
+			log.info(deploymentName + " is being deployed");
 			servletModule.appDeployment = appDeployment;
 			endpointContainer = (ServerContainer)
 					appDeployment.getAttribute(ServerContainer.class.getName());
@@ -321,7 +322,6 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			final var modules = configureInjections();
 			modules.add(servletModule);
 			injector = createInjector(modules);
-			log.info(deploymentName + ": Guice Injector created successfully");
 			appDeployment.setAttribute(Injector.class.getName(), injector);
 			endpointConfigurator = createEndpointConfigurator();
 			GuiceServerEndpointConfigurator.registerDeployment(appDeployment);
@@ -342,10 +342,11 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 				);
 			}
 			log.info(deploymentName + " deployed successfully");
-		} catch (Exception e) {
-			final var message = "could not deploy " + deploymentName;
+		} catch (Throwable e) {
+			final var message = deploymentName + " failed to deploy";
 			log.log(Level.SEVERE, message, e);
 			e.printStackTrace();
+			if (e instanceof Error) throw (Error) e;
 			throw new RuntimeException(message, e);
 		}
 	}
@@ -400,7 +401,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	@Override
 	public final void contextDestroyed(ServletContextEvent destruction) {
-		log.info(deploymentName + ": shutting down");
+		log.info(deploymentName + " is shutting down");
 		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
 		servletModule.shutdownAllExecutors();
 		List<ServletContextTrackingExecutor> unterminatedExecutors;
