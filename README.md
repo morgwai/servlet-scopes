@@ -103,7 +103,7 @@ public class MyAnnotatedEndpoint {
 }
 ```
 
-### Transferring contexts to callbacks with `ContextBinder`
+### Transferring contexts to callbacks using `ContextBinder`
 ```java
 class MyComponent {
 
