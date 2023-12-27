@@ -4,13 +4,12 @@ package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 import javax.websocket.*;
 
 import com.google.inject.Inject;
-import pl.morgwai.base.servlet.guice.scopes.tests.jetty.ServletContextListener;
 
 
 
 /**
  * Delegates to its wrapped {@link EchoEndpoint} instance. Added programmatically in
- * {@link ServletContextListener#configureServletsFiltersEndpoints()}.
+ * {@link pl.morgwai.base.servlet.guice.scopes.tests.jetty.ServletContextListener}.
  */
 public class ProgrammaticEndpoint extends Endpoint {
 

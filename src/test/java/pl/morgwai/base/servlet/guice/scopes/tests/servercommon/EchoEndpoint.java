@@ -12,7 +12,6 @@ import javax.websocket.RemoteEndpoint.Async;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
-import pl.morgwai.base.servlet.guice.scopes.tests.jetty.TestServlet;
 
 
 
@@ -23,6 +22,9 @@ public class EchoEndpoint {
 
 	public static final String WELCOME_MESSAGE = "welcome :)";
 	public static final String CLOSE_MESSAGE = "close";
+
+	/** Format for servlet and websocket responses. */
+	public static final String RESPONSE_FORMAT = "%s\nservice hashCodes:\ncall=%d\nsession=%d";
 
 
 
@@ -67,17 +69,15 @@ public class EchoEndpoint {
 
 
 	/**
-	 * Sends {@code message} to the peer together with scoped object hashes. The format is coherent
-	 * with the one in {@link TestServlet}: 3rd line contains container call scoped object hash,
-	 * 4th line contains HTTP session scoped object hash.<br/>
-	 * The 1st line contains the messages with EOL characters replaced by space. The 5th line
-	 * contains websocket connection scoped object hash.
-	 *
-	 * @see TestServlet#RESPONSE_FORMAT
+	 * Sends {@code message} to the peer followed by with scoped object hashes.
+	 * The 1st line contains the messages with EOL characters replaced by space.
+	 * The 3rd line contains container call scoped object hash.
+	 * The 4th line contains HTTP session scoped object hash.
+	 * The 5th line contains websocket connection scoped object hash.
 	 */
 	void send(String message) {
 		connector.sendText(String.format(
-			TestServlet.RESPONSE_FORMAT + "\nconnection=%d",
+			RESPONSE_FORMAT + "\nconnection=%d",
 			message.replace('\n', ' '),
 			eventScopedProvider.get().hashCode(),
 			httpSessionScopedProvider.get().hashCode(),

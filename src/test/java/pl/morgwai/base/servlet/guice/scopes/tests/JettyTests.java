@@ -86,7 +86,7 @@ public class JettyTests extends MultiAppWebsocketTests {
 	/**
 	 * {@link #sendServletRequest(HttpRequest, Class) Sends} 2 GET requests to {@code url} and
 	 * verifies scoping. Specifically, assumes that the response corresponds to
-	 * {@link TestServlet#RESPONSE_FORMAT} and verifies that request-scoped hash has changed while
+	 * {@link EchoEndpoint#RESPONSE_FORMAT} and verifies that request-scoped hash has changed while
 	 * session-scoped remained the same.
 	 * @return a {@code List} containing both response bodies as returned by
 	 *     {@link #sendServletRequest(HttpRequest, Class)}.

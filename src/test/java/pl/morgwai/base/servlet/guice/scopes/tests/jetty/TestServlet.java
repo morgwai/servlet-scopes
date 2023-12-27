@@ -9,17 +9,13 @@ import javax.servlet.http.*;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
+import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.EchoEndpoint;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Service;
 
 
 
 /** Base class for all other {@code Servlets} testing different ways of dispatching. */
 public abstract class TestServlet extends HttpServlet {
-
-
-
-	/** Format for servlet and websocket responses. */
-	public static final String RESPONSE_FORMAT = "%s\nservice hashCodes:\ncall=%d\nsession=%d";
 
 
 
@@ -59,7 +55,7 @@ public abstract class TestServlet extends HttpServlet {
 
 
 	/**
-	 * Sends the final response in {@link #RESPONSE_FORMAT}. The 1st line contains
+	 * Sends the final response in {@link EchoEndpoint#RESPONSE_FORMAT}. The 1st line contains
 	 * {@link Class#getSimpleName() simple class name} of the actual {@code Servlet} that sent the
 	 * response as this method may be called in various {@code Servlets} depending on
 	 * {@link AsyncServlet#MODE_PARAM} and {@link AsyncServlet#TARGET_PATH_PARAM} request params.
@@ -72,7 +68,7 @@ public abstract class TestServlet extends HttpServlet {
 		) {
 			response.setStatus(HttpServletResponse.SC_OK);
 			output.println(String.format(
-				RESPONSE_FORMAT,
+				EchoEndpoint.RESPONSE_FORMAT,
 				getClass().getSimpleName(),
 				requestScopedProvider.get().hashCode(),
 				sessionScopedProvider.get().hashCode())
