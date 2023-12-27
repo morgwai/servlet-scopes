@@ -79,7 +79,7 @@ public interface WebsocketBroadcastingTests {
 		);
 		for (int clientNumber = 0; clientNumber < urls.length; clientNumber++) {
 			assertEquals("client " + (clientNumber + 1) + " should receive 2 messages",
-				2, messages[clientNumber].size());
+					2, messages[clientNumber].size());
 			assertEquals(
 				"the 1st message of client " + (clientNumber + 1) + " should be the welcome",
 				BroadcastEndpoint.WELCOME_MESSAGE,

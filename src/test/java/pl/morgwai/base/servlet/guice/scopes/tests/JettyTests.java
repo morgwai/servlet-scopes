@@ -73,9 +73,11 @@ public class JettyTests extends MultiAppWebsocketTests {
 		final var response = httpClient.send(request, BodyHandlers.ofString());
 		if (log.isLoggable(Level.FINE)) log.fine("response from " + request.uri() + ", status: "
 				+ response.statusCode() + '\n' + response.body());
-		assertEquals("response code should be 'OK'", 200, response.statusCode());
+		assertEquals("response code should be 'OK'",
+				200, response.statusCode());
 		final var responseLines = response.body().split("\n");
-		assertEquals("response should have 4 lines", 4, responseLines.length);
+		assertEquals("response should have 4 lines",
+				4, responseLines.length);
 		assertEquals("processing should be dispatched to the correct servlet",
 				expectedTargetServletClass.getSimpleName(), responseLines[0]);
 		return responseLines;

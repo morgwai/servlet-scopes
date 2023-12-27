@@ -106,8 +106,10 @@ public abstract class WebsocketIntegrationTests extends WebsocketTestBase {
 		} catch (InterruptedException e) {  // interrupted by clientEndpoint.closeHandler above
 			fail("abnormal close code: " + closeReasonHolder[0].getCloseCode());
 		}
-		assertEquals("reply should have 5 lines", 5, replies.get(0).length);
-		assertEquals("reply should have 5 lines", 5, replies.get(1).length);
+		assertEquals("reply should have 5 lines",
+				5, replies.get(0).length);
+		assertEquals("reply should have 5 lines",
+				5, replies.get(1).length);
 		assertEquals("onOpen reply should be a welcome",
 				EchoEndpoint.WELCOME_MESSAGE, replies.get(0)[0]);
 		if (sendTestMessage) {
