@@ -12,7 +12,7 @@ import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.ServletModule;
 import pl.morgwai.base.servlet.guice.scopes.connectionproxy.tyrus.server.InMemoryClusterContext;
 import pl.morgwai.base.servlet.guice.scopes.connectionproxy.tyrus.server.ServerNode;
-import pl.morgwai.base.servlet.guice.scopes.tests.BroadcastingTests;
+import pl.morgwai.base.servlet.guice.scopes.tests.WebsocketBroadcastingTests;
 import pl.morgwai.base.servlet.guice.scopes.tests.WebsocketTestBase;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.BroadcastEndpoint;
 import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
@@ -62,6 +62,6 @@ public class TyrusClusteringTests extends WebsocketTestBase {
 		final var port2 = node2.getPort();
 		final var url1 = URL_PREFIX + port1 + ServerNode.PATH + BroadcastEndpoint.PATH;
 		final var url2 = URL_PREFIX + port2 + ServerNode.PATH + BroadcastEndpoint.PATH;
-		BroadcastingTests.testBroadcast(clientWebsocketContainer, url1, url2, url1);
+		WebsocketBroadcastingTests.testBroadcast(clientWebsocketContainer, url1, url2, url1);
 	}
 }

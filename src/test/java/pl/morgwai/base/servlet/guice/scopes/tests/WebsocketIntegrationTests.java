@@ -231,6 +231,6 @@ public abstract class WebsocketIntegrationTests extends WebsocketTestBase {
 	@Test
 	public void testBroadcast() throws DeploymentException, IOException, InterruptedException {
 		final var url = appWebsocketUrl + BroadcastEndpoint.PATH;
-		BroadcastingTests.testBroadcast(clientWebsocketContainer, url, url);
+		WebsocketBroadcastingTests.testBroadcast(clientWebsocketContainer, url, url);
 	}
 }

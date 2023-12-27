@@ -16,7 +16,7 @@ import static org.junit.Assert.*;
 
 
 
-public interface BroadcastingTests {
+public interface WebsocketBroadcastingTests {
 
 
 
