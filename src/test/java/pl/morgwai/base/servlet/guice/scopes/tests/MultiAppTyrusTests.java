@@ -1,10 +1,11 @@
-package pl.morgwai.base.servlet.guice.scopes.tests.tyrus;
+package pl.morgwai.base.servlet.guice.scopes.tests;
 
 import javax.websocket.Session;
 
 import pl.morgwai.base.servlet.guice.scopes.tests.MultiAppWebsocketTests;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.MultiAppServer;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server;
+import pl.morgwai.base.servlet.guice.scopes.tests.tyrus.TwoNodeTyrusFarm;
 
 
 
