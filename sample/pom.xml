@@ -14,7 +14,7 @@
 	<properties>
 		<maven.compiler.release>11</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<servlet.scopes.version>14.0-SNAPSHOT-javax</servlet.scopes.version><!--jakarta-->
+		<servlet.scopes.version>14.0-SNAPSHOT</servlet.scopes.version>
 	</properties>
 
 	<dependencyManagement>
@@ -22,7 +22,7 @@
 			<dependency>
 				<groupId>pl.morgwai.base</groupId>
 				<artifactId>servlet-scopes-bom</artifactId>
-				<version>${servlet.scopes.version}</version>
+				<version>${servlet.scopes.version}-javax</version><!--jakarta-->
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -30,12 +30,6 @@
 	</dependencyManagement>
 
 	<dependencies>
-		<dependency>
-			<groupId>pl.morgwai.base</groupId>
-			<artifactId>servlet-scopes</artifactId>
-			<version>${servlet.scopes.version}</version>
-			<classifier>shadedbytebuddy</classifier>
-		</dependency>
 		<dependency>
 			<groupId>com.google.inject</groupId>
 			<artifactId>guice</artifactId>
@@ -49,6 +43,12 @@
 				<activeByDefault>true</activeByDefault><!--jakarta:<activeByDefault>false</activeByDefault>-->
 			</activation>
 			<dependencies>
+				<dependency>
+					<groupId>pl.morgwai.base</groupId>
+					<artifactId>servlet-scopes</artifactId>
+					<version>${servlet.scopes.version}-javax</version>
+					<classifier>shadedbytebuddy</classifier>
+				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-servlet</artifactId>
@@ -65,6 +65,12 @@
 				<activeByDefault>false</activeByDefault><!--jakarta:<activeByDefault>true</activeByDefault>-->
 			</activation>
 			<dependencies>
+				<dependency>
+					<groupId>pl.morgwai.base</groupId>
+					<artifactId>servlet-scopes</artifactId>
+					<version>${servlet.scopes.version}-jakarta</version>
+					<classifier>shadedbytebuddy</classifier>
+				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-servlet</artifactId>
