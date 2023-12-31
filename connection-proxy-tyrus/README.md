@@ -6,4 +6,5 @@ Provides unified, websocket API compliant access to clustered websocket connecti
 
 ## USAGE
 
-Simply add [servlet-scopes-connection-proxy-tyrus.jar](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes-connection-proxy-tyrus/) to your runtime classpath and everything will happen automagically thanks to the SPI mechanism. Note: the version of the jar should match the one of [servlet-scopes](..).
+Simply add [servlet-scopes-connection-proxy-tyrus.jar](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes-connection-proxy-tyrus/) to your runtime classpath and everything will happen automagically thanks to the SPI mechanism.<br>
+Note: the **major** version of the jar should match the one of [servlet-scopes](..).
