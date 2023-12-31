@@ -14,7 +14,7 @@
 	<properties>
 		<maven.compiler.release>11</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<servlet.scopes.version>13.3-SNAPSHOT-javax</servlet.scopes.version><!--jakarta-->
+		<servlet.scopes.version>14.0-SNAPSHOT-javax</servlet.scopes.version><!--jakarta-->
 	</properties>
 
 	<dependencyManagement>

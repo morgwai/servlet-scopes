@@ -37,9 +37,21 @@ public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecut
 
 
 
+	/** See {@link ServletModule#newContextTrackingExecutor(String, int)}. */
 	public ServletContextTrackingExecutor(
-			String name, List<ContextTracker<?>> trackers, int poolSize) {
-		this(name, trackers, poolSize, new LinkedBlockingQueue<>());
+		String name,
+		List<ContextTracker<?>> trackers,
+		int poolSize
+	) {
+		this(name,
+			trackers,
+			poolSize,
+			poolSize,
+			0L,
+			TimeUnit.DAYS,
+			new LinkedBlockingQueue<>(),
+			new NamingThreadFactory(name)
+		);
 	}
 
 
@@ -95,57 +107,6 @@ public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecut
 
 
 
-	/** See {@link ServletModule#newContextTrackingExecutor(String, int, int)}. */
-	public ServletContextTrackingExecutor(
-		String name,
-		List<ContextTracker<?>> trackers,
-		int poolSize,
-		int queueSize
-	) {
-		this(name, trackers, poolSize, new LinkedBlockingQueue<>(queueSize));
-	}
-
-
-
-	public ServletContextTrackingExecutor(
-		String name,
-		List<ContextTracker<?>> trackers,
-		int poolSize,
-		BlockingQueue<Runnable> workQueue
-	) {
-		super(poolSize, poolSize, 0L, TimeUnit.DAYS, workQueue, new NamingThreadFactory(name));
-		this.name = name;
-		this.trackers = trackers;
-	}
-
-
-
-	/**
-	 * See {@link ServletModule#newContextTrackingExecutor(String, int, BlockingQueue,
-	 * RejectedExecutionHandler)}.
-	 */
-	public ServletContextTrackingExecutor(
-		String name,
-		List<ContextTracker<?>> trackers,
-		int poolSize,
-		BlockingQueue<Runnable> workQueue,
-		RejectedExecutionHandler rejectionHandler
-	) {
-		this(
-			name,
-			trackers,
-			poolSize,
-			poolSize,
-			0L,
-			TimeUnit.SECONDS,
-			workQueue,
-			new NamingThreadFactory(name),
-			rejectionHandler
-		);
-	}
-
-
-
 	/**
 	 * See {@link ServletModule#newContextTrackingExecutor(String, int, int, long, TimeUnit,
 	 * BlockingQueue, ThreadFactory, RejectedExecutionHandler)}.
@@ -166,4 +127,44 @@ public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecut
 		this.trackers = trackers;
 	}
 
+
+
+	/**
+	 * See {@link ServletModule#newContextTrackingExecutor(String, int, int, long, TimeUnit,
+	 * BlockingQueue, ThreadFactory)}.
+	 */
+	public ServletContextTrackingExecutor(
+		String name,
+		List<ContextTracker<?>> trackers,
+		int corePoolSize,
+		int maxPoolSize,
+		long keepAliveTime,
+		TimeUnit unit,
+		BlockingQueue<Runnable> workQueue,
+		ThreadFactory threadFactory
+	) {
+		super(corePoolSize, maxPoolSize, keepAliveTime, unit, workQueue, threadFactory);
+		this.name = name;
+		this.trackers = trackers;
+	}
+
+
+
+	/** See {@link ServletModule#newContextTrackingExecutor(String, int, int)}. */
+	public ServletContextTrackingExecutor(
+		String name,
+		List<ContextTracker<?>> trackers,
+		int poolSize,
+		int queueSize
+	) {
+		this(name,
+			trackers,
+			poolSize,
+			poolSize,
+			0L,
+			TimeUnit.DAYS,
+			new LinkedBlockingQueue<>(queueSize),
+			new NamingThreadFactory(name)
+		);
+	}
 }

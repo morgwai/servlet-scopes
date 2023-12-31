@@ -215,25 +215,29 @@ public class ServletModule implements Module {
 
 
 	/**
-	 * Constructs a fixed size, context tracking executor that uses {@code workQueue},
-	 * {@code rejectionHandler} and a new
-	 * {@link pl.morgwai.base.utils.concurrent.NamingThreadFactory} named after this executor.
-	 * <p>
-	 * {@code rejectionHandler} will receive a task wrapped with a {@link ContextBoundRunnable}.</p>
-	 * <p>
-	 * In order for {@link ServletContextTrackingExecutor#execute(
-	 * javax.servlet.http.HttpServletResponse, Runnable)} and
-	 * {@link ServletContextTrackingExecutor#execute(javax.websocket.Session, Runnable)} to work
-	 * properly, the {@code rejectionHandler} must throw a {@link RejectedExecutionException}.</p>
+	 * Constructs a context tracking executor.
+	 * @see ThreadPoolExecutor#ThreadPoolExecutor(int, int, long, TimeUnit, BlockingQueue,
+	 *     ThreadFactory) ThreadPoolExecutor constructor docs for param details
 	 */
 	public ServletContextTrackingExecutor newContextTrackingExecutor(
 		String name,
-		int poolSize,
+		int corePoolSize,
+		int maxPoolSize,
+		long keepAliveTime,
+		TimeUnit unit,
 		BlockingQueue<Runnable> workQueue,
-		RejectedExecutionHandler rejectionHandler
+		ThreadFactory threadFactory
 	) {
 		final var executor = new ServletContextTrackingExecutor(
-				name, allTrackers, poolSize, workQueue, rejectionHandler);
+			name,
+			allTrackers,
+			corePoolSize,
+			maxPoolSize,
+			keepAliveTime,
+			unit,
+			workQueue,
+			threadFactory
+		);
 		executors.add(executor);
 		return executor;
 	}
@@ -242,11 +246,16 @@ public class ServletModule implements Module {
 
 	/**
 	 * Constructs a context tracking executor.
+	 * <p>
+	 * {@code rejectionHandler} will receive a task wrapped with a {@link ContextBoundRunnable}.</p>
+	 * <p>
+	 * In order for {@link ServletContextTrackingExecutor#execute(
+	 * javax.servlet.http.HttpServletResponse, Runnable)} and
+	 * {@link ServletContextTrackingExecutor#execute(javax.websocket.Session, Runnable)} to work
+	 * properly, the {@code rejectionHandler} must throw a {@link RejectedExecutionException}.</p>
 	 * @see ThreadPoolExecutor#ThreadPoolExecutor(int, int, long, TimeUnit, BlockingQueue,
 	 *     ThreadFactory, RejectedExecutionHandler) ThreadPoolExecutor constructor docs for param
 	 *     details
-	 * @see #newContextTrackingExecutor(String, int, BlockingQueue, RejectedExecutionHandler)
-	 *     notes on <code>rejectionHandler</code>
 	 */
 	public ServletContextTrackingExecutor newContextTrackingExecutor(
 		String name,

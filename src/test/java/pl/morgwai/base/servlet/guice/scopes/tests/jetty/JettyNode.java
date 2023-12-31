@@ -168,8 +168,7 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 				);
 
 		final var sessionFolder = (args.length > 2)
-				? args[2]
-				: ("/tmp/" + JettyNode.class.getPackageName() + ".sessions");
+				? args[2] : ("/tmp/" + JettyNode.class.getPackageName() + ".sessions");
 		final var sessionStore = new FileSessionDataStore();
 		sessionStore.setStoreDir(new File(sessionFolder));
 		sessionStore.setGracePeriodSec(10);
