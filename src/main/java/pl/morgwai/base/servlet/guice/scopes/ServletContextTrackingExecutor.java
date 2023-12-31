@@ -2,7 +2,6 @@
 package pl.morgwai.base.servlet.guice.scopes;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -10,16 +9,15 @@ import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.Session;
 
-import pl.morgwai.base.guice.scopes.ContextBoundRunnable;
-import pl.morgwai.base.guice.scopes.ContextTracker;
+import pl.morgwai.base.guice.scopes.ContextBinder;
 import pl.morgwai.base.utils.concurrent.NamingThreadFactory;
 import pl.morgwai.base.utils.concurrent.TaskTrackingThreadPoolExecutor;
 
 
 
 /**
- * {@link TaskTrackingThreadPoolExecutor} that wraps tasks with {@link ContextBoundRunnable}
- * decorator to automatically transfer {@code Contexts}.
+ * {@link TaskTrackingThreadPoolExecutor} that automatically transfer {@code Contexts} to worker
+ * {@code Threads} using {@link ContextBinder}.
  * <p>
  * Instances should usually be created using
  * {@link ServletModule#newContextTrackingExecutor(String, int)
@@ -33,18 +31,15 @@ public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecut
 	public String getName() { return name; }
 	final String name;
 
-	final List<ContextTracker<?>> trackers;
+	final ContextBinder ctxBinder;
 
 
 
 	/** See {@link ServletModule#newContextTrackingExecutor(String, int)}. */
-	public ServletContextTrackingExecutor(
-		String name,
-		List<ContextTracker<?>> trackers,
-		int poolSize
-	) {
-		this(name,
-			trackers,
+	public ServletContextTrackingExecutor(String name, ContextBinder ctxBinder, int poolSize) {
+		this(
+			name,
+			ctxBinder,
 			poolSize,
 			poolSize,
 			0L,
@@ -58,7 +53,7 @@ public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecut
 
 	@Override
 	public void execute(Runnable task) {
-		super.execute(new ContextBoundRunnable(ContextTracker.getActiveContexts(trackers), task));
+		super.execute(ctxBinder.bindToContext(task));
 	}
 
 
@@ -113,7 +108,7 @@ public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecut
 	 */
 	public ServletContextTrackingExecutor(
 		String name,
-		List<ContextTracker<?>> trackers,
+		ContextBinder ctxBinder,
 		int corePoolSize,
 		int maxPoolSize,
 		long keepAliveTime,
@@ -124,7 +119,7 @@ public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecut
 	) {
 		super(corePoolSize, maxPoolSize, keepAliveTime, unit, workQueue, threadFactory, handler);
 		this.name = name;
-		this.trackers = trackers;
+		this.ctxBinder = ctxBinder;
 	}
 
 
@@ -135,7 +130,7 @@ public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecut
 	 */
 	public ServletContextTrackingExecutor(
 		String name,
-		List<ContextTracker<?>> trackers,
+		ContextBinder ctxBinder,
 		int corePoolSize,
 		int maxPoolSize,
 		long keepAliveTime,
@@ -145,7 +140,7 @@ public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecut
 	) {
 		super(corePoolSize, maxPoolSize, keepAliveTime, unit, workQueue, threadFactory);
 		this.name = name;
-		this.trackers = trackers;
+		this.ctxBinder = ctxBinder;
 	}
 
 
@@ -153,12 +148,13 @@ public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecut
 	/** See {@link ServletModule#newContextTrackingExecutor(String, int, int)}. */
 	public ServletContextTrackingExecutor(
 		String name,
-		List<ContextTracker<?>> trackers,
+		ContextBinder ctxBinder,
 		int poolSize,
 		int queueSize
 	) {
-		this(name,
-			trackers,
+		this(
+			name,
+			ctxBinder,
 			poolSize,
 			poolSize,
 			0L,

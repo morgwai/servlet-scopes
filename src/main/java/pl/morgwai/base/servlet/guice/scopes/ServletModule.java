@@ -184,7 +184,7 @@ public class ServletModule implements Module {
 	 * (such as a load balancer or a frontend proxy) should be used.</p>
 	 */
 	public ServletContextTrackingExecutor newContextTrackingExecutor(String name, int poolSize) {
-		final var executor = new ServletContextTrackingExecutor(name, allTrackers, poolSize);
+		final var executor = new ServletContextTrackingExecutor(name, contextBinder, poolSize);
 		executors.add(executor);
 		return executor;
 	}
@@ -207,7 +207,7 @@ public class ServletModule implements Module {
 		int queueSize
 	) {
 		final var executor =
-				new ServletContextTrackingExecutor(name, allTrackers, poolSize, queueSize);
+				new ServletContextTrackingExecutor(name, contextBinder, poolSize, queueSize);
 		executors.add(executor);
 		return executor;
 	}
@@ -230,7 +230,7 @@ public class ServletModule implements Module {
 	) {
 		final var executor = new ServletContextTrackingExecutor(
 			name,
-			allTrackers,
+			contextBinder,
 			corePoolSize,
 			maxPoolSize,
 			keepAliveTime,
@@ -269,7 +269,7 @@ public class ServletModule implements Module {
 	) {
 		final var executor = new ServletContextTrackingExecutor(
 			name,
-			allTrackers,
+			contextBinder,
 			corePoolSize,
 			maxPoolSize,
 			keepAliveTime,
