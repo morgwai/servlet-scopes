@@ -14,25 +14,15 @@
 	<properties>
 		<maven.compiler.release>11</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<guice.version>6.0.0</guice.version><!--jakarta:<guice.version>7.0.0</guice.version>-->
 		<servlet.scopes.version>14.0-SNAPSHOT</servlet.scopes.version>
 	</properties>
-
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>pl.morgwai.base</groupId>
-				<artifactId>servlet-scopes-bom</artifactId>
-				<version>${servlet.scopes.version}-javax</version><!--jakarta-->
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 
 	<dependencies>
 		<dependency>
 			<groupId>com.google.inject</groupId>
 			<artifactId>guice</artifactId>
+			<version>${guice.version}</version>
 		</dependency>
 	</dependencies>
 
@@ -52,10 +42,12 @@
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-servlet</artifactId>
+					<version>[10.0.7,10.999.0]</version>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty.websocket</groupId>
 					<artifactId>websocket-javax-server</artifactId>
+					<version>[10.0.7,10.999.0]</version>
 				</dependency>
 			</dependencies>
 		</profile>
@@ -74,10 +66,12 @@
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-servlet</artifactId>
+					<version>[11.0.7,11.999.0]</version>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty.websocket</groupId>
 					<artifactId>websocket-jakarta-server</artifactId>
+					<version>[11.0.7,11.999.0]</version>
 				</dependency>
 			</dependencies>
 		</profile>

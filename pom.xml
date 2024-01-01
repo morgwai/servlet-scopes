@@ -4,44 +4,88 @@
 		xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<parent>
-		<groupId>pl.morgwai.base</groupId>
-		<artifactId>servlet-scopes-bom</artifactId>
-		<version>14.0-SNAPSHOT-javax</version><!--jakarta-->
-	</parent>
+	<groupId>pl.morgwai.base</groupId>
 	<artifactId>servlet-scopes</artifactId>
+	<version>14.0-SNAPSHOT-javax</version><!--jakarta-->
 
 	<name>Servlet and Websocket Guice Scopes</name>
 	<description>containerCallScope (either a HttpServletRequest or a websocket endpoint event), websocketConnectionScope (javax.websocket.Session) and httpSessionScope</description>
 	<url>https://github.com/morgwai/servlet-scopes</url>
 
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+	<scm>
+		<url>https://github.com/morgwai/servlet-scopes.git</url>
+		<connection>scm:git:https://github.com/morgwai/servlet-scopes.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/morgwai/servlet-scopes.git</developerConnection>
+	</scm>
+	<developers>
+		<developer>
+			<id>morgwai</id>
+			<name>Piotr Morgwai Kotarbinski</name>
+			<email>foss@morgwai.pl</email>
+			<url>http://morgwai.pl/</url>
+		</developer>
+	</developers>
+
+	<distributionManagement>
+		<snapshotRepository>
+			<id>ossrh</id>
+			<url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+		</snapshotRepository>
+		<repository>
+			<id>ossrh</id>
+			<url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+		</repository>
+	</distributionManagement>
+
+	<properties>
+		<maven.compiler.release>11</maven.compiler.release>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<guice.scopes.version>9.2</guice.scopes.version>
+		<utils.version>4.0</utils.version>
+		<servlet.utils.version>4.1</servlet.utils.version>
+		<guice.version>6.0.0</guice.version><!--jakarta:<guice.version>7.0.0</guice.version>-->
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>com.google.inject</groupId>
 			<artifactId>guice</artifactId>
+			<version>${guice.version}</version>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>pl.morgwai.base</groupId>
 			<artifactId>guice-context-scopes</artifactId>
+			<version>${guice.scopes.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>pl.morgwai.base</groupId>
 			<artifactId>java-utils</artifactId>
+			<version>${utils.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>pl.morgwai.base</groupId>
 			<artifactId>servlet-utils</artifactId>
+			<version>${servlet.utils.version}-javax</version><!--jakarta-->
 		</dependency>
 		<dependency>
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy</artifactId>
+			<version>[1.14.6,)</version>
 			<optional>true</optional>
 		</dependency>
 
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
+			<version>[4.13.2,4.999.0]</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -68,32 +112,38 @@
 				<dependency>
 					<groupId>javax.servlet</groupId>
 					<artifactId>javax.servlet-api</artifactId>
+					<version>4.0.1</version>
 					<scope>provided</scope>
 				</dependency>
 				<dependency>
 					<groupId>javax.websocket</groupId>
 					<artifactId>javax.websocket-api</artifactId>
+					<version>1.1</version>
 					<scope>provided</scope>
 				</dependency>
 
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-servlet</artifactId>
+					<version>[10.0.7,10.999.0]</version>
 					<scope>test</scope>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty.websocket</groupId>
 					<artifactId>websocket-javax-server</artifactId>
+					<version>[10.0.7,10.999.0]</version>
 					<scope>test</scope>
 				</dependency>
 				<dependency>
 					<groupId>org.glassfish.tyrus</groupId>
 					<artifactId>tyrus-server</artifactId>
+					<version>[1.21,1.999]</version>
 					<scope>test</scope>
 				</dependency>
 				<dependency>
 					<groupId>org.glassfish.tyrus</groupId>
 					<artifactId>tyrus-container-grizzly-server</artifactId>
+					<version>[1.21,1.999]</version>
 					<scope>test</scope>
 				</dependency>
 			</dependencies>
@@ -107,36 +157,43 @@
 				<dependency>
 					<groupId>jakarta.servlet</groupId>
 					<artifactId>jakarta.servlet-api</artifactId>
+					<version>5.0.0</version>
 					<scope>provided</scope>
 				</dependency>
 				<dependency>
 					<groupId>jakarta.websocket</groupId>
 					<artifactId>jakarta.websocket-api</artifactId>
+					<version>2.0.0</version>
 					<scope>provided</scope>
 				</dependency>
 				<dependency>
 					<groupId>jakarta.annotation</groupId>
 					<artifactId>jakarta.annotation-api</artifactId>
+					<version>2.1.1</version>
 				</dependency>
 
 				<dependency>
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-servlet</artifactId>
+					<version>[11.0.7,11.999.0]</version>
 					<scope>test</scope>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty.websocket</groupId>
 					<artifactId>websocket-jakarta-server</artifactId>
+					<version>[11.0.7,11.999.0]</version>
 					<scope>test</scope>
 				</dependency>
 				<dependency>
 					<groupId>org.glassfish.tyrus</groupId>
 					<artifactId>tyrus-server</artifactId>
+					<version>[2.0.5,2.0.999]</version>
 					<scope>test</scope>
 				</dependency>
 				<dependency>
 					<groupId>org.glassfish.tyrus</groupId>
 					<artifactId>tyrus-container-grizzly-server</artifactId>
+					<version>[2.0.5,2.0.999]</version>
 					<scope>test</scope>
 				</dependency>
 			</dependencies>
