@@ -1,12 +1,12 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServlet;
@@ -18,6 +18,10 @@ import javax.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.Module;
 import com.google.inject.*;
+
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toList;
 
 import static pl.morgwai.base.servlet.guice.scopes.HttpSessionContext.CUSTOM_SERIALIZATION_PARAM;
 
@@ -354,14 +358,14 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Returns the timeout in seconds for
-	 * {@link ServletModule#awaitTerminationOfAllExecutors(long, TimeUnit) termination of all
-	 * Executors} obtained from {@link #servletModule}. By default {@code 5} seconds.
+	 * Returns the timeout for {@link ServletModule#awaitTerminationOfAllExecutors(long, TimeUnit)
+	 * termination of all Executors} obtained from {@link #servletModule}.
+	 * By default {@code 5} seconds.
 	 * <p>
 	 * This method is called by {@link #contextDestroyed(ServletContextEvent)} and may be overridden
 	 * if a different value needs to be used.</p>
 	 */
-	protected int getExecutorsTerminationTimeoutSeconds() { return 5; }
+	protected Duration getExecutorsTerminationTimeout() { return Duration.ofSeconds(5); }
 
 
 
@@ -396,7 +400,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * {@link ServletModule#shutdownAllExecutors() Shutdowns} and
 	 * {@link ServletModule#awaitTerminationOfAllExecutors(long, TimeUnit) awaits termination all
 	 * Executors} created by {@link #servletModule}. If after the timeout returned by
-	 * {@link #getExecutorsTerminationTimeoutSeconds()} not all {@code Executors} are terminated,
+	 * {@link #getExecutorsTerminationTimeout()} not all {@code Executors} are terminated,
 	 * calls {@link #handleUnterminatedExecutors(List)}.
 	 */
 	@Override
@@ -407,11 +411,11 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		List<ServletContextTrackingExecutor> unterminatedExecutors;
 		try {
 			unterminatedExecutors = servletModule.awaitTerminationOfAllExecutors(
-					getExecutorsTerminationTimeoutSeconds(), TimeUnit.SECONDS);
+					getExecutorsTerminationTimeout().toNanos(), NANOSECONDS);
 		} catch (InterruptedException e) {
 			unterminatedExecutors = servletModule.getExecutors().stream()
-				.filter((executor) -> !executor.isTerminated())
-				.collect(Collectors.toList());
+				.filter(not(ServletContextTrackingExecutor::isTerminated))
+				.collect(toList());
 		}
 		if ( !unterminatedExecutors.isEmpty()) handleUnterminatedExecutors(unterminatedExecutors);
 		for (var shutdownHook : shutdownHooks) shutdownHook.run();
