@@ -58,26 +58,42 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 		throw new RejectedExecutionException("rejected " + task);
 	};
 
-	ServletContextTrackingExecutor testSubject;
-	CountDownLatch taskBlockingLatch;
+	final CountDownLatch taskBlockingLatch = new CountDownLatch(1);
+	final CountDownLatch blockingTasksStarted = new CountDownLatch(1);
+	final Runnable blockingTask = () -> {
+		blockingTasksStarted.countDown();
+		try {
+			taskBlockingLatch.await();
+		} catch (InterruptedException ignored) {}
+	};
+
+	final ServletContextTrackingExecutor testSubject = servletModule.newContextTrackingExecutor(
+		"testExecutor",
+		1, 1,
+		0L, MILLISECONDS,
+		new LinkedBlockingQueue<>(1),
+		new NamingThreadFactory("testExecutor"),
+		rejectionHandler
+	);
 
 
 
 	@Before
 	public void setupMocks() throws IOException {
 		expect(servletRequest.getAttribute(anyString()))
-			.andAnswer(() -> attributes.get((String) getCurrentArgument(0))).anyTimes();
+			.andAnswer(() -> attributes.get((String) getCurrentArgument(0)))
+			.anyTimes();
 
 		servletRequest.setAttribute(anyString(), anyObject());
-		expectLastCall().andAnswer(
-			() -> attributes.put(getCurrentArgument(0), getCurrentArgument(1))
-		).anyTimes();
+		expectLastCall()
+			.andAnswer(() -> attributes.put(getCurrentArgument(0), getCurrentArgument(1)))
+			.anyTimes();
 
 		expect(servletResponse.isCommitted()).andAnswer(() -> responseCommitted).anyTimes();
 		servletResponse.sendError(captureInt(statusCapture));
 		expectLastCall().andAnswer(() -> {
 			responseCommitted = true;
-			return null;
+			return null;  // Void
 		}).times(0, 1);
 
 		expect(wsConnection.getUserProperties()).andReturn(attributes).anyTimes();
@@ -85,7 +101,7 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 		wsConnection.close(capture(closeReasonCapture));
 		expectLastCall().andAnswer(() -> {
 			wsConnectionClosed = true;
-			return null;
+			return null;  // Void
 		}).times(0, 1);
 
 		replayAll();
@@ -95,16 +111,6 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 		wsConnectionCtx = new WebsocketConnectionContext(wsConnectionProxy);
 		wsEventCtx = new WebsocketEventContext(
 				wsConnectionCtx, null, servletModule.containerCallContextTracker);
-
-		taskBlockingLatch = new CountDownLatch(1);
-		testSubject = servletModule.newContextTrackingExecutor(
-			"testExecutor",
-			1, 1,
-			0L, MILLISECONDS,
-			new LinkedBlockingQueue<>(1),
-			new NamingThreadFactory("testExecutor"),
-			rejectionHandler
-		);
 	}
 
 
@@ -139,18 +145,18 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 
 
 
-	public void testExecutionRejection(ContainerCallContext ctx, Consumer<Runnable> callUnderTest) {
+	public void testExecutionRejection(ContainerCallContext ctx, Consumer<Runnable> callUnderTest)
+			throws Exception {
 		final Runnable overloadingTask = () -> {};
 		try {
 			ctx.executeWithinSelf(() -> {
-				testSubject.execute(() -> {  // make worker busy
-					try {
-						taskBlockingLatch.await();
-					} catch (InterruptedException ignored) {}
-				});
+				testSubject.execute(blockingTask);
+				assertTrue("blockingTask should start",
+						blockingTasksStarted.await(50L, MILLISECONDS));
 				testSubject.execute(() -> {});  // fill the queue
 
 				callUnderTest.accept(overloadingTask);
+				return null;  // Callable<Void>
 			});
 		} finally {
 			taskBlockingLatch.countDown();
@@ -164,14 +170,14 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 	}
 
 	@Test
-	public void testWebsocketExecutionRejection() {
+	public void testWebsocketExecutionRejection() throws Exception {
 		testExecutionRejection(wsEventCtx, (task) -> testSubject.execute(wsConnection, task));
 		assertEquals("code reported to client should be TRY_AGAIN_LATER",
 				CloseCodes.TRY_AGAIN_LATER, closeReasonCapture.getValue().getCloseCode());
 	}
 
 	@Test
-	public void testWebsocketExecutionRejectionConnectionAlreadyClosed() {
+	public void testWebsocketExecutionRejectionConnectionAlreadyClosed() throws Exception {
 		wsConnectionClosed = true;
 		testExecutionRejection(wsEventCtx, (task) -> testSubject.execute(wsConnection, task));
 		assertFalse("close(...) should not be called if wsConnection was already closed",
@@ -179,14 +185,14 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 	}
 
 	@Test
-	public void testServletExecutionRejection() {
+	public void testServletExecutionRejection() throws Exception {
 		testExecutionRejection(requestCtx, (task) -> testSubject.execute(servletResponse, task));
 		assertEquals("status reported to client should be SC_SERVICE_UNAVAILABLE",
 				HttpServletResponse.SC_SERVICE_UNAVAILABLE, statusCapture.getValue().intValue());
 	}
 
 	@Test
-	public void testServletExecutionRejectionResponseAlreadyCommitted() {
+	public void testServletExecutionRejectionResponseAlreadyCommitted() throws Exception {
 		responseCommitted = true;
 		testExecutionRejection(requestCtx, (task) -> testSubject.execute(servletResponse, task));
 		assertFalse("status should not be sent if servletResponse was already committed",
@@ -195,59 +201,29 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 
 
 
-	public void testTryForceTerminatePreservesContext(ContainerCallContext ctx)
+	public void testGetRunningTasksPreservesContext(ContainerCallContext ctx)
 			throws InterruptedException {
-		final var blockingTasksStarted = new CountDownLatch(1);
-		final var blockingTaskFinished = new CountDownLatch(1);
-		final Runnable blockingTask = () -> {
-			blockingTasksStarted.countDown();
-			try {
-				taskBlockingLatch.await();
-			} catch (InterruptedException ignored) {}
-			blockingTaskFinished.countDown();
-		};
-		final Runnable queuedTask = () -> {};
-		ctx.executeWithinSelf(() -> {
-			testSubject.execute(blockingTask);
-			testSubject.execute(queuedTask);
-		});
-		assertTrue("blocking task should start",
+		ctx.executeWithinSelf(() -> testSubject.execute(blockingTask));
+		assertTrue("blockingTask should start",
 				blockingTasksStarted.await(50L, MILLISECONDS));
-
-		testSubject.shutdown();
-		final var aftermath = testSubject.tryForceTerminate();
-		assertTrue("blockingTask should finish after tryForceTerminate()",
-				blockingTaskFinished.await(50L, MILLISECONDS));
-		assertEquals("1 task should be running in the aftermath",
-				1, aftermath.runningTasks.size());
-		assertEquals("1 task should be unexecuted in the aftermath",
-				1, aftermath.unexecutedTasks.size());
-		final var runningTask = aftermath.runningTasks.get(0);
-		final var unexecutedTask = aftermath.unexecutedTasks.get(0);
+		final var runningTask = testSubject.getRunningTasks().get(0);
 		assertTrue("runningTask should be a ContextBoundRunnable",
 				runningTask instanceof ContextBoundRunnable);
 		final var contextBoundRunningTask = (ContextBoundRunnable) runningTask;
-		assertTrue("unexecutedTask should be a ContextBoundRunnable",
-				unexecutedTask instanceof ContextBoundRunnable);
-		final var contextBoundUnexecutedTask = (ContextBoundRunnable) unexecutedTask;
 		assertSame("runningTask should be blockingTask",
 				blockingTask, contextBoundRunningTask.getBoundClosure());
-		assertSame("unexecutedTask should be queuedTask",
-				queuedTask, contextBoundUnexecutedTask.getBoundClosure());
 		assertSame("ctx should be preserved during tryForceTerminate()",
 				ctx, contextBoundRunningTask.getContexts().get(0));
-		assertSame("ctx should be preserved during tryForceTerminate()",
-				ctx, contextBoundUnexecutedTask.getContexts().get(0));
 	}
 
 	@Test
-	public void testTryForceTerminatePreservesServletContext() throws InterruptedException {
-		testTryForceTerminatePreservesContext(requestCtx);
+	public void testGetRunningTasksPreservesServletContext() throws InterruptedException {
+		testGetRunningTasksPreservesContext(requestCtx);
 	}
 
 	@Test
-	public void testTryForceTerminatePreservesWebsocketContext() throws InterruptedException {
-		testTryForceTerminatePreservesContext(wsEventCtx);
+	public void testGetRunningTasksPreservesWebsocketContext() throws InterruptedException {
+		testGetRunningTasksPreservesContext(wsEventCtx);
 	}
 
 
