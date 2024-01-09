@@ -35,15 +35,16 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 	final ServletContext mockDeployment = new StandaloneWebsocketContainerServletContext("/test");
 	final Map<String, Object> attributes = new HashMap<>(3);
 
-	@Mock final HttpServletResponse servletResponse = mock(HttpServletResponse.class);
+	@Mock HttpServletResponse servletResponse;
 	boolean responseCommitted = false;
 	final Capture<Integer> statusCapture = Capture.newInstance();
-	@Mock final HttpServletRequest servletRequest = mock(HttpServletRequest.class);
+
+	@Mock HttpServletRequest servletRequest;
 	final ServletModule servletModule = new ServletModule(mockDeployment);
 	final ServletRequestContext requestCtx =
 			new ServletRequestContext(servletRequest, servletModule.containerCallContextTracker);
 
-	@Mock final Session wsConnection = mock(Session.class);
+	@Mock Session wsConnection;
 	boolean wsConnectionClosed = false;
 	final Capture<CloseReason> closeReasonCapture = Capture.newInstance();
 	WebsocketConnectionProxy wsConnectionProxy;
@@ -80,24 +81,31 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 
 	@Before
 	public void setupMocks() throws IOException {
+		injectMocks(this);
+
 		expect(servletRequest.getAttribute(anyString()))
 			.andAnswer(() -> attributes.get((String) getCurrentArgument(0)))
 			.anyTimes();
-
 		servletRequest.setAttribute(anyString(), anyObject());
 		expectLastCall()
 			.andAnswer(() -> attributes.put(getCurrentArgument(0), getCurrentArgument(1)))
 			.anyTimes();
 
-		expect(servletResponse.isCommitted()).andAnswer(() -> responseCommitted).anyTimes();
+		expect(servletResponse.isCommitted())
+			.andAnswer(() -> responseCommitted)
+			.anyTimes();
 		servletResponse.sendError(captureInt(statusCapture));
 		expectLastCall().andAnswer(() -> {
 			responseCommitted = true;
 			return null;  // Void
 		}).times(0, 1);
 
-		expect(wsConnection.getUserProperties()).andReturn(attributes).anyTimes();
-		expect(wsConnection.isOpen()).andAnswer(() -> !wsConnectionClosed).anyTimes();
+		expect(wsConnection.getUserProperties())
+			.andReturn(attributes)
+			.anyTimes();
+		expect(wsConnection.isOpen())
+			.andAnswer(() -> !wsConnectionClosed)
+			.anyTimes();
 		wsConnection.close(capture(closeReasonCapture));
 		expectLastCall().andAnswer(() -> {
 			wsConnectionClosed = true;
@@ -111,6 +119,13 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 		wsConnectionCtx = new WebsocketConnectionContext(wsConnectionProxy);
 		wsEventCtx = new WebsocketEventContext(
 				wsConnectionCtx, null, servletModule.containerCallContextTracker);
+	}
+
+
+
+	@After
+	public void verifyMocks() {
+		verifyAll();
 	}
 
 
@@ -130,6 +145,10 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 			}
 		}));
 		assertTrue("task should complete", taskFinished.await(20L, MILLISECONDS));
+		assertFalse("servletResponse should not be committed",
+				responseCommitted);
+		assertFalse("wsConnection should not be closed",
+				wsConnectionClosed);
 		if (asyncError[0] != null) throw asyncError[0];
 	}
 
@@ -172,6 +191,8 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 	@Test
 	public void testWebsocketExecutionRejection() throws Exception {
 		testExecutionRejection(wsEventCtx, (task) -> testSubject.execute(wsConnection, task));
+		assertTrue("wsConnection should be closed",
+				wsConnectionClosed);
 		assertEquals("code reported to client should be TRY_AGAIN_LATER",
 				CloseCodes.TRY_AGAIN_LATER, closeReasonCapture.getValue().getCloseCode());
 	}
@@ -187,6 +208,8 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 	@Test
 	public void testServletExecutionRejection() throws Exception {
 		testExecutionRejection(requestCtx, (task) -> testSubject.execute(servletResponse, task));
+		assertTrue("servletResponse should be committed",
+				responseCommitted);
 		assertEquals("status reported to client should be SC_SERVICE_UNAVAILABLE",
 				HttpServletResponse.SC_SERVICE_UNAVAILABLE, statusCapture.getValue().intValue());
 	}
