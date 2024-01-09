@@ -2,6 +2,8 @@
 package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 
 import java.io.IOException;
+import java.io.StringWriter;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,6 +15,8 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
 
+import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Service.*;
+
 
 
 /** Implementation of echoing. All other valid {@code Endpoints} either extend or wrap this one. */
@@ -22,21 +26,19 @@ public class EchoEndpoint {
 
 	public static final String WELCOME_MESSAGE = "welcome :)";
 	public static final String CLOSE_MESSAGE = "close";
-
-	/** Format for servlet and websocket responses. */
-	public static final String RESPONSE_FORMAT = "%s\nservice hashCodes:\ncall=%d\nsession=%d";
+	public static final String MESSAGE_PROPERTY = "message";
 
 
 
 	Session connection;
 
-	@Inject @Named(Service.CONTAINER_CALL)
+	@Inject @Named(CONTAINER_CALL)
 	Provider<Service> eventScopedProvider;
 
-	@Inject @Named(Service.WEBSOCKET_CONNECTION)
+	@Inject @Named(WEBSOCKET_CONNECTION)
 	Provider<Service> connectionScopedProvider;
 
-	@Inject @Named(Service.HTTP_SESSION)
+	@Inject @Named(HTTP_SESSION)
 	Provider<Service> httpSessionScopedProvider;
 
 	Async connector;
@@ -57,32 +59,92 @@ public class EchoEndpoint {
 			try {
 				connection.close(new CloseReason(CloseCodes.NORMAL_CLOSURE, "bye"));
 			} catch (IOException e) {
-				log.log(Level.INFO, "exception while closing websocket " + connection.getId(), e);
+				log.log(Level.WARNING, "exception while closing " + connection.getId(), e);
 			}
 		} else {
-			StringBuilder formattedMessageBuilder = new StringBuilder(message.length() + 10);
-			appendFiltered(message, formattedMessageBuilder);
-			send(formattedMessageBuilder.toString());
+			send(filter(message));
 		}
+	}
+
+	// Adapted from
+	// github.com/apache/tomcat/blob/trunk/webapps/examples/WEB-INF/classes/util/HTMLFilter.java
+	public static String filter(String message) {
+		if (message == null) return "";
+		final var builder = new StringBuilder(message.length() + 10);
+		char[] messageChars = new char[message.length()];
+		message.getChars(0, message.length(), messageChars, 0);
+		for (char c: messageChars) {
+			switch (c) {
+				case '<':
+					builder.append("&lt;");
+					break;
+				case '>':
+					builder.append("&gt;");
+					break;
+				case '&':
+					builder.append("&amp;");
+					break;
+				case '"':
+					builder.append("&quot;");
+					break;
+				case '\'':
+					builder.append("&apos;");
+					break;
+				default:
+					builder.append(c);
+			}
+		}
+		return builder.toString();
+	}
+
+
+
+	/** Calls {@link #send(String, String) send(MESSAGE_PROPERTY, message)}. */
+	void send(String message) {
+		send(MESSAGE_PROPERTY, message);
 	}
 
 
 
 	/**
-	 * Sends {@code message} to the peer followed by with scoped object hashes.
-	 * The 1st line contains the messages with EOL characters replaced by space.
-	 * The 3rd line contains container call scoped object hash.
-	 * The 4th line contains HTTP session scoped object hash.
-	 * The 5th line contains websocket connection scoped object hash.
+	 * Sends a {@link Properties} object as text to the peer.
+	 * The following {@link Properties#setProperty(String, String) properties will be set}:
+	 * <ul>
+	 *   <li>{@code name} - {@code value}</li>
+	 *   <li>{@link Service#CONTAINER_CALL} - hash of the
+	 *       {@link pl.morgwai.base.servlet.guice.scopes.ServletModule#containerCallScope
+	 *       containerCallScope}d instance of {@link Service}</li>
+	 *   <li>{@link Service#WEBSOCKET_CONNECTION} - hash of the
+	 *       {@link pl.morgwai.base.servlet.guice.scopes.ServletModule#websocketConnectionScope
+	 *       websocketConnectionScope}d instance of {@link Service}</li>
+	 *   <li>{@link Service#HTTP_SESSION} - hash of the
+	 *       {@link pl.morgwai.base.servlet.guice.scopes.ServletModule#httpSessionScope
+	 *       httpSessionScope}d instance of {@link Service}</li>
+	 * </ul>
 	 */
-	void send(String message) {
-		connector.sendText(String.format(
-			RESPONSE_FORMAT + "\nconnection=%d",
-			message.replace('\n', ' '),
-			eventScopedProvider.get().hashCode(),
-			httpSessionScopedProvider.get().hashCode(),
-			connectionScopedProvider.get().hashCode()
-		));
+	void send(String name, String value) {
+		final var response = new Properties();
+		response.setProperty(name, value);
+		response.setProperty(
+			CONTAINER_CALL,
+			String.valueOf(eventScopedProvider.get().hashCode())
+		);
+		response.setProperty(
+			WEBSOCKET_CONNECTION,
+			String.valueOf(connectionScopedProvider.get().hashCode())
+		);
+		response.setProperty(
+			HTTP_SESSION,
+			String.valueOf(httpSessionScopedProvider.get().hashCode())
+		);
+		try (
+			final var stringWriter = new StringWriter();
+		) {
+			response.store(stringWriter, null);
+			connector.sendText(stringWriter.toString());
+		} catch (IOException neverHappens) {
+			throw new RuntimeException(neverHappens);
+		}
 	}
 
 
@@ -102,37 +164,6 @@ public class EchoEndpoint {
 	public void onClose(CloseReason closeReason) {
 		log.info("closing " + connection.getId() + ", code: " + closeReason.getCloseCode() +
 				", reason: " + closeReason.getReasonPhrase());
-	}
-
-
-
-	// Adapted from
-	// github.com/apache/tomcat/blob/trunk/webapps/examples/WEB-INF/classes/util/HTMLFilter.java
-	public static void appendFiltered(String message, StringBuilder target) {
-		if (message == null) return;
-		char[] content = new char[message.length()];
-		message.getChars(0, message.length(), content, 0);
-		for (final char c: content) {
-			switch (c) {
-				case '<':
-					target.append("&lt;");
-					break;
-				case '>':
-					target.append("&gt;");
-					break;
-				case '&':
-					target.append("&amp;");
-					break;
-				case '"':
-					target.append("&quot;");
-					break;
-				case '\'':
-					target.append("&apos;");
-					break;
-				default:
-					target.append(c);
-			}
-		}
 	}
 
 

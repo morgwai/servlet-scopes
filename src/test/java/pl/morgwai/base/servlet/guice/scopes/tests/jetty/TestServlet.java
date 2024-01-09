@@ -2,6 +2,7 @@
 package pl.morgwai.base.servlet.guice.scopes.tests.jetty;
 
 import java.io.IOException;
+import java.util.Properties;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
@@ -9,8 +10,10 @@ import javax.servlet.http.*;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
-import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.EchoEndpoint;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Service;
+
+import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Service.CONTAINER_CALL;
+import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Service.HTTP_SESSION;
 
 
 
@@ -19,10 +22,12 @@ public abstract class TestServlet extends HttpServlet {
 
 
 
-	@Inject @Named(Service.CONTAINER_CALL)
+	public static final String RESPONDING_SERVLET = "respondingServlet";
+
+	@Inject @Named(CONTAINER_CALL)
 	Provider<Service> requestScopedProvider;
 
-	@Inject @Named(Service.HTTP_SESSION)
+	@Inject @Named(HTTP_SESSION)
 	Provider<Service> sessionScopedProvider;
 
 
@@ -37,8 +42,8 @@ public abstract class TestServlet extends HttpServlet {
 			throws ServletException {
 		try {
 			if (
-				request.getAttribute(Service.CONTAINER_CALL) != requestScopedProvider.get()
-				|| request.getAttribute(Service.HTTP_SESSION) != sessionScopedProvider.get()
+				request.getAttribute(CONTAINER_CALL) != requestScopedProvider.get()
+				|| request.getAttribute(HTTP_SESSION) != sessionScopedProvider.get()
 			) {
 				throw new ServletException(getClass().getSimpleName() + ": scoping failure on "
 						+ threadDesignation + " (" + Thread.currentThread().getName() + ')');
@@ -55,24 +60,37 @@ public abstract class TestServlet extends HttpServlet {
 
 
 	/**
-	 * Sends the final response in {@link EchoEndpoint#RESPONSE_FORMAT}. The 1st line contains
-	 * {@link Class#getSimpleName() simple class name} of the actual {@code Servlet} that sent the
-	 * response as this method may be called in various {@code Servlets} depending on
-	 * {@link AsyncServlet#MODE_PARAM} and {@link AsyncServlet#TARGET_PATH_PARAM} request params.
+	 * Sends the final response as {@link Properties}.
+	 * The following {@link Properties#setProperty(String, String) properties will be set}:
+	 * <ul>
+	 *   <li>{@link #RESPONDING_SERVLET} - {@link Class#getSimpleName() simple name of the Class}
+	 *       of the {@code Servlet} that actually produced the response</li>
+	 *   <li>{@link Service#CONTAINER_CALL} - hash of the
+	 *       {@link pl.morgwai.base.servlet.guice.scopes.ServletModule#containerCallScope
+	 *       containerCallScope}d instance of {@link Service}</li>
+	 *   <li>{@link Service#HTTP_SESSION} - hash of the
+	 *       {@link pl.morgwai.base.servlet.guice.scopes.ServletModule#httpSessionScope
+	 *       httpSessionScope}d instance of {@link Service}</li>
+	 * </ul>
 	 */
 	void doAsyncHandling(HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
 		verifyScoping(request, "the 2nd container thread");
 		try (
-			final var output = response.getWriter();
+			final var responseStream = response.getOutputStream();
 		) {
-			response.setStatus(HttpServletResponse.SC_OK);
-			output.println(String.format(
-				EchoEndpoint.RESPONSE_FORMAT,
-				getClass().getSimpleName(),
-				requestScopedProvider.get().hashCode(),
-				sessionScopedProvider.get().hashCode())
+			final var responseContent = new Properties(5);
+			responseContent.setProperty(RESPONDING_SERVLET, getClass().getSimpleName());
+			responseContent.setProperty(
+				CONTAINER_CALL,
+				String.valueOf(requestScopedProvider.get().hashCode())
 			);
+			responseContent.setProperty(
+				HTTP_SESSION,
+				String.valueOf(sessionScopedProvider.get().hashCode())
+			);
+			response.setStatus(HttpServletResponse.SC_OK);
+			responseContent.store(responseStream, null);
 		}
 	}
 }

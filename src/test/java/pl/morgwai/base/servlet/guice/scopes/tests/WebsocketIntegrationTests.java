@@ -2,9 +2,9 @@
 package pl.morgwai.base.servlet.guice.scopes.tests;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -18,7 +18,10 @@ import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 
 import static org.junit.Assert.*;
+import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.EchoEndpoint.MESSAGE_PROPERTY;
+import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.EchoEndpoint.WELCOME_MESSAGE;
 import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server.WEBSOCKET_PATH;
+import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Service.*;
 
 
 
@@ -68,10 +71,10 @@ public abstract class WebsocketIntegrationTests extends WebsocketTestBase {
 	 * {@link EchoEndpoint}. Both messages are expected to be sent from the same HTTP session scope
 	 * and the same websocket connection scope.</p>
 	 */
-	protected List<String[]> testSingleSessionWithServerEndpoint(URI url, boolean sendTestMessage)
+	protected List<Properties> testSingleSessionWithServerEndpoint(URI url, boolean sendTestMessage)
 			throws Exception {
 		final var testMessage = "test message for " + url;
-		final var replies = new ArrayList<String[]>(4);
+		final var replies = new ArrayList<Properties>(4);
 		final var testMessageSent = new CountDownLatch(1);
 		final var repliesReceived = new CountDownLatch(2);
 		final var testThread = Thread.currentThread();
@@ -79,8 +82,15 @@ public abstract class WebsocketIntegrationTests extends WebsocketTestBase {
 		final var clientEndpoint = new ClientEndpoint(
 			(reply) -> {
 				if (replies.size() >= 2 && !sendTestMessage) return;  // extra pong
-				replies.add(reply.split("\n"));
-				repliesReceived.countDown();
+				final var parsedReply = new Properties(5);
+				try {
+					parsedReply.load(new StringReader(reply));
+					replies.add(parsedReply);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				} finally {
+					repliesReceived.countDown();
+				}
 			},
 			(connection, error) -> {},
 			(connection, closeReason) -> {
@@ -106,24 +116,29 @@ public abstract class WebsocketIntegrationTests extends WebsocketTestBase {
 		} catch (InterruptedException e) {  // interrupted by clientEndpoint.closeHandler above
 			fail("abnormal close code: " + closeReasonHolder[0].getCloseCode());
 		}
-		assertEquals("reply should have 5 lines",
-				5, replies.get(0).length);
-		assertEquals("reply should have 5 lines",
-				5, replies.get(1).length);
 		assertEquals("onOpen reply should be a welcome",
-				EchoEndpoint.WELCOME_MESSAGE, replies.get(0)[0]);
+				WELCOME_MESSAGE, replies.get(0).getProperty(MESSAGE_PROPERTY));
 		if (sendTestMessage) {
 			assertEquals("2nd reply should be an echo",
-					testMessage, replies.get(1)[0]);
+					testMessage, replies.get(1).getProperty(MESSAGE_PROPERTY));
 		}
 		if (isHttpSessionAvailable()) {
-			assertEquals("session scoped object hash should remain the same",
-					replies.get(0)[3], replies.get(1)[3]);
+			assertEquals(
+				"HttpSession scoped object hash should remain the same",
+				replies.get(0).getProperty(HTTP_SESSION),
+				replies.get(1).getProperty(HTTP_SESSION)
+			);
 		}
-		assertEquals("connection scoped object hash should remain the same",
-				replies.get(0)[4], replies.get(1)[4]);
-		assertNotEquals("event scoped object hash should change",
-				replies.get(0)[2], replies.get(1)[2]);
+		assertEquals(
+			"connection scoped object hash should remain the same",
+			replies.get(0).getProperty(WEBSOCKET_CONNECTION),
+			replies.get(1).getProperty(WEBSOCKET_CONNECTION)
+		);
+		assertNotEquals(
+			"event scoped object hash should change",
+			replies.get(0).getProperty(CONTAINER_CALL),
+			replies.get(1).getProperty(CONTAINER_CALL)
+		);
 		return replies;
 	}
 
@@ -134,16 +149,22 @@ public abstract class WebsocketIntegrationTests extends WebsocketTestBase {
 	 * {@link #testSingleSessionWithServerEndpoint(URI, boolean)} made via separate websocket
 	 * connections. All 4 messages are expected to be sent from the same HTTP session scope.
 	 */
-	protected List<String[]> test2SessionsWithServerEndpoint(String url, boolean sendTestMessage)
+	protected List<Properties> test2SessionsWithServerEndpoint(String url, boolean sendTestMessage)
 			throws Exception {
 		final var uri = URI.create(url);
 		final var replies = testSingleSessionWithServerEndpoint(uri, sendTestMessage);
 		replies.addAll(testSingleSessionWithServerEndpoint(uri, sendTestMessage));
-		assertNotEquals("connection scoped object hash should change",
-				replies.get(0)[4], replies.get(2)[4]);
+		assertNotEquals(
+			"connection scoped object hash should change",
+			replies.get(0).getProperty(WEBSOCKET_CONNECTION),
+			replies.get(2).getProperty(WEBSOCKET_CONNECTION)
+		);
 		if (isHttpSessionAvailable()) {
-			assertEquals("session scoped object hash should remain the same",
-					replies.get(0)[3], replies.get(2)[3]);
+			assertEquals(
+				"session scoped object hash should remain the same",
+				replies.get(0).getProperty(HTTP_SESSION),
+				replies.get(2).getProperty(HTTP_SESSION)
+			);
 		}
 		return replies;
 	}

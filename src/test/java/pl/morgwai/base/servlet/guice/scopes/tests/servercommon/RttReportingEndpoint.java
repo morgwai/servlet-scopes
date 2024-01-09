@@ -18,6 +18,7 @@ public class RttReportingEndpoint extends ProgrammaticEndpoint implements RttObs
 
 	public static final String TYPE = "rttReporting";
 	public static final String PATH = Server.WEBSOCKET_PATH + TYPE;
+	public static final String RTT_PROPERTY = "rtt";
 
 
 
@@ -31,6 +32,6 @@ public class RttReportingEndpoint extends ProgrammaticEndpoint implements RttObs
 	@Override
 	public void onPong(long rttNanos) {
 		EchoEndpoint.log.info(String.format("got pong RTT report: %,10dns", rttNanos));
-		echoEndpoint.send(String.format("rtt: %,10dns", rttNanos));
+		echoEndpoint.send(RTT_PROPERTY, String.valueOf(rttNanos));
 	}
 }
