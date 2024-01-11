@@ -16,6 +16,9 @@ import javax.websocket.CloseReason.CloseCodes;
 import org.junit.*;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
+import pl.morgwai.base.utils.concurrent.Awaitable;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import static org.junit.Assert.*;
 import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.EchoEndpoint.MESSAGE_PROPERTY;
@@ -110,9 +113,9 @@ public abstract class WebsocketIntegrationTests extends WebsocketTestBase {
 		if (sendTestMessage) connection.getAsyncRemote().sendText(testMessage);
 		testMessageSent.countDown();
 		try {
-			if ( !repliesReceived.await(2L, TimeUnit.SECONDS)) fail("timeout");
+			if ( !repliesReceived.await(2L, SECONDS)) fail("timeout");
 			connection.close();
-			if ( !clientEndpoint.awaitClosure(2L, TimeUnit.SECONDS)) fail("timeout");
+			if ( !clientEndpoint.awaitClosure(2L, SECONDS)) fail("timeout");
 		} catch (InterruptedException e) {  // interrupted by clientEndpoint.closeHandler above
 			fail("abnormal close code: " + closeReasonHolder[0].getCloseCode());
 		}
@@ -251,9 +254,82 @@ public abstract class WebsocketIntegrationTests extends WebsocketTestBase {
 
 
 
+	protected void testBroadcast(String... urls)
+		throws DeploymentException, IOException, InterruptedException {
+		final var broadcastMessage = "broadcast";
+		final var welcomesReceived = new CountDownLatch(urls.length);
+		final var broadcastSent = new CountDownLatch(1);
+		final var broadcastsReceived = new CountDownLatch(urls.length);
+		@SuppressWarnings("unchecked")
+		final List<String>[] messages = (List<String>[]) new List<?>[urls.length];
+		final ClientEndpoint[] clientEndpoints = new ClientEndpoint[urls.length];
+		final Session[] connections =  new Session[urls.length];
+
+		try {
+			for (int clientNumber = 0; clientNumber < urls.length; clientNumber++) {
+				// create clientEndpoints and open connections
+				messages[clientNumber] = new ArrayList<>(2);
+				final var localClientNumber = clientNumber;
+				clientEndpoints[clientNumber] = new ClientEndpoint(
+					(message) -> {
+						messages[localClientNumber].add(message);
+						if (message.equals(BroadcastEndpoint.WELCOME_MESSAGE)) {
+							welcomesReceived.countDown();
+						} else {
+							broadcastsReceived.countDown();
+						}
+					},
+					(connection, error) -> {},
+					(connection, closeReason) -> {}
+				);
+				connections[clientNumber] = clientWebsocketContainer.connectToServer(
+					clientEndpoints[clientNumber],
+					null,
+					URI.create(urls[clientNumber])
+				);
+			}
+
+			if ( !welcomesReceived.await(2L, SECONDS)) fail("timeout");
+			connections[0].getAsyncRemote().sendText(broadcastMessage);
+			broadcastSent.countDown();
+			if ( !broadcastsReceived.await(2L, SECONDS)) fail("timeout");
+		} finally {
+			for (int clientNumber = 0; clientNumber < urls.length; clientNumber++) {
+				if (connections[clientNumber] != null && connections[clientNumber].isOpen()) {
+					try {
+						connections[clientNumber].close();
+					} catch (IOException ignored) {}
+				}
+			}
+		}
+
+		assertTrue(
+			"timeout",
+			Awaitable.awaitMultiple(
+				2L, SECONDS,
+				Arrays.stream(clientEndpoints)
+					.map(Awaitable.entryMapper(ClientEndpoint::toAwaitableOfClosure))
+			).isEmpty()
+		);
+		for (int clientNumber = 0; clientNumber < urls.length; clientNumber++) {
+			assertEquals("client " + (clientNumber + 1) + " should receive 2 messages",
+					2, messages[clientNumber].size());
+			assertEquals(
+				"the 1st message of client " + (clientNumber + 1) + " should be the welcome",
+				BroadcastEndpoint.WELCOME_MESSAGE,
+				messages[clientNumber].get(0)
+			);
+			assertEquals(
+				"the 2nd message of client " + (clientNumber + 1) + " should be the broadcast",
+				broadcastMessage,
+				messages[clientNumber].get(1)
+			);
+		}
+	}
+
 	@Test
 	public void testBroadcast() throws DeploymentException, IOException, InterruptedException {
 		final var url = appWebsocketUrl + BroadcastEndpoint.PATH;
-		WebsocketBroadcastingTests.testBroadcast(clientWebsocketContainer, url, url);
+		testBroadcast(url, url);
 	}
 }
