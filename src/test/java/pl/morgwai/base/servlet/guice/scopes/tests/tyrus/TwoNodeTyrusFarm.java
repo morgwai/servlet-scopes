@@ -17,7 +17,7 @@ public class TwoNodeTyrusFarm implements MultiAppServer {
 
 
 	public TwoNodeTyrusFarm(int port1, int port2, String path1, String path2)
-		throws DeploymentException {
+			throws DeploymentException {
 		node1 = new TyrusServer(port1, path1);
 		node2 = new TyrusServer(port2, path2);
 	}

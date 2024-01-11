@@ -1,8 +1,7 @@
 // Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes.tests.tyrus;
 
-import java.util.LinkedList;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import javax.websocket.*;
@@ -12,6 +11,7 @@ import javax.websocket.server.ServerEndpointConfig;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import org.glassfish.tyrus.core.cluster.ClusterContext;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.ServletModule;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
@@ -26,38 +26,24 @@ public class TyrusServer implements Server {
 
 
 	final String deploymentPath;
-	final StandaloneWebsocketContainerServletContext appDeployment;
-	final WebsocketPingerService pingerService;
 	final org.glassfish.tyrus.server.Server tyrus;
 
 
 
 	public TyrusServer(int port, String deploymentPath) throws DeploymentException {
+		this(port, deploymentPath, null);
+	}
+
+
+
+	public TyrusServer(int port, String deploymentPath, ClusterContext clusterCtx)
+			throws DeploymentException {
 		this.deploymentPath = deploymentPath;
-		appDeployment  = new StandaloneWebsocketContainerServletContext(deploymentPath);
-
-		final var servletModule = new ServletModule(appDeployment);
-		final var modules = new LinkedList<Module>();
-		modules.add(servletModule);
-		modules.add(new ServiceModule(servletModule, false));
-		final Injector injector = Guice.createInjector(modules);
-
-		final var intervalFromProperty = System.getProperty(Server.PING_INTERVAL_MILLIS_PROPERTY);
-		pingerService = new WebsocketPingerService(
-			intervalFromProperty != null ? Long.parseLong(intervalFromProperty) : 500L,
-			TimeUnit.MILLISECONDS,
-			WebsocketPingerService.DEFAULT_FAILURE_LIMIT
-		);
-
-		appDeployment.setAttribute(Injector.class.getName(), injector);
-		appDeployment.setAttribute(WebsocketPingerService.class.getName(), pingerService);
-		GuiceServerEndpointConfigurator.registerDeployment(appDeployment);
-
 		tyrus = new org.glassfish.tyrus.server.Server(
 			"localhost",
 			port,
 			deploymentPath,
-			null,
+			clusterCtx == null ? null : Map.of(ClusterContext.CLUSTER_CONTEXT, clusterCtx),
 			TyrusConfig.class
 		);
 		tyrus.start();
@@ -75,8 +61,6 @@ public class TyrusServer implements Server {
 	@Override
 	public void shutdown() {
 		tyrus.stop();
-		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
-		pingerService.stop();
 	}
 
 
@@ -115,5 +99,39 @@ public class TyrusServer implements Server {
 				BroadcastEndpoint.class
 			);
 		}
+	}
+
+
+
+	public static StandaloneWebsocketContainerServletContext createDeployment(String path) {
+		final var appDeployment = new StandaloneWebsocketContainerServletContext(path);
+
+		// create and store injector
+		final var servletModule = new ServletModule(appDeployment);
+		final var modules = new LinkedList<Module>();
+		modules.add(servletModule);
+		modules.add(new ServiceModule(servletModule, false));
+		final Injector injector = Guice.createInjector(modules);
+		appDeployment.setAttribute(Injector.class.getName(), injector);
+
+		// create and store pingerService
+		final var intervalFromProperty = System.getProperty(Server.PING_INTERVAL_MILLIS_PROPERTY);
+		final var pingerService = new WebsocketPingerService(
+			intervalFromProperty != null ? Long.parseLong(intervalFromProperty) : 500L,
+			TimeUnit.MILLISECONDS,
+			WebsocketPingerService.DEFAULT_FAILURE_LIMIT
+		);
+		appDeployment.setAttribute(WebsocketPingerService.class.getName(), pingerService);
+
+		GuiceServerEndpointConfigurator.registerDeployment(appDeployment);
+		return appDeployment;
+	}
+
+
+
+	public static void cleanupDeployment(StandaloneWebsocketContainerServletContext appDeployment) {
+		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
+		((WebsocketPingerService)appDeployment.getAttribute(WebsocketPingerService.class.getName()))
+				.stop();
 	}
 }

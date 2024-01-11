@@ -1,0 +1,1 @@
+../../../../../../../../../../../src/test/java/pl/morgwai/base/servlet/guice/scopes/tests/MultiAppWebsocketTests.java

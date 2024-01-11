@@ -3,8 +3,10 @@ package pl.morgwai.base.servlet.guice.scopes.tests;
 
 import javax.websocket.Session;
 
+import org.junit.After;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server;
 import pl.morgwai.base.servlet.guice.scopes.tests.tyrus.TyrusServer;
+import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
 
 
 
@@ -12,9 +14,21 @@ public class TyrusTests extends WebsocketIntegrationTests {
 
 
 
+	protected StandaloneWebsocketContainerServletContext appDeployment;
+
+
+
 	@Override
 	protected Server createServer() throws Exception {
+		appDeployment = TyrusServer.createDeployment(Server.APP_PATH);
 		return new TyrusServer(-1, Server.APP_PATH);
+	}
+
+
+
+	@After
+	public void cleanupDeployment() {
+		TyrusServer.cleanupDeployment(appDeployment);
 	}
 
 
