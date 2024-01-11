@@ -39,8 +39,8 @@ public class TwoNodeTyrusFarm implements MultiAppServer {
 
 
 	@Override
-	public void stopz() {
-		node1.stopz();
-		node2.stopz();
+	public void shutdown() {
+		node1.shutdown();
+		node2.shutdown();
 	}
 }

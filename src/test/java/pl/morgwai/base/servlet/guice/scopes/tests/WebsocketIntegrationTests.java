@@ -49,7 +49,7 @@ public abstract class WebsocketIntegrationTests extends WebsocketTestBase {
 
 	@After
 	public void stopServer() throws Exception {
-		server.stopz();
+		server.shutdown();
 	}
 
 

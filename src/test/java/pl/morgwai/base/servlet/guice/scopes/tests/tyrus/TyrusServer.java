@@ -73,7 +73,7 @@ public class TyrusServer implements Server {
 
 
 	@Override
-	public void stopz() {
+	public void shutdown() {
 		tyrus.stop();
 		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
 		pingerService.stop();

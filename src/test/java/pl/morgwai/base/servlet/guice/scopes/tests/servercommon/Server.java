@@ -12,5 +12,5 @@ public interface Server {
 	String APP_PATH = "/test";
 
 	String getAppWebsocketUrl();
-	void stopz() throws Exception;
+	void shutdown() throws Exception;
 }
