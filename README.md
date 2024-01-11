@@ -31,25 +31,25 @@ All the above scopes are built using [guice-context-scopes lib](https://github.c
 
 ## MAIN USER CLASSES
 
-### [ServletModule](src/main/java/pl/morgwai/base/servlet/guice/scopes/ServletModule.java)
+### [ServletModule](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/ServletModule.html)
 Contains the above `Scope`s, related `ContextTracker`s and some helper methods.
 
-### [GuiceServerEndpointConfigurator](src/main/java/pl/morgwai/base/servlet/guice/scopes/GuiceServerEndpointConfigurator.java)
+### [GuiceServerEndpointConfigurator](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/GuiceServerEndpointConfigurator.html)
 Websocket `ServerEndpoint` `Configurator` that ensures that `Endpoint` instances have their dependencies injected and that their methods run within websocket contexts, so that the above `Scope`s work properly.
 
-### [GuiceServletContextListener](src/main/java/pl/morgwai/base/servlet/guice/scopes/GuiceServletContextListener.java)
+### [GuiceServletContextListener](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/GuiceServletContextListener.html)
 Base class for app `ServletContextListener`s. Creates and configures an app-wide Guice `Injector` instance, the above mentioned `ServletModule` and performs bookkeeping related to `GuiceServerEndpointConfigurator` and `ServletContextTrackingExecutor`s. Also provides helper methods for creating and configuring programmatic `Servlet`s, `Filter`s and `Endpoint`s.
 
-### [PingingEndpointConfigurator](src/main/java/pl/morgwai/base/servlet/guice/utils/PingingEndpointConfigurator.java)
-Subclass of `GuiceServerEndpointConfigurator` that additionally automatically registers and deregisters created `Endpoint` instances to its associated [WebsocketPingerService](https://github.com/morgwai/servlet-utils#main-user-classes).
+### [PingingEndpointConfigurator](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/utils/PingingEndpointConfigurator.html)
+Subclass of `GuiceServerEndpointConfigurator` that additionally automatically registers and deregisters created `Endpoint` instances to its associated [WebsocketPingerService](https://javadoc.io/doc/pl.morgwai.base/servlet-utils/latest/pl/morgwai/base/servlet/utils/WebsocketPingerService.html).
 
-### [PingingServletContextListener](src/main/java/pl/morgwai/base/servlet/guice/utils/PingingServletContextListener.java)
+### [PingingServletContextListener](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/utils/PingingServletContextListener.html)
 Subclass of `GuiceServletContextListener` that uses `PingingEndpointConfigurator` for programmatic `Endpoint`s and configures app's `WebsocketPingerService`.
 
-### [ServletContextTrackingExecutor](src/main/java/pl/morgwai/base/servlet/guice/scopes/ServletContextTrackingExecutor.java)
+### [ServletContextTrackingExecutor](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/ServletContextTrackingExecutor.html)
 A `ThreadPoolExecutor` that upon dispatching a task, automatically transfers all the active `Context`s to the thread running the task.
 
-### [ContextBinder](https://github.com/morgwai/guice-context-scopes/blob/master/src/main/java/pl/morgwai/base/guice/scopes/ContextBinder.java)
+### [ContextBinder](https://javadoc.io/doc/pl.morgwai.base/guice-context-scopes/latest/pl/morgwai/base/guice/scopes/ContextBinder.html)
 Binds tasks and callbacks (`Runnable`s, `Consumer`s, `BiConsumer`s, `Function`s and `BiFunction`s) to contexts that were active at the time of binding. This can be used to transfer `Context`s **almost** fully automatically when it's not possible to use `GrpcContextTrackingExecutor` when switching threads (for example when providing callbacks as arguments to async functions). See a usage sample below.
 
 
@@ -129,7 +129,7 @@ There are 2 builds available:
 
 ## EXTENSIONS
 
-[Tyrus connection proxy that provides unified, websocket API compliant access to clustered websocket connections and properties](connection-proxy-tyrus)
+[Tyrus connection proxy](connection-proxy-tyrus) that provides unified, websocket API compliant access to clustered websocket connections and properties.
 
 
 ## EXAMPLES
