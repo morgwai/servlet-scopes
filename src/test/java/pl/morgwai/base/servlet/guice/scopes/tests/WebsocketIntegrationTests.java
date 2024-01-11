@@ -3,6 +3,7 @@ package pl.morgwai.base.servlet.guice.scopes.tests;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.CookieManager;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -13,6 +14,8 @@ import java.util.logging.Logger;
 import javax.websocket.*;
 import javax.websocket.CloseReason.CloseCodes;
 
+import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
+import org.eclipse.jetty.websocket.javax.common.JavaxWebSocketContainer;
 import org.junit.*;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
@@ -28,12 +31,16 @@ import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Service.*;
 
 
 
-public abstract class WebsocketIntegrationTests extends WebsocketTestBase {
+public abstract class WebsocketIntegrationTests {
 
 
 
 	protected Server server;
 	protected String appWebsocketUrl;
+
+	protected CookieManager cookieManager;
+	protected org.eclipse.jetty.client.HttpClient wsHttpClient;
+	protected WebSocketContainer clientWebsocketContainer;
 
 
 
@@ -46,12 +53,23 @@ public abstract class WebsocketIntegrationTests extends WebsocketTestBase {
 	public void setupServer() throws Exception {
 		server = createServer();
 		appWebsocketUrl = server.getAppWebsocketUrl();
+
+		cookieManager = new CookieManager();
+		wsHttpClient = new org.eclipse.jetty.client.HttpClient();
+		wsHttpClient.setCookieStore(cookieManager.getCookieStore());
+		clientWebsocketContainer = JavaxWebSocketClientContainerProvider.getContainer(wsHttpClient);
 	}
 
 
 
 	@After
 	public void stopServer() throws Exception {
+		final var jettyWsContainer = ((JavaxWebSocketContainer) clientWebsocketContainer);
+		jettyWsContainer.stop();
+		jettyWsContainer.destroy();
+		wsHttpClient.stop();
+		wsHttpClient.destroy();
+
 		server.shutdown();
 	}
 
@@ -332,4 +350,8 @@ public abstract class WebsocketIntegrationTests extends WebsocketTestBase {
 		final var url = appWebsocketUrl + BroadcastEndpoint.PATH;
 		testBroadcast(url, url);
 	}
+
+
+
+	protected static final Logger log = Logger.getLogger(WebsocketIntegrationTests.class.getName());
 }
