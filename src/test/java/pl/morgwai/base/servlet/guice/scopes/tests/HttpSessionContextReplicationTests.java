@@ -8,9 +8,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.ConsoleHandler;
 
 import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.server.session.JDBCSessionDataStore.SessionTableSchema;
@@ -18,7 +18,10 @@ import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import pl.morgwai.base.servlet.guice.scopes.tests.jetty.JettyNode;
 
+import static java.util.logging.Level.*;
+
 import static org.junit.Assert.assertEquals;
+import static pl.morgwai.base.jul.JulConfigurator.*;
 import static pl.morgwai.base.servlet.guice.scopes.tests.jetty.JettyNode.*;
 
 
@@ -171,10 +174,13 @@ public class HttpSessionContextReplicationTests {
 
 
 
-	static Level LOG_LEVEL = Level.WARNING;
-
 	@BeforeClass
 	public static void setupLogging() {
-		for (final var handler: Logger.getLogger("").getHandlers()) handler.setLevel(LOG_LEVEL);
+		addOrReplaceLoggingConfigProperties(Map.of(
+			"pl.morgwai.level", SEVERE.toString(),
+			LEVEL_SUFFIX, WARNING.toString(),
+			ConsoleHandler.class.getName() + LEVEL_SUFFIX, FINEST.toString()
+		));
+		overrideLogLevelsWithSystemProperties("pl.morgwai");
 	}
 }

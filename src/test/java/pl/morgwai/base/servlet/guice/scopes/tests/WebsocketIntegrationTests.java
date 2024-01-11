@@ -8,8 +8,7 @@ import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
 import javax.websocket.*;
 import javax.websocket.CloseReason.CloseCodes;
@@ -22,8 +21,11 @@ import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 import pl.morgwai.base.utils.concurrent.Awaitable;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.logging.Level.FINEST;
+import static java.util.logging.Level.WARNING;
 
 import static org.junit.Assert.*;
+import static pl.morgwai.base.jul.JulConfigurator.*;
 import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.EchoEndpoint.MESSAGE_PROPERTY;
 import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.EchoEndpoint.WELCOME_MESSAGE;
 import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server.WEBSOCKET_PATH;
@@ -354,4 +356,15 @@ public abstract class WebsocketIntegrationTests {
 
 
 	protected static final Logger log = Logger.getLogger(WebsocketIntegrationTests.class.getName());
+
+
+
+	@BeforeClass
+	public static void setupLogging() {
+		addOrReplaceLoggingConfigProperties(Map.of(
+			LEVEL_SUFFIX, WARNING.toString(),
+			ConsoleHandler.class.getName() + LEVEL_SUFFIX, FINEST.toString()
+		));
+		overrideLogLevelsWithSystemProperties("pl.morgwai");
+	}
 }
