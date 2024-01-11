@@ -1,1 +1,0 @@
-../../../../../../../../../../../src/test/java/pl/morgwai/base/servlet/guice/scopes/tests/WebsocketIntegrationTests.java

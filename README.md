@@ -129,7 +129,7 @@ There are 2 builds available:
 
 ## EXTENSIONS
 
-[Tyrus connection proxy](connection-proxy-tyrus) that provides unified, websocket API compliant access to clustered websocket connections and properties.
+[Tyrus connection proxy](https://github.com/morgwai/servlet-scopes-connection-proxy-tyrus) that provides unified, websocket API compliant access to clustered websocket connections and properties.
 
 
 ## EXAMPLES
