@@ -12,10 +12,10 @@ import pl.morgwai.base.guice.scopes.InjectionContext;
 /**
  * Context of an {@link HttpSession}.
  * <p>
- * <b>NOTE:</b> If the servlet container being used uses mechanism other than the standard
+ * <b>NOTE:</b> If the servlet container being used, uses mechanism other than the standard
  * {@link java.io.Serializable Java Serialization} to persist/replicate {@link HttpSession}s, then
- * a deployment {@link ServletContext#setInitParameter(String, String) init-param} named
- * {@value #CUSTOM_SERIALIZATION_PARAM} must be set to {@code "true"} either in {@code web.xml} or
+ * a {@link ServletContext#setInitParameter(String, String) deployment init-param} named
+ * {@link  #CUSTOM_SERIALIZATION_PARAM} must be set to {@code "true"} either in {@code web.xml} or
  * programmatically before any request is served (for example in
  * {@link javax.servlet.ServletContextListener#contextInitialized(ServletContextEvent)}).</p>
  * @see ServletModule#httpSessionScope corresponding Scope
@@ -27,8 +27,19 @@ public class HttpSessionContext extends InjectionContext implements HttpSessionA
 	public HttpSession getSession() { return session; }
 	private transient HttpSession session;
 
+	/** See {@link #CUSTOM_SERIALIZATION_PARAM}. */
+	public static final String CUSTOM_SERIALIZATION_PARAM_SUFFIX = ".customSerialization";
+	/**
+	 * Name of the {@link ServletContext#setInitParameter(String, String) deployment init-param}
+	 * indicating that the servlet container uses serialization mechanism other than the
+	 * {@link java.io.Serializable standard Java Serialization} to persist/replicate
+	 * {@link HttpSession}s.
+	 * The value is a concatenation of
+	 * {@link Class#getName() the fully qualified name of this class} and
+	 * {@value #CUSTOM_SERIALIZATION_PARAM_SUFFIX}.
+	 */
 	public static final String CUSTOM_SERIALIZATION_PARAM =
-			"pl.morgwai.base.servlet.guice.scopes.HttpSessionContext.customSerialization";
+			HttpSessionContext.class.getName() + CUSTOM_SERIALIZATION_PARAM_SUFFIX;
 	final boolean customSerialization;
 
 
@@ -67,8 +78,9 @@ public class HttpSessionContext extends InjectionContext implements HttpSessionA
 
 
 	/**
-	 * Calls {@link #prepareForSerialization()} if {@value #CUSTOM_SERIALIZATION_PARAM}
-	 * {@link javax.servlet.ServletContext#getInitParameter(String) init-param} is {@code true}.
+	 * Calls {@link #prepareForSerialization()} if
+	 * {@link javax.servlet.ServletContext#getInitParameter(String) init-param} named
+	 * {@link #CUSTOM_SERIALIZATION_PARAM} is {@code true}.
 	 */
 	@Override
 	public void sessionWillPassivate(HttpSessionEvent serialization) {
@@ -78,8 +90,9 @@ public class HttpSessionContext extends InjectionContext implements HttpSessionA
 
 
 	/**
-	 * Calls {@link #restoreAfterDeserialization()} if {@value #CUSTOM_SERIALIZATION_PARAM}
-	 * {@link javax.servlet.ServletContext#getInitParameter(String) init-param} is {@code true}.
+	 * Calls {@link #restoreAfterDeserialization()} if
+	 * {@link javax.servlet.ServletContext#getInitParameter(String) init-param} named
+	 * {@link #CUSTOM_SERIALIZATION_PARAM} is {@code true}.
 	 */
 	@Override
 	public void sessionDidActivate(HttpSessionEvent deserialization) {
@@ -96,5 +109,5 @@ public class HttpSessionContext extends InjectionContext implements HttpSessionA
 
 
 
-	private static final long serialVersionUID = -7919669682504906435L;
+	private static final long serialVersionUID = -3482947070671038422L;
 }
