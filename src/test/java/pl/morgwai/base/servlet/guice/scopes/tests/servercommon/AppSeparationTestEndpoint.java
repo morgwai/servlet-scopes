@@ -3,9 +3,9 @@ package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 
 import java.io.IOException;
 
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
-import javax.websocket.server.ServerEndpoint;
+import jakarta.websocket.OnOpen;
+import jakarta.websocket.Session;
+import jakarta.websocket.server.ServerEndpoint;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;

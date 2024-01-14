@@ -6,8 +6,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
-import javax.websocket.*;
-import javax.websocket.MessageHandler.Whole;
+import jakarta.websocket.*;
+import jakarta.websocket.MessageHandler.Whole;
 
 import pl.morgwai.base.utils.concurrent.Awaitable;
 
