@@ -144,7 +144,8 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 				taskFinished.countDown();
 			}
 		}));
-		assertTrue("task should complete", taskFinished.await(20L, MILLISECONDS));
+		assertTrue("task should complete",
+				taskFinished.await(20L, MILLISECONDS));
 		assertFalse("servletResponse should not be committed",
 				responseCommitted);
 		assertFalse("wsConnection should not be closed",
