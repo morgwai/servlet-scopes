@@ -57,14 +57,17 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 	/**
 	 * Allows to override {@link #pingerService}'s {@code failureLimit} param.
-	 * By default {@link WebsocketPingerService#DEFAULT_FAILURE_LIMIT}.
+	 * By default {@value #DEFAULT_FAILURE_LIMIT}.
 	 * <p>
 	 * This method is called by {@link #createPingerService()}, it may use {@link #appDeployment}
 	 * and {@link #injector}.</p>
 	 */
 	protected int getPingFailureLimit() {
-		return WebsocketPingerService.DEFAULT_FAILURE_LIMIT;
+		return DEFAULT_FAILURE_LIMIT;
 	}
+
+	/** For {@link #getPingFailureLimit()}. */
+	public static final int DEFAULT_FAILURE_LIMIT = 4;
 
 
 

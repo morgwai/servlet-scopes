@@ -15,8 +15,7 @@ import org.glassfish.tyrus.core.cluster.ClusterContext;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.ServletModule;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
-import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
-import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
+import pl.morgwai.base.servlet.guice.utils.*;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
@@ -119,7 +118,7 @@ public class TyrusServer implements Server {
 		final var pingerService = new WebsocketPingerService(
 			intervalFromProperty != null ? Long.parseLong(intervalFromProperty) : 500L,
 			TimeUnit.MILLISECONDS,
-			WebsocketPingerService.DEFAULT_FAILURE_LIMIT
+			PingingServletContextListener.DEFAULT_FAILURE_LIMIT
 		);
 		appDeployment.setAttribute(WebsocketPingerService.class.getName(), pingerService);
 
