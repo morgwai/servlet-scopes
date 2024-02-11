@@ -103,7 +103,7 @@
 		<dependency>
 			<groupId>pl.morgwai.base</groupId>
 			<artifactId>jul-utils</artifactId>
-			<version>3.0</version>
+			<version>[4.0,)</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
