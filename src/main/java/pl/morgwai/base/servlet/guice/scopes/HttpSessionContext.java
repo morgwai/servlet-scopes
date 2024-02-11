@@ -14,9 +14,9 @@ import pl.morgwai.base.guice.scopes.InjectionContext;
  * <p>
  * <b>NOTE:</b> If the servlet container being used, uses mechanism other than the standard
  * {@link java.io.Serializable Java Serialization} to persist/replicate {@link HttpSession}s, then
- * a {@link ServletContext#setInitParameter(String, String) deployment init-param} named
- * {@link  #CUSTOM_SERIALIZATION_PARAM} must be set to {@code "true"} either in {@code web.xml} or
- * programmatically before any request is served (for example in
+ * a {@link ServletContext#setInitParameter(String, String) deployment init-param} named as the
+ * value of {@link #CUSTOM_SERIALIZATION_PARAM}, must be set to {@code "true"} either in
+ * {@code web.xml} or programmatically before any request is served (for example in
  * {@link javax.servlet.ServletContextListener#contextInitialized(ServletContextEvent)}).</p>
  * @see ServletModule#httpSessionScope corresponding Scope
  */
@@ -80,7 +80,7 @@ public class HttpSessionContext extends InjectionContext implements HttpSessionA
 	/**
 	 * Calls {@link #prepareForSerialization()} if
 	 * {@link javax.servlet.ServletContext#getInitParameter(String) init-param} named
-	 * {@link #CUSTOM_SERIALIZATION_PARAM} is {@code true}.
+	 * {@link #CUSTOM_SERIALIZATION_PARAM} is {@code "true"}.
 	 */
 	@Override
 	public void sessionWillPassivate(HttpSessionEvent serialization) {
