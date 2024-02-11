@@ -20,6 +20,12 @@ import pl.morgwai.base.servlet.guice.scopes.HttpSessionContext;
 
 
 
+/**
+ * Jetty server using {@link SessionDataStore HttpSession replication}, with a
+ * {@link NodeInfoServlet Servlet}, that outputs some data
+ * {@link HttpSession#setAttribute(String, Object) stored} and {@link HttpSessionContext scoped} to
+ * {@link HttpSession}s.
+ */
 public class JettyNode extends org.eclipse.jetty.server.Server {
 
 
@@ -115,6 +121,35 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 
 
 
+	/**
+	 * {@link #doGet(HttpServletRequest, HttpServletResponse) GET} outputs to
+	 * {@link HttpServletResponse} in
+	 * {@link Properties#store(java.io.OutputStream, String) Properties format} the following data:
+	 * <ul>
+	 *   <li>{@link HttpSession#getId()} at {@link #SESSION_ID_PROPERTY}</li>
+	 *   <li>
+	 *     {@link #NODE_ID_ATTRIBUTE}
+	 *     {@link HttpSession#getAttribute(String) session attribuute} at
+	 *     {@link #SESSION_NODE_ID_PROPERTY}.<br/>
+	 *     If the {@link HttpSession#isNew() HttpSession is new}, then {@code "null"} is output and
+	 *     the {@link HttpSession#setAttribute(String, Object) attribute is set} for subsequent
+	 *     requests to the value of {@link #NODE_ID_ATTRIBUTE}
+	 *     {@link javax.servlet.ServletContext#getInitParameter(String) deployment init-param}
+	 * 	   containing the id of the {@link JettyNode} serving the current request.
+	 *   </li>
+	 *   <li>
+	 *     {@link HttpSessionContext HttpSession-scoped} value of {@link #NODE_ID_ATTRIBUTE}
+	 *     {@link javax.servlet.ServletContext#getInitParameter(String) deployment init-param}
+	 *     at {@link #CONTEXT_NODE_ID_PROPERTY}.
+	 *   </li>
+	 *   <li>
+	 *     {@link HttpSessionContext HttpSession-scoped} value of {@link #NODE_ID_ATTRIBUTE}
+	 *     {@link javax.servlet.ServletContext#getInitParameter(String) deployment init-param}
+	 *     wrapped with a {@link NonSerializableObject} at
+	 *     {@link #NON_SERIALIZABLE_CONTEXT_NODE_ID_PROPERTY}.
+	 *   </li>
+	 * </ul>
+	 */
 	public static class NodeInfoServlet extends HttpServlet {
 
 		@Inject @Named(NODE_ID_ATTRIBUTE) Provider<String> nodeIdProvider;
