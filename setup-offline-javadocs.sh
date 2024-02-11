@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
+# Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 mvnLocalRepo=$(./mvnw -q -N exec:exec -Dexec.executable=echo '-Dexec.args=${settings.localRepository}') &&
 ./mvnw dependency:resolve -Dclassifier=javadoc -DincludeScope=compile -DexcludeTransitive=true &&
 

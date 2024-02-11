@@ -1,6 +1,7 @@
 # Servlet and Websocket Guice Scopes
 
 `containerCallScope` (either a `HttpServletRequest` or a websocket endpoint event), `websocketConnectionScope` (`javax.websocket.Session`) and `httpSessionScope`.<br/>
+Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0<br/>
 <br/>
 **latest release: 14.0**<br/>
 [javax flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/14.0-javax/jar)

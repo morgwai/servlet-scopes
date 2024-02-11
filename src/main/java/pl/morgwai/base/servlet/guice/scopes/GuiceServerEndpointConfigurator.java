@@ -1,4 +1,4 @@
-// Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
+// Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
 import java.lang.annotation.Annotation;

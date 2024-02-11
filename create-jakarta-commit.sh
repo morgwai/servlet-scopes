@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
+# Copyright 2022 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 if [[ -n "$(git status --porcelain)" ]]; then
 	echo "repository not clean, exiting..." >&2;
 	exit 1;

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
+# Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 rm -f build.gradle settings.gradle &&
 
 ./gradlew init --type pom --dsl groovy <<< 'no' &&
