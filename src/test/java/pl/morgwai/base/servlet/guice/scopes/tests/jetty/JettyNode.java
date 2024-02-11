@@ -65,7 +65,6 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 		sessionCache.setSessionDataStore(sessionStore);
 		testAppHandler.getSessionHandler().setSessionCache(sessionCache);
 
-		setStopAtShutdown(true);
 		start();
 		this.port = Arrays.stream(getConnectors())
 			.filter(NetworkConnector.class::isInstance)
@@ -178,6 +177,7 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 		final var customSerialization = args.length > 3 && Boolean.parseBoolean(args[3]);
 
 		final var node = new JettyNode(port, nodeId, sessionStore, customSerialization);
+		node.setStopAtShutdown(true);
 		node.join();
 		node.destroy();
 		System.out.println("exiting, bye!");
