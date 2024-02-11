@@ -165,7 +165,7 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 				: InetAddress.getLocalHost().getHostName() + (
 					(port != 0)
 							? ":" + port
-							: "@" + System.nanoTime()
+							: "_pid" + ProcessHandle.current().pid()
 				);
 
 		final var sessionFolder = (args.length > 2)
