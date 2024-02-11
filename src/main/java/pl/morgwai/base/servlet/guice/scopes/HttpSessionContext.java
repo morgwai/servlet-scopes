@@ -1,9 +1,9 @@
 // Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.http.*;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.http.*;
 
 import pl.morgwai.base.guice.scopes.InjectionContext;
 
@@ -17,7 +17,7 @@ import pl.morgwai.base.guice.scopes.InjectionContext;
  * a {@link ServletContext#setInitParameter(String, String) deployment init-param} named
  * {@link  #CUSTOM_SERIALIZATION_PARAM} must be set to {@code "true"} either in {@code web.xml} or
  * programmatically before any request is served (for example in
- * {@link javax.servlet.ServletContextListener#contextInitialized(ServletContextEvent)}).</p>
+ * {@link jakarta.servlet.ServletContextListener#contextInitialized(ServletContextEvent)}).</p>
  * @see ServletModule#httpSessionScope corresponding Scope
  */
 public class HttpSessionContext extends InjectionContext implements HttpSessionActivationListener {
@@ -79,7 +79,7 @@ public class HttpSessionContext extends InjectionContext implements HttpSessionA
 
 	/**
 	 * Calls {@link #prepareForSerialization()} if
-	 * {@link javax.servlet.ServletContext#getInitParameter(String) init-param} named
+	 * {@link jakarta.servlet.ServletContext#getInitParameter(String) init-param} named
 	 * {@link #CUSTOM_SERIALIZATION_PARAM} is {@code true}.
 	 */
 	@Override
@@ -91,7 +91,7 @@ public class HttpSessionContext extends InjectionContext implements HttpSessionA
 
 	/**
 	 * Calls {@link #restoreAfterDeserialization()} if
-	 * {@link javax.servlet.ServletContext#getInitParameter(String) init-param} named
+	 * {@link jakarta.servlet.ServletContext#getInitParameter(String) init-param} named
 	 * {@link #CUSTOM_SERIALIZATION_PARAM} is {@code true}.
 	 */
 	@Override

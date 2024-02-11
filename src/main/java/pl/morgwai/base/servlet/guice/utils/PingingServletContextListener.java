@@ -23,7 +23,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 * {@code Endpoints}. Initialized with the result of {@link #createPingerService()}.
 	 * <p>
 	 * The app-wide pinger service is also stored as a
-	 * {@link javax.servlet.ServletContext#getAttribute(String) deployment attribute} under
+	 * {@link jakarta.servlet.ServletContext#getAttribute(String) deployment attribute} under
 	 * {@link Class#getName() fully-qualified name} of {@link WebsocketPingerService} class.</p>
 	 */
 	protected WebsocketPingerService pingerService;
@@ -116,7 +116,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	/**
 	 * Overrides {@link #endpointConfigurator} to be a {@link PingingEndpointConfigurator}.
 	 * Also {@link #createPingerService() creates the app-wide pinger service} and stores it as a
-	 * {@link javax.servlet.ServletContext#setAttribute(String, Object) deployment attribute} under
+	 * {@link jakarta.servlet.ServletContext#setAttribute(String, Object) deployment attribute} under
 	 * {@link Class#getName() fully-qualified name} of {@link WebsocketPingerService} class.
 	 */
 	@Override
