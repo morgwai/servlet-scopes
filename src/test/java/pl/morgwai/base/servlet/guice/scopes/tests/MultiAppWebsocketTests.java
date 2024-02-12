@@ -12,8 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 
 
@@ -66,12 +65,13 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 			throws InterruptedException, DeploymentException, IOException {
 		final var messages = new ArrayList<String>(2);
 
-		final var endpoint = new ClientEndpoint(messages::add, null, null);
+		final var endpoint1 = new ClientEndpoint(messages::add, null, null);
 		final var uri1 = URI.create(testAppWebsocketUrl);
 		try (
-			final var ignored = clientWebsocketContainer.connectToServer(endpoint, null, uri1);
+			final var ignored = clientWebsocketContainer.connectToServer(endpoint1, null, uri1);
 		) {
-			if ( !endpoint.awaitClosure(500L, TimeUnit.MILLISECONDS)) fail("timeout");
+			assertTrue("endpoint1 should be closed",
+					endpoint1.awaitClosure(500L, TimeUnit.MILLISECONDS));
 		}
 
 		final var endpoint2 = new ClientEndpoint(messages::add, null, null);
@@ -79,7 +79,8 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 		try (
 			final var ignored = clientWebsocketContainer.connectToServer(endpoint2, null, uri2);
 		) {
-			if ( !endpoint2.awaitClosure(500L, TimeUnit.MILLISECONDS)) fail("timeout");
+			assertTrue("endpoint2 should be closed",
+					endpoint2.awaitClosure(500L, TimeUnit.MILLISECONDS));
 		}
 
 		assertNotEquals("Endpoint Configurators of separate apps should have separate Injectors",

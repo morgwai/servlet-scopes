@@ -133,9 +133,11 @@ public abstract class WebsocketIntegrationTests {
 		if (sendTestMessage) connection.getAsyncRemote().sendText(testMessage);
 		testMessageSent.countDown();
 		try {
-			if ( !repliesReceived.await(2L, SECONDS)) fail("timeout");
+			assertTrue("relies should be received",
+					repliesReceived.await(2L, SECONDS));
 			connection.close();
-			if ( !clientEndpoint.awaitClosure(2L, SECONDS)) fail("timeout");
+			assertTrue ("client endpoint should be closed",
+					clientEndpoint.awaitClosure(2L, SECONDS));
 		} catch (InterruptedException e) {  // interrupted by clientEndpoint.closeHandler above
 			fail("abnormal close code: " + closeReasonHolder[0].getCloseCode());
 		}
@@ -309,10 +311,12 @@ public abstract class WebsocketIntegrationTests {
 				);
 			}
 
-			if ( !welcomesReceived.await(2L, SECONDS)) fail("timeout");
+			assertTrue("welcome messages should be received by all clients",
+					welcomesReceived.await(2L, SECONDS));
 			connections[0].getAsyncRemote().sendText(broadcastMessage);
 			broadcastSent.countDown();
-			if ( !broadcastsReceived.await(2L, SECONDS)) fail("timeout");
+			assertTrue("broadcast messages should be received by all clients",
+					broadcastsReceived.await(2L, SECONDS));
 		} finally {
 			for (int clientNumber = 0; clientNumber < urls.length; clientNumber++) {
 				if (connections[clientNumber] != null && connections[clientNumber].isOpen()) {
@@ -324,7 +328,7 @@ public abstract class WebsocketIntegrationTests {
 		}
 
 		assertTrue(
-			"timeout",
+			"all client endpoints should be closed",
 			Awaitable.awaitMultiple(
 				2L, SECONDS,
 				Arrays.stream(clientEndpoints)
