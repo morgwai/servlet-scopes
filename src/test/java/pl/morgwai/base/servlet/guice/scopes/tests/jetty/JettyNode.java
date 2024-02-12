@@ -74,9 +74,9 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 		start();
 		this.port = Arrays.stream(getConnectors())
 			.filter(NetworkConnector.class::isInstance)
-			.findFirst()
 			.map(NetworkConnector.class::cast)
 			.map(NetworkConnector::getLocalPort)
+			.findFirst()
 			.orElseThrow();
 	}
 
