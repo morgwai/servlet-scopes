@@ -54,12 +54,16 @@ public class HttpSessionContextReplicationTests {
 
 	@After
 	public void shutdown() throws Exception {
-		if ( !node1.isStopped()) node1.stop();
-		if ( !node2.isStopped()) node2.stop();
-		node1.join();
-		node2.join();
-		node1.destroy();
-		node2.destroy();
+		if (node1 != null) {
+			if ( !node1.isStopped()) node1.stop();
+			node1.join();
+			node1.destroy();
+		}
+		if (node2 != null) {
+			if ( !node2.isStopped()) node2.stop();
+			node2.join();
+			node2.destroy();
+		}
 	}
 
 
