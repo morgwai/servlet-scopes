@@ -160,8 +160,10 @@ public class HttpSessionContextReplicationTests {
 	void testHttpSessionContextReplicationWithJdbcStore(boolean customSerialization)
 			throws Exception {
 		final var adaptor = new DatabaseAdaptor();
-		final var driver = new org.h2.Driver();
-		adaptor.setDriverInfo(driver, "jdbc:h2:mem:servlet-scopes-test-sessions;DB_CLOSE_DELAY=-1");
+		adaptor.setDriverInfo(
+			org.h2.Driver.class.getName(),
+			"jdbc:h2:mem:servlet-scopes-test-sessions;DB_CLOSE_DELAY=-1"
+		);
 		testHttpSessionContextReplication(
 			createJdbcSessionStore(adaptor),
 			createJdbcSessionStore(adaptor),
