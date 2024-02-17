@@ -20,7 +20,8 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * If an instance of this {@code Filter} is not created by Guice, then a reference to the
  * {@link ContextTracker} must be set either
  * {@link #setContainerCallContextTracker(ContextTracker) manually} or by requesting
- * {@link com.google.inject.Injector#injectMembers(Object) Guice member injection}.<br/>
+ * {@link com.google.inject.Injector#injectMembers(Object) Guice member injection}.</p>
+ * <p>
  * This {@code Filter} should usually be installed at the beginning of the
  * chain for all URL patterns for new and async {@code Requests}:
  * {@link FilterRegistration#addMappingForUrlPatterns(java.util.EnumSet, boolean, String...)
@@ -48,7 +49,7 @@ public class RequestContextFilter implements Filter {
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 		final ServletRequestContext ctx;
-		if (request.getDispatcherType() == DispatcherType.REQUEST) {
+		if (request.getDispatcherType() == DispatcherType.REQUEST) {  // new request
 			ctx = new ServletRequestContext(
 					(HttpServletRequest) request, containerCallContextTracker);
 			request.setAttribute(ServletRequestContext.class.getName(), ctx);
@@ -60,7 +61,7 @@ public class RequestContextFilter implements Filter {
 			ctx.executeWithinSelf(
 				() -> {
 					chain.doFilter(request, response);
-					return null;
+					return null;  // Void
 				}
 			);
 		} catch (IOException | ServletException | RuntimeException e) {

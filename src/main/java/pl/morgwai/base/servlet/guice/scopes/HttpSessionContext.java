@@ -79,8 +79,8 @@ public class HttpSessionContext extends InjectionContext implements HttpSessionA
 
 	/**
 	 * Calls {@link #prepareForSerialization()} if
-	 * {@link javax.servlet.ServletContext#getInitParameter(String) init-param} named
-	 * {@link #CUSTOM_SERIALIZATION_PARAM} is {@code "true"}.
+	 * {@link javax.servlet.ServletContext#getInitParameter(String) deployment init-param} named as
+	 * the value of {@link #CUSTOM_SERIALIZATION_PARAM} is {@code "true"}.
 	 */
 	@Override
 	public void sessionWillPassivate(HttpSessionEvent serialization) {
@@ -91,8 +91,8 @@ public class HttpSessionContext extends InjectionContext implements HttpSessionA
 
 	/**
 	 * Calls {@link #restoreAfterDeserialization()} if
-	 * {@link javax.servlet.ServletContext#getInitParameter(String) init-param} named
-	 * {@link #CUSTOM_SERIALIZATION_PARAM} is {@code true}.
+	 * {@link javax.servlet.ServletContext#getInitParameter(String) deployment init-param} named as
+	 * the value of {@link #CUSTOM_SERIALIZATION_PARAM} is {@code "true"}.
 	 */
 	@Override
 	public void sessionDidActivate(HttpSessionEvent deserialization) {

@@ -49,23 +49,29 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  *         .build()
  * );}</pre>
  * <p>
- * To use this {@code Configurator} for @{@link ServerEndpoint} annotated {@code Endpoints}, first
- * the app-wide {@link Injector} must be
- * {@link ServletContext#setAttribute(String, Object) stored as a deployment attribute} under the
- * {@link Class#getName() fully-qualified name} of {@link Injector} class in
- * {@link javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
- * contextInitialized(event)} method of app's {@link javax.servlet.ServletContextListener}.<br/>
- * Secondly, {@link #registerDeployment(ServletContext)} and
- * {@link #deregisterDeployment(ServletContext)} static methods must be called respectively in
- * {@link javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
- * contextInitialized(event)} and
- * {@link javax.servlet.ServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)
- * contextDestroyed(event)} methods of app's {@link javax.servlet.ServletContextListener}.<br/>
- * This way container-created instances (with
- * {@link #GuiceServerEndpointConfigurator() the param-less constructor}) of this
- * {@code Configurator} can obtain a reference to the {@link Injector}. Note that if app's
- * {@code Listener} extends {@link GuiceServletContextListener}, the whole above setup is
- * automatically taken care of.<br/>
+ * To use this {@code Configurator} for @{@link ServerEndpoint} annotated {@code Endpoints}, the
+ * following setup must be performed:</p>
+ * <ol>
+ *   <li>
+ *     the app-wide {@link Injector} must be
+ *     {@link ServletContext#setAttribute(String, Object) stored as a deployment attribute} under
+ *     the {@link Class#getName() fully-qualified name} of {@link Injector} class in {@link
+ *     javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
+ *     contextInitialized(event)} method of app's {@link javax.servlet.ServletContextListener}.
+ *   </li>
+ *   <li>
+ *     {@link #registerDeployment(ServletContext)} and {@link #deregisterDeployment(ServletContext)}
+ *     static methods must be called respectively in {@link
+ *     javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
+ *     contextInitialized(event)} and {@link
+ *     javax.servlet.ServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)
+ *     contextDestroyed(event)} methods of app's {@link javax.servlet.ServletContextListener}.
+ *   </li>
+ * </ol>
+ * <p>
+ * This allows container-created instances of this {@code Configurator} to obtain a reference to the
+ * {@link Injector}. Note that if app's {@code Listener} extends
+ * {@link GuiceServletContextListener}, the above setup is performed automatically.<br/>
  * Finally, {@code Endpoint} methods annotated with @{@link OnOpen} <b>must</b> have a
  * {@link Session} param.<br/>
  * After the above conditions are met, simply pass this class as
@@ -85,7 +91,7 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  *     // other methods here...
  * }</pre>
  * <p>
- * <b>NOTE:</b> due to the way most debuggers work, it is <b>strongly</b> recommended for
+ * <b>NOTE:</b> due to the way many debuggers work, it is <b>strongly</b> recommended for
  * {@code toString()} methods of {@code Endpoints} to work properly even when called outside of any
  * {@code Context}.</p>
  * @see GuiceServletContextListener
@@ -106,12 +112,13 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	/**
-	 * Registers {@code appDeployment} to be used by container-created
-	 * {@code GuiceServerEndpointConfigurator} instances.
+	 * Registers {@code appDeployment} for container-created
+	 * {@code Configurator} instances to call {@link #initialize(ServletContext)}.
 	 * <p>
 	 * This method is called automatically by
 	 * {@link GuiceServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)},
 	 * it must be called manually in apps that don't use it.</p>
+	 * @see #modifyHandshake(ServerEndpointConfig, HandshakeRequest, HandshakeResponse)
 	 */
 	public static void registerDeployment(ServletContext appDeployment) {
 		appDeployments.put(appDeployment.getContextPath(), new WeakReference<>(appDeployment));
@@ -144,12 +151,21 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 
-	/** Necessary for {@link ServerEndpoint} annotated {@code Endpoints}. */
+	/**
+	 * Used by the container to create {@code Configurators} for {@link ServerEndpoint} annotated
+	 * {@code Endpoints}.
+	 * {@link #initialize(ServletContext)} will be called by the 1st invocation of
+	 * {@link #modifyHandshake(ServerEndpointConfig, HandshakeRequest, HandshakeResponse)}.
+	 */
 	public GuiceServerEndpointConfigurator() {}
 
 
 
-	/** For {@link GuiceServletContextListener} managed instance. */
+	/**
+	 * Creates {@link GuiceServletContextListener} managed instance for
+	 * {@link GuiceServletContextListener#addEndpoint(Class, String) programmatic Endpoints}.
+	 * Calls {@link #initialize(ServletContext)} right away.
+	 */
 	public GuiceServerEndpointConfigurator(ServletContext appDeployment) {
 		this.appDeployment = appDeployment;
 		initialize(appDeployment);
@@ -178,8 +194,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	/**
 	 * Obtains an instance of {@code endpointClass} from {@link Injector#getInstance(Class) Guice}
-	 * and creates a context-aware proxy for it, so that {@code Endpoint} lifecycle methods are
-	 * executed within {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
+	 * and creates a context-aware proxy for it.
+	 * The proxy ensures that {@code Endpoint} lifecycle methods are executed within
+	 * {@link WebsocketEventContext}, {@link WebsocketConnectionContext} and if an
+	 * {@link HttpSession} is present, then also {@link HttpSessionContext}.
 	 * @return a proxy for the newly created {@code endpointClass} instance.
 	 */
 	@Override
@@ -258,13 +276,16 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	/**
 	 * Checks if {@code endpointClass} has all the required methods with appropriate
 	 * {@code Endpoint} lifecycle annotations as specified by
-	 * {@link #getRequiredEndpointMethodAnnotationTypes()}.
+	 * {@link #getRequiredEndpointMethodAnnotationTypes()} and if {@link OnOpen} annotated method
+	 * has a {@link Session} param.
 	 * @throws RuntimeException if the check fails.
 	 */
 	private void checkIfRequiredEndpointMethodsPresent(Class<?> endpointClass) {
 		final var fugitiveMethodAnnotationTypes = getRequiredEndpointMethodAnnotationTypes();
 		final var fugitiveMethodAnnotationTypesIterator = fugitiveMethodAnnotationTypes.iterator();
 		while (fugitiveMethodAnnotationTypesIterator.hasNext()) {
+			// remove annotation from fugitiveMethodAnnotationTypes each time a corresponding method
+			// is found within endpointClass
 			final var fugitiveAnnotationType = fugitiveMethodAnnotationTypesIterator.next();
 			for (var method: endpointClass.getMethods()) {
 				if (method.isAnnotationPresent(fugitiveAnnotationType)) {
@@ -290,14 +311,15 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	/**
 	 * Returns a set of annotations of {@code Endpoint} lifecycle methods that are required to be
-	 * present in {@code Endpoint} classes using this configurator. By default a singleton of
-	 * {@link OnOpen}. Subclasses may override this method if needed by calling {@code super} and
-	 * adding their required annotations to the obtained set before returning it.
+	 * present in {@code Endpoint} classes using this configurator.
+	 * By default a singleton of {@link OnOpen}. Subclasses may override this method if needed.
+	 * Overriding methods should call {@code super} and add their required annotations to the
+	 * obtained {@code Set} before returning it.
 	 */
 	protected HashSet<Class<? extends Annotation>> getRequiredEndpointMethodAnnotationTypes() {
-		final var result = new HashSet<Class<? extends Annotation>>(5);
-		result.add(OnOpen.class);
-		return result;
+		final var requiredAnnotationTypes = new HashSet<Class<? extends Annotation>>(5);
+		requiredAnnotationTypes.add(OnOpen.class);
+		return requiredAnnotationTypes;
 	}
 
 
@@ -306,10 +328,11 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * Stores into {@link ServerEndpointConfig#getUserProperties() user properties} the
 	 * {@link HttpSession} associated with {@code request}.
 	 * <p>
-	 * For {@code Configurator} instances created by the container (as a result of providing this
-	 * class as a {@link ServerEndpoint#configurator()} argument of some annotated {@code Endpoint}
-	 * class), this method will also call {@link #initialize(ServletContext)} on its first
-	 * invocation.</p>
+	 * For container-created {@code Configurator} instances using
+	 * {@link #GuiceServerEndpointConfigurator() the param-less constructor} (as a result of
+	 * providing this class as a {@link ServerEndpoint#configurator()} argument for some annotated
+	 * {@code Endpoint} class), this method will also call {@link #initialize(ServletContext)} on
+	 * its first invocation.</p>
 	 */
 	@Override
 	public void modifyHandshake(
@@ -323,17 +346,19 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		}
 
 		if (this.appDeployment == null) {
-			// multiple threads initializing appDeployment reference concurrently in the same
-			// Configurator instance, will set exactly the same values
+			// container-created instance using param-less constructor:
+			// retrieve appDeployment and call initialize(...)
 			ServletContext appDeployment = null;
 			if (httpSession != null) {
 				appDeployment = ((HttpSession) httpSession).getServletContext();
 			} else {
+				// try retrieving from appDeployments Map (appDeploymentPath -> appDeployment)
 				final var requestPath = request.getRequestURI().getPath();
 				final var appDeploymentPath = requestPath.substring(
 						0, requestPath.lastIndexOf(config.getPath()));
 				final var appDeploymentRef = appDeployments.get(appDeploymentPath);
 				if (appDeploymentRef != null) appDeployment = appDeploymentRef.get();
+
 				if (appDeployment == null) {
 					final var message = String.format(
 						NO_DEPLOYMENT_FOR_PATH,
@@ -344,7 +369,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					System.err.println(message);
 					try {
 						// pick first and hope for the best: this is guaranteed to work correctly
-						// only if this is the only app using this Configurator in the given
+						// only if this is the only app using this Configurator in a given
 						// ClassLoader (which is the default for standard war file deployments)
 						appDeployment = appDeployments.values().iterator().next().get();
 					} catch (NoSuchElementException e) {
@@ -355,6 +380,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 					}
 				}
 			}
+			// multiple threads initializing the same Configurator, will set exactly the same values
 			initialize(appDeployment);
 			this.appDeployment = appDeployment;
 		}
@@ -372,8 +398,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	/**
 	 * Subclasses may override this method to further customize {@code Endpoints}.
 	 * {@link InvocationHandler#invoke(Object, Method, Object[])} method of the returned handler
-	 * will be executed within {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
-	 * By default it returns a handler that simply invokes the given method on {@code endpoint}.
+	 * will be executed within websocket {@code  Contexts}. By default this method returns a handler
+	 * that simply invokes the given method on {@code endpoint}.
 	 */
 	protected InvocationHandler getAdditionalDecorator(Object endpoint) {
 		return (proxy, method, args) -> method.invoke(endpoint, args);
@@ -387,8 +413,9 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 /**
- * Executes each call to the wrapped {@code Endpoint} instance within the current
- * {@link ContainerCallContext} and {@link WebsocketConnectionContext}.
+ * Executes each call to its wrapped {@code Endpoint} within websocket {@code Contexts}.
+ * Creates a new separate {@link WebsocketEventContext} for method invocation with links to the
+ * current {@link WebsocketConnectionContext} and {@link HttpSessionContext} if it's present.
  */
 class EndpointProxyHandler implements InvocationHandler {
 
@@ -439,11 +466,11 @@ class EndpointProxyHandler implements InvocationHandler {
 			}
 		}
 
-		// the first call to this Endpoint instance and it is NOT onOpen(...) : this is usually a
-		// call from a debugger, most usually toString(). Session has not been intercepted yet, so
-		// contexts couldn't have been created: just call the method outside of contexts and hope
-		// for the best...
 		if (connectionCtx == null) {
+			// the first call to this Endpoint instance and it is NOT onOpen(...) : this is usually
+			// a call from a debugger, most usually toString(). Session has not been intercepted
+			// yet, so contexts couldn't have been created: just call the method outside of contexts
+			// and hope for the best...
 			final var manualCallWarningMessage =
 					proxy.getClass().getSimpleName() + '.' + method.getName() + MANUAL_CALL_WARNING;
 			log.warning(manualCallWarningMessage);
