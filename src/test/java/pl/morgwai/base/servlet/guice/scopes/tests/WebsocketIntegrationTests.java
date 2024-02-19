@@ -133,7 +133,7 @@ public abstract class WebsocketIntegrationTests {
 		if (sendTestMessage) connection.getAsyncRemote().sendText(testMessage);
 		testMessageSent.countDown();
 		try {
-			assertTrue("relies should be received",
+			assertTrue("replies should be received",
 					repliesReceived.await(2L, SECONDS));
 			connection.close();
 			assertTrue ("client endpoint should be closed",
