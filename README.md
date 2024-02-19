@@ -3,11 +3,11 @@
 `containerCallScope` (either a `HttpServletRequest` or a websocket endpoint event), `websocketConnectionScope` (`javax.websocket.Session`) and `httpSessionScope`.<br/>
 Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0<br/>
 <br/>
-**latest release: 14.3**<br/>
-[javax flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/14.3-javax/jar)
-([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/14.3-javax)) - supports Servlet `4.0.1` and Websocket `1.1` APIs<br/>
-[jakarta flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/14.3-jakarta/jar)
-([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/14.3-jakarta)) - supports Servlet `5.0.0` to at least `6.0.0` and Websocket `2.0.0` to at least `2.1.1` APIs 
+**latest release: 15.0**<br/>
+[javax flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/15.0-javax/jar)
+([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/15.0-javax)) - supports Servlet `4.0.1` and Websocket `1.1` APIs<br/>
+[jakarta flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/15.0-jakarta/jar)
+([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/15.0-jakarta)) - supports Servlet `5.0.0` to at least `6.0.0` and Websocket `2.0.0` to at least `2.1.1` APIs 
 
 
 ## OVERVIEW
