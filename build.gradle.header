@@ -20,3 +20,7 @@ publishing {
 		}
 	}
 }
+
+test {
+	systemProperty "pl.morgwai.level", System.getProperty("pl.morgwai.level")
+}
