@@ -7,14 +7,10 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 
 import javax.servlet.ServletContext;
-import javax.websocket.OnClose;
-import javax.websocket.Session;
+import javax.websocket.*;
 
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
-
-import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnClose;
-import static pl.morgwai.base.servlet.utils.EndpointUtils.isOnOpen;
 
 
 
@@ -118,5 +114,48 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 		}
 
 		Session connection;
+	}
+
+
+
+	/**
+	 * Checks if {@code method} is either annotated with {@link OnOpen} or overrides
+	 * {@link Endpoint#onOpen(Session, EndpointConfig)}.
+	 */
+	static boolean isOnOpen(Method method) {
+		return isEndpointLifecycleMethod(method, OnOpen.class, "onOpen");
+	}
+
+	/**
+	 * Checks if {@code method} is either annotated with {@link OnClose} or overrides
+	 * {@link Endpoint#onClose(Session, CloseReason)}.
+	 */
+	static boolean isOnClose(Method method) {
+		return isEndpointLifecycleMethod(method, OnClose.class, "onClose");
+	}
+
+	/**
+	 * Checks if {@code method} either is annotated with {@code annotationClass} or overrides the
+	 * {@link Endpoint} method given by {@code endpointMethodName}.
+	 */
+	private static boolean isEndpointLifecycleMethod(
+		Method method,
+		Class<? extends Annotation> annotationClass,
+		String endpointMethodName
+	) {
+		if (
+			method.isAnnotationPresent(annotationClass)
+			&& !Endpoint.class.isAssignableFrom(method.getDeclaringClass())
+		) {
+			return true;
+		}
+
+		if ( !method.getName().equals(endpointMethodName)) return false;
+		try {
+			Endpoint.class.getMethod(endpointMethodName, method.getParameterTypes());
+			return true;
+		} catch (NoSuchMethodException e) {
+			return false;
+		}
 	}
 }

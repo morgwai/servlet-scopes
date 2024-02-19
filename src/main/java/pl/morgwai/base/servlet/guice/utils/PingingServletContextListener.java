@@ -1,11 +1,14 @@
 // Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.utils;
 
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledExecutorService;
 
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServletContextListener;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 
 
@@ -50,7 +53,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 * and {@link #injector}.</p>
 	 */
 	protected long getPingIntervalMillis() {
-		return WebsocketPingerService.DEFAULT_INTERVAL_SECONDS * 1000L;
+		return SECONDS.toMillis(WebsocketPingerService.DEFAULT_INTERVAL_SECONDS);
 	}
 
 
@@ -67,7 +70,34 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	}
 
 	/** For {@link #getPingFailureLimit()}. */
-	public static final int DEFAULT_FAILURE_LIMIT = 4;
+	public static final int DEFAULT_FAILURE_LIMIT = 1;
+
+
+
+	/**
+	 * Allows to override name of a {@link java.security.MessageDigest} to use for ping content
+	 * hashing by {@link #pingerService}.
+	 * By default {@value WebsocketPingerService#DEFAULT_HASH_FUNCTION}.
+	 * <p>
+	 * This method is called by {@link #createPingerService()}, it may use {@link #appDeployment}
+	 * and {@link #injector}.</p>
+	 */
+	protected String getHashFunctionName() {
+		return WebsocketPingerService.DEFAULT_HASH_FUNCTION;
+	}
+
+
+
+	/**
+	 * Creates a scheduler to be used by {@link #pingerService} for ping scheduling.
+	 * By default {@link WebsocketPingerService#newDefaultScheduler()}.
+	 * <p>
+	 * This method is called by {@link #createPingerService()}, it may use {@link #appDeployment}
+	 * and {@link #injector}.</p>
+	 */
+	protected ScheduledExecutorService createScheduler() {
+		return WebsocketPingerService.newDefaultScheduler();
+	}
 
 
 
@@ -87,8 +117,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	/**
 	 * Creates {@link #pingerService the app-wide pinger service}. By default it calls
 	 * {@link #isPingerInKeepAliveOnlyMode()}, {@link #getPingIntervalMillis()} and
-	 * {@link #getPingFailureLimit()} and {@link #shouldSynchronizePingSending()} to configure the
-	 * service.
+	 * {@link #getPingFailureLimit()}, {@link #getHashFunctionName()}, {@link #createScheduler()}
+	 * and {@link #shouldSynchronizePingSending()} to configure the service.
 	 * <p>
 	 * This method is called once in a {@link #createEndpointConfigurator()} and may be overridden
 	 * if other customizations are required. It may use {@link #appDeployment} and
@@ -98,14 +128,18 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 		if (isPingerInKeepAliveOnlyMode()) {
 			return new WebsocketPingerService(
 				getPingIntervalMillis(),
-				TimeUnit.MILLISECONDS,
+				MILLISECONDS,
+				getHashFunctionName(),
+				createScheduler(),
 				shouldSynchronizePingSending()
 			);
 		} else {
 			return new WebsocketPingerService(
 				getPingIntervalMillis(),
-				TimeUnit.MILLISECONDS,
+				MILLISECONDS,
 				getPingFailureLimit(),
+				getHashFunctionName(),
+				createScheduler(),
 				shouldSynchronizePingSending()
 			);
 		}
