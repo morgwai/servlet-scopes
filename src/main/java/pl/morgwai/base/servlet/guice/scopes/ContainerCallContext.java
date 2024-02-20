@@ -1,7 +1,7 @@
 // Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
-import javax.servlet.http.HttpSession;
+import javax.servlet.http.*;
 
 import com.google.inject.OutOfScopeException;
 import pl.morgwai.base.guice.scopes.ContextTracker;
@@ -12,10 +12,15 @@ import pl.morgwai.base.guice.scopes.TrackableContext;
 /**
  * Context of either an {@link ServletRequestContext HttpServletRequest} or a
  * {@link WebsocketEventContext websocket event}.
- * Each single container-invoked call either to one of {@link javax.servlet.Servlet}'s
- * {@code doXXX(...)} methods or to one of websocket {@code Endpoint}'s event-handling methods
- * {@link TrackableContext#executeWithinSelf(java.util.concurrent.Callable) runs within} its own
- * separate instance of the appropriate subclass of {@code ContainerCallContext}.
+ * Each single container-invoked call either to one of
+ * {@link javax.servlet.Servlet#service(javax.servlet.ServletRequest, javax.servlet.ServletResponse)
+ * Servlet's service(...)}&nbsp;/&nbsp;{@link
+ * javax.servlet.http.HttpServlet#doGet(HttpServletRequest, HttpServletResponse) doXXX(...)} methods
+ * or to one of websocket {@code Endpoint}'s
+ * {@link javax.websocket.Endpoint#onOpen(javax.websocket.Session, javax.websocket.EndpointConfig)
+ * event}-{@link javax.websocket.OnMessage handling} methods
+ * {@link TrackableContext#executeWithinSelf(java.util.concurrent.Callable) runs within} a
+ * <b>separate</b> instance of the appropriate {@code ContainerCallContext} subclass.
  * <p>
  * Having a common base class for {@link ServletRequestContext} and {@link WebsocketEventContext}
  * allows to provide {@link ServletModule#containerCallScope container-call scoped} objects both in
@@ -26,7 +31,7 @@ public abstract class ContainerCallContext extends TrackableContext<ContainerCal
 
 
 
-	/** Returns the {@link HttpSession}  this request/event belongs to. */
+	/** Returns the {@link HttpSession} this request/event belongs to or {@code null} if none. */
 	public abstract HttpSession getHttpSession();
 
 

@@ -77,7 +77,8 @@ public class HttpSessionContextReplicationTests {
 		node1 = new JettyNode(0, NODE1_ID, store1, customSerialization);
 		if (startNode2rightAway) {
 			// FileSessionDataStore's files may be accessed by only 1 node process at a time, so
-			// the start of node2 needs to be delayed in such case, otherwise start it right away
+			// the start of node2 needs to be delayed in such case, otherwise (JDBCSessionDataStore
+			// case) start it right away
 			node2 = new JettyNode(0, NODE2_ID, store2, customSerialization);
 		}
 		final var url1 = URL_PREFIX + node1.getPort() + APP_PATH + NODE_INFO_SERVLET_PATH;

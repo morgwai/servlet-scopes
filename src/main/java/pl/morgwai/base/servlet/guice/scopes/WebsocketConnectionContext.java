@@ -9,17 +9,12 @@ import pl.morgwai.base.guice.scopes.InjectionContext;
 
 /**
  * Context of a websocket connection ({@link javax.websocket.Session}).
- * <p>
- * Each instance is associated with a given endpoint instance.
- * Specifically, all methods of the associated endpoint annotated with one of the websocket
- * annotations ({@link javax.websocket.OnOpen @OnOpen},
- * {@link javax.websocket.OnMessage @OnMessage}, {@link javax.websocket.OnError @OnError} and
- * {@link javax.websocket.OnClose @OnClose}), or overriding those of
- * {@link javax.websocket.Endpoint} or of registered {@link javax.websocket.MessageHandler}s, are
- * executed within the same {@code WebsocketConnectionContext} instance.</p>
+ * All {@link WebsocketEventContext websocket events} related to the same {@link Session connection}
+ * are {@link WebsocketEventContext#executeWithinSelf(java.util.concurrent.Callable) handled within}
+ * <b>the same</b> {@code WebsocketConnectionContext} instance.
  * <p>
  * Instances are stored in {@link Session#getUserProperties() user properites} under
- * {@link Class#getName() fully-qualified name} of {@code WebsocketConnectionContext} class.</p>
+ * {@link Class#getName() fully-qualified name} of this class.</p>
  * @see ServletModule#websocketConnectionScope corresponding Scope
  */
 public class WebsocketConnectionContext extends InjectionContext {

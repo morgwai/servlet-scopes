@@ -92,8 +92,8 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * }</pre>
  * <p>
  * <b>NOTE:</b> due to the way many debuggers work, it is <b>strongly</b> recommended for
- * {@code toString()} methods of {@code Endpoints} to work properly even when called outside of any
- * {@code Context}.</p>
+ * {@link Object#toString() toString()} methods of {@code Endpoints} to work properly even when
+ * called outside of any {@code Context}.</p>
  * @see GuiceServletContextListener
  */
 public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Configurator {

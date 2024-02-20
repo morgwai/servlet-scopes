@@ -129,7 +129,7 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 	 *   <li>{@link HttpSession#getId()} at {@link #SESSION_ID_PROPERTY}</li>
 	 *   <li>
 	 *     {@link #NODE_ID_ATTRIBUTE}
-	 *     {@link HttpSession#getAttribute(String) session attribuute} at
+	 *     {@link HttpSession#getAttribute(String) session attribute} at
 	 *     {@link #SESSION_NODE_ID_PROPERTY}.<br/>
 	 *     If the {@link HttpSession#isNew() HttpSession is new}, then {@code "null"} is output and
 	 *     the {@link HttpSession#setAttribute(String, Object) attribute is set} for subsequent

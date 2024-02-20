@@ -31,9 +31,10 @@ public class ServletModule implements Module {
 
 	/**
 	 * Scopes objects to the {@code Context} of either an
-	 * {@link ServletRequestContext HttpServletRequests}
-	 * or a {@link WebsocketEventContext websocket events}, depending within which type a given
-	 * {@code  Thread} runs (as returned by {@link #containerCallContextTracker}).
+	 * {@link ServletRequestContext HttpServletRequests} or a
+	 * {@link WebsocketEventContext websocket event}.
+	 * Depending which is active (as returned by {@link #containerCallContextTracker}) at the moment
+	 * of scoping.
 	 */
 	public final Scope containerCallScope =
 			new ContextScope<>("containerCallScope", containerCallContextTracker);
@@ -46,16 +47,16 @@ public class ServletModule implements Module {
 	 * {@link #containerCallContextTracker}, so it may be active both within
 	 * {@link ServletRequestContext}s and {@link WebsocketEventContext}s.
 	 * <p>
-	 * <b>NOTE:</b> there's no way to create an {@link javax.servlet.http.HttpSession} from the
-	 * websocket {@code Endpoint} layer if it didn't exist before. To safely use this {@code Scope}
-	 * in websocket {@code Endpoints}, other layers must ensure that a {@code Session} exists (for
-	 * example a {@link javax.servlet.Filter} targeting URL patterns of websockets can be used).</p>
+	 * <b>NOTE:</b> it is not possible to create an {@link javax.servlet.http.HttpSession} from the
+	 * websocket {@code Endpoint} layer if it doesn't already exist. To safely use this
+	 * {@code Scope} in websocket {@code Endpoints}, other layers must ensure that a {@code Session}
+	 * exists (for example a {@link javax.servlet.Filter} targeting URL patterns of websockets can
+	 * be used: see {@link GuiceServletContextListener#addEnsureSessionFilter(String...)}).</p>
 	 * <p>
 	 * <b>NOTE:</b> similarly as with
 	 * {@link javax.servlet.http.HttpSession#setAttribute(String, Object) Session attributes},
 	 * session-scoped objects must be {@link java.io.Serializable} if they need to be transferred
 	 * between cluster nodes.</p>
-	 * @see GuiceServletContextListener#addEnsureSessionFilter(String...)
 	 */
 	public final Scope httpSessionScope = new InducedContextScope<>(
 		"httpSessionScope",
@@ -68,7 +69,7 @@ public class ServletModule implements Module {
 	/**
 	 * Scopes objects to the {@link WebsocketConnectionContext Context of a websocket connections
 	 * (javax.websocket.Session)}.
-	 * This {@code Scope} is induced by and active within <b>only</b>
+	 * This {@code Scope} is induced by and active <b>only</b> within
 	 * {@link WebsocketEventContext}s.
 	 */
 	public final Scope websocketConnectionScope = new InducedContextScope<>(
@@ -82,8 +83,8 @@ public class ServletModule implements Module {
 		try {
 			return ((WebsocketEventContext) eventCtx).getConnectionContext();
 		} catch (ClassCastException e) {
-			throw new OutOfScopeException("cannot provide a websocketConnectionScope bound "
-					+ "object within a ServletRequestContext");
+			throw new OutOfScopeException("cannot provide a websocketConnectionScope-d object "
+					+ "within a ServletRequestContext");
 		}
 	};
 
@@ -95,7 +96,7 @@ public class ServletModule implements Module {
 	 */
 	public final List<ContextTracker<?>> allTrackers = List.of(containerCallContextTracker);
 
-	/** {@code ContextBinder} created with {@link #allTrackers}. */
+	/** {@code ContextBinder} created using {@link #allTrackers}. */
 	public final ContextBinder contextBinder = new ContextBinder(allTrackers);
 
 	/** Calls {@link ContextTracker#getActiveContexts(List) getActiveContexts(allTrackers)}. */
@@ -123,7 +124,6 @@ public class ServletModule implements Module {
 	public ServletModule(ServletContext appDeployment) {
 		this.appDeployment = appDeployment;
 	}
-
 	/** For {@link GuiceServletContextListener#servletModule}. */
 	ServletModule() {}
 

@@ -12,10 +12,10 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * Context of a single websocket event such as a connection creation/closure, a message arrival or
  * an error occurrence.
  * Each container-invoked call to some {@code Endpoint} event-handling method or to a registered
- * {@link MessageHandler} method {@link
- * pl.morgwai.base.guice.scopes.TrackableContext#executeWithinSelf(java.util.concurrent.Callable)
- * runs within} a separate instance of {@code WebsocketEventContext}. Specifically, all methods
- * annotated with one of the websocket {@code Annotations} (&nbsp;{@link OnOpen @OnOpen},
+ * {@link MessageHandler} method
+ * {@link WebsocketEventContext#executeWithinSelf(java.util.concurrent.Callable) runs within} a
+ * <b>separate</b> {@code WebsocketEventContext} instance. Specifically, all methods annotated with
+ * one of the websocket {@code Annotations} (&nbsp;{@link OnOpen @OnOpen},
  * {@link OnMessage @OnMessage}, {@link OnError @OnError}, {@link OnClose @OnClose}&nbsp;), or
  * overriding one of {@link Endpoint} methods
  * (&nbsp;{@link Endpoint#onOpen(Session, EndpointConfig) onOpen(...)},

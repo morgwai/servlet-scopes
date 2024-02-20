@@ -9,16 +9,18 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 /**
- * Context of an {@link HttpServletRequest}. Each {@link HttpServletRequest} processing {@link
- * pl.morgwai.base.guice.scopes.TrackableContext#executeWithinSelf(java.util.concurrent.Callable)
- * runs within} a separate instance of {@code ServletRequestContext}. Specifically
+ * Context of an {@link HttpServletRequest}.
+ * Each {@link HttpServletRequest} processing
+ * {@link ServletRequestContext#executeWithinSelf(java.util.concurrent.Callable) runs within} a
+ * <b>separate</b> {@code ServletRequestContext} instance. Specifically
  * {@link javax.servlet.Filter}s {@link
  * javax.servlet.FilterRegistration#addMappingForServletNames(java.util.EnumSet, boolean, String...)
- * registered} at the end of the {@link javax.servlet.FilterChain} (&nbsp;{@code true} passed as
- * {@code isMatchAfter} param), the {@link javax.servlet.Servlet}'s {@link
+ * registered} after the {@link RequestContextFilter} (&nbsp;{@code true} passed as
+ * {@code isMatchAfter} param), {@link
  * javax.servlet.Servlet#service(javax.servlet.ServletRequest, javax.servlet.ServletResponse)
- * service(request, response) method} and the {@link javax.servlet.Servlet}'s appropriate
- * {@code doXXX(request, response)} method.
+ * Servlet.service(...) methods} and as a consequence all the
+ * {@link javax.servlet.http.HttpServlet#doGet(javax.servlet.http.HttpServletRequest,
+ * javax.servlet.http.HttpServletResponse) Servlet.doXXX(...) methods}.
  * <p>
  * Note: this context is transferred automatically to the new thread when
  * {@link javax.servlet.AsyncContext#dispatch(String) dispatching from AsyncContext}.</p>

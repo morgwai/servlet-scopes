@@ -14,7 +14,7 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 /**
  * Creates {@link ServletRequestContext}s for newly incoming {@link HttpServletRequest}s and
  * transfers {@code Contexts} for {@code Requests}
- * {@link javax.servlet.AsyncContext#dispatch(String) dispatched from AsyncContext} to
+ * {@link javax.servlet.AsyncContext#dispatch(String) dispatched from AsyncContexts} to
  * new {@code Threads}.
  * <p>
  * If an instance of this {@code Filter} is not created by Guice, then a reference to the
