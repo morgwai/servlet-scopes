@@ -1,14 +1,14 @@
 // Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
-import javax.websocket.Session;
+import jakarta.websocket.Session;
 
 import pl.morgwai.base.guice.scopes.InjectionContext;
 
 
 
 /**
- * Context of a websocket connection ({@link javax.websocket.Session}).
+ * Context of a websocket connection ({@link jakarta.websocket.Session}).
  * All {@link WebsocketEventContext websocket events} related to the same {@link Session connection}
  * are {@link WebsocketEventContext#executeWithinSelf(java.util.concurrent.Callable) handled within}
  * <b>the same</b> {@code WebsocketConnectionContext} instance.

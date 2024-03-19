@@ -5,8 +5,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
 
 import com.google.inject.Module;
 import com.google.inject.*;
@@ -47,14 +47,14 @@ public class ServletModule implements Module {
 	 * {@link #containerCallContextTracker}, so it may be active both within
 	 * {@link ServletRequestContext}s and {@link WebsocketEventContext}s.
 	 * <p>
-	 * <b>NOTE:</b> it is not possible to create an {@link javax.servlet.http.HttpSession} from the
+	 * <b>NOTE:</b> it is not possible to create an {@link jakarta.servlet.http.HttpSession} from the
 	 * websocket {@code Endpoint} layer if it doesn't already exist. To safely use this
 	 * {@code Scope} in websocket {@code Endpoints}, other layers must ensure that a {@code Session}
-	 * exists (for example a {@link javax.servlet.Filter} targeting URL patterns of websockets can
+	 * exists (for example a {@link jakarta.servlet.Filter} targeting URL patterns of websockets can
 	 * be used: see {@link GuiceServletContextListener#addEnsureSessionFilter(String...)}).</p>
 	 * <p>
 	 * <b>NOTE:</b> similarly as with
-	 * {@link javax.servlet.http.HttpSession#setAttribute(String, Object) Session attributes},
+	 * {@link jakarta.servlet.http.HttpSession#setAttribute(String, Object) Session attributes},
 	 * session-scoped objects must be {@link java.io.Serializable} if they need to be transferred
 	 * between cluster nodes.</p>
 	 */
@@ -68,7 +68,7 @@ public class ServletModule implements Module {
 
 	/**
 	 * Scopes objects to the {@link WebsocketConnectionContext Context of a websocket connections
-	 * (javax.websocket.Session)}.
+	 * (jakarta.websocket.Session)}.
 	 * This {@code Scope} is induced by and active <b>only</b> within
 	 * {@link WebsocketEventContext}s.
 	 */
@@ -198,8 +198,8 @@ public class ServletModule implements Module {
 	 * <p>
 	 * The default {@link RejectedExecutionHandler} throws a {@link RejectedExecutionException} if
 	 * the queue is full or the executor is shutting down. It should usually be handled by
-	 * sending {@link javax.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} /
-	 * {@link javax.websocket.CloseReason.CloseCodes#TRY_AGAIN_LATER} to the client.</p>
+	 * sending {@link jakarta.servlet.http.HttpServletResponse#SC_SERVICE_UNAVAILABLE} /
+	 * {@link jakarta.websocket.CloseReason.CloseCodes#TRY_AGAIN_LATER} to the client.</p>
 	 */
 	public ServletContextTrackingExecutor newContextTrackingExecutor(
 		String name,
@@ -250,8 +250,8 @@ public class ServletModule implements Module {
 	 * {@code rejectionHandler} will receive a task wrapped with a {@link ContextBoundRunnable}.</p>
 	 * <p>
 	 * In order for {@link ServletContextTrackingExecutor#execute(
-	 * javax.servlet.http.HttpServletResponse, Runnable)} and
-	 * {@link ServletContextTrackingExecutor#execute(javax.websocket.Session, Runnable)} to work
+	 * jakarta.servlet.http.HttpServletResponse, Runnable)} and
+	 * {@link ServletContextTrackingExecutor#execute(jakarta.websocket.Session, Runnable)} to work
 	 * properly, the {@code rejectionHandler} must throw a {@link RejectedExecutionException}.</p>
 	 * @see ThreadPoolExecutor#ThreadPoolExecutor(int, int, long, TimeUnit, BlockingQueue,
 	 *     ThreadFactory, RejectedExecutionHandler) ThreadPoolExecutor constructor docs for param
