@@ -360,23 +360,24 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				if (appDeploymentRef != null) appDeployment = appDeploymentRef.get();
 
 				if (appDeployment == null) {
-					final var message = String.format(
-						NO_DEPLOYMENT_FOR_PATH,
+					final var noDeploymentForPathWarning = String.format(
+						NO_DEPLOYMENT_FOR_PATH_WARNING,
 						requestPath,
 						(appDeploymentPath.isBlank() ? "[rootApp]" : appDeploymentPath)
 					);
-					log.severe(message);
-					System.err.println(message);
+					log.severe(noDeploymentForPathWarning);
+					System.err.println(noDeploymentForPathWarning);
 					try {
 						// pick first and hope for the best: this is guaranteed to work correctly
 						// only if this is the only app using this Configurator in a given
 						// ClassLoader (which is the default for standard war file deployments)
 						appDeployment = appDeployments.values().iterator().next().get();
 					} catch (NoSuchElementException e) {
-						final var message2 = String.format(NO_DEPLOYMENTS, requestPath);
-						log.severe(message2);
-						System.err.println(message2);
-						throw new RuntimeException(message2);
+						final var noDeploymentsWarning =
+								String.format(NO_DEPLOYMENTS_WARNING, requestPath);
+						log.severe(noDeploymentsWarning);
+						System.err.println(noDeploymentsWarning);
+						throw new RuntimeException(noDeploymentsWarning);
 					}
 				}
 			}
@@ -386,10 +387,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		}
 	}
 
-	static final String NO_DEPLOYMENT_FOR_PATH = "could not find deployment for request path %s "
-			+ "(calculated app deployment path: %s ), "
+	static final String NO_DEPLOYMENT_FOR_PATH_WARNING = "could not find deployment for request "
+			+ "path %s (calculated app deployment path: %s ), "
 			+ "GuiceServerEndpointConfigurator.registerDeployment(...) probably wasn't called";
-	static final String NO_DEPLOYMENTS = "could not find *ANY* deployment when configuring "
+	static final String NO_DEPLOYMENTS_WARNING = "could not find *ANY* deployment when configuring "
 			+ "Endpoint for request path %s, "
 			+ "GuiceServerEndpointConfigurator.registerDeployment(...) probably wasn't called";
 
