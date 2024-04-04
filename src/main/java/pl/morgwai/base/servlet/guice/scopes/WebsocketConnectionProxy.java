@@ -54,7 +54,8 @@ public class WebsocketConnectionProxy implements Session {
 
 
 	public Session getWrappedConnection() { return wrappedConnection; }
-	protected final Session wrappedConnection;
+	public final Session wrappedConnection;
+
 	protected final ContextTracker<ContainerCallContext> ctxTracker;
 	protected final HttpSession httpSession;
 

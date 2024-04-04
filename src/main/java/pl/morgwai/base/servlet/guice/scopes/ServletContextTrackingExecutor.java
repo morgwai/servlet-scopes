@@ -29,7 +29,7 @@ public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecut
 
 
 	public String getName() { return name; }
-	final String name;
+	public final String name;
 
 	final ContextBinder ctxBinder;
 

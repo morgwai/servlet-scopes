@@ -30,10 +30,10 @@ public class WebsocketEventContext extends ContainerCallContext {
 
 
 	public WebsocketConnectionContext getConnectionContext() { return connectionContext; }
-	final WebsocketConnectionContext connectionContext;
+	public final WebsocketConnectionContext connectionContext;
 
 	@Override public HttpSession getHttpSession() { return httpSession; }
-	final HttpSession httpSession;
+	public final HttpSession httpSession;
 
 
 

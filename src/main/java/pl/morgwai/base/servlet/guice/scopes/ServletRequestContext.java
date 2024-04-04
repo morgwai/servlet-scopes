@@ -30,8 +30,8 @@ public class ServletRequestContext extends ContainerCallContext {
 
 
 
-	final HttpServletRequest request;
 	public HttpServletRequest getRequest() { return request; }
+	public final HttpServletRequest request;
 
 
 
