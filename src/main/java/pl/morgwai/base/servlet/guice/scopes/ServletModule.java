@@ -36,7 +36,7 @@ public class ServletModule implements Module {
 	 * of scoping.
 	 */
 	public final Scope containerCallScope =
-			new ContextScope<>("containerCallScope", containerCallContextTracker);
+			new ContextScope<>("ServletModule.containerCallScope", containerCallContextTracker);
 
 
 
@@ -58,7 +58,7 @@ public class ServletModule implements Module {
 	 * between cluster nodes.</p>
 	 */
 	public final Scope httpSessionScope = new InducedContextScope<>(
-		"httpSessionScope",
+		"ServletModule.httpSessionScope",
 		containerCallContextTracker,
 		ContainerCallContext::getHttpSessionContext
 	);
@@ -72,7 +72,7 @@ public class ServletModule implements Module {
 	 * {@link WebsocketEventContext}s.
 	 */
 	public final Scope websocketConnectionScope = new InducedContextScope<>(
-		"websocketConnectionScope",
+		"ServletModule.websocketConnectionScope",
 		containerCallContextTracker,
 		ServletModule::getWebsocketConnectionContext
 	);
