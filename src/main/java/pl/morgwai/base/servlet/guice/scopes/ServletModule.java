@@ -3,7 +3,6 @@ package pl.morgwai.base.servlet.guice.scopes;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.Function;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -75,18 +74,18 @@ public class ServletModule implements Module {
 	public final Scope websocketConnectionScope = new InducedContextScope<>(
 		"websocketConnectionScope",
 		containerCallContextTracker,
-		getWebsocketConnectionContext
+		ServletModule::getWebsocketConnectionContext
 	);
 
-	static final Function<ContainerCallContext, WebsocketConnectionContext>
-	getWebsocketConnectionContext = (eventCtx) -> {
+	static WebsocketConnectionContext getWebsocketConnectionContext(ContainerCallContext eventCtx) {
 		try {
 			return ((WebsocketEventContext) eventCtx).getConnectionContext();
 		} catch (ClassCastException e) {
-			throw new OutOfScopeException("cannot provide a websocketConnectionScope-d object "
-					+ "within a ServletRequestContext");
+			throw new OutOfScopeException(
+				"cannot provide a websocketConnectionScope-d object within a ServletRequestContext"
+			);
 		}
-	};
+	}
 
 
 
@@ -153,12 +152,9 @@ public class ServletModule implements Module {
 		binder.bind(ContainerCallContext.class).toProvider(
 				containerCallContextTracker::getCurrentContext);
 		binder.bind(HttpSessionContext.class).toProvider(
-			() -> containerCallContextTracker.getCurrentContext().getHttpSessionContext()
-		);
+				() -> containerCallContextTracker.getCurrentContext().getHttpSessionContext());
 		binder.bind(WebsocketConnectionContext.class).toProvider(
-			() -> getWebsocketConnectionContext.apply(
-				containerCallContextTracker.getCurrentContext()
-			)
+			() -> getWebsocketConnectionContext(containerCallContextTracker.getCurrentContext())
 		);
 	}
 
