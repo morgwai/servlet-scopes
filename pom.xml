@@ -6,7 +6,7 @@
 
 	<groupId>pl.morgwai.base</groupId>
 	<artifactId>servlet-scopes</artifactId>
-	<version>15.3-SNAPSHOT-javax</version><!--jakarta-->
+	<version>16.0-SNAPSHOT-javax</version><!--jakarta-->
 
 	<name>Servlet and Websocket Guice Scopes</name>
 	<description>containerCallScope (either a HttpServletRequest or a websocket endpoint event), websocketConnectionScope (javax.websocket.Session) and httpSessionScope</description>
@@ -47,7 +47,7 @@
 	<properties>
 		<maven.compiler.release>11</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<guice.scopes.version>9.6</guice.scopes.version>
+		<guice.scopes.version>10.0</guice.scopes.version>
 		<utils.version>4.1</utils.version>
 		<servlet.utils.version>5.1</servlet.utils.version>
 		<guice.version>6.0.0</guice.version><!--jakarta:<guice.version>7.0.0</guice.version>-->
