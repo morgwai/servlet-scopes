@@ -74,6 +74,8 @@ public class HttpSessionContextReplicationTests {
 		boolean startNode2rightAway,
 		boolean customSerialization
 	) throws Exception {
+
+		// start node(s) and get data from node1
 		node1 = new JettyNode(0, NODE1_ID, store1, customSerialization);
 		if (startNode2rightAway) {
 			// FileSessionDataStore's files may be accessed by only 1 node process at a time, so
@@ -90,6 +92,7 @@ public class HttpSessionContextReplicationTests {
 		responseNode1.load(httpClient.send(request1, BodyHandlers.ofInputStream()).body());
 		node1.stop();
 
+		// get data from node2 (start it first if needed)
 		if (node2 == null) node2 = new JettyNode(0, NODE2_ID, store2, customSerialization);
 		final var url2 = URL_PREFIX + node2.getPort() + APP_PATH + NODE_INFO_SERVLET_PATH;
 		final var request2 = HttpRequest.newBuilder(URI.create(url2))
@@ -98,6 +101,8 @@ public class HttpSessionContextReplicationTests {
 			.build();
 		final var responseNode2 = new Properties();
 		responseNode2.load(httpClient.send(request2, BodyHandlers.ofInputStream()).body());
+
+		// verify that Context data was properly replicated between nodes
 		assertEquals(
 			"session should be replicated between nodes",
 			responseNode1.getProperty(SESSION_ID_PROPERTY),
