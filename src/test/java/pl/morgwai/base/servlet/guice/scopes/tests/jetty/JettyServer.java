@@ -63,14 +63,18 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 		appCollection.addHandler(secondAppHandler);
 		setHandler(appCollection);
 
-		setStopAtShutdown(true);
 		start();
-		this.port = Arrays.stream(getConnectors())
-			.filter(NetworkConnector.class::isInstance)
-			.findFirst()
-			.map(NetworkConnector.class::cast)
-			.map(NetworkConnector::getLocalPort)
-			.orElseThrow();
+		try {
+			this.port = Arrays.stream(getConnectors())
+				.filter(NetworkConnector.class::isInstance)
+				.findFirst()
+				.map(NetworkConnector.class::cast)
+				.map(NetworkConnector::getLocalPort)
+				.orElseThrow();
+		} catch (Throwable e) {
+			stop();
+			throw e;
+		}
 	}
 
 
@@ -108,6 +112,7 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 			} catch (Exception ignored) {}
 		}
 		final var server = new JettyServer(port);
+		server.setStopAtShutdown(true);
 		server.join();
 		server.destroy();
 		System.out.println("exiting, bye!");

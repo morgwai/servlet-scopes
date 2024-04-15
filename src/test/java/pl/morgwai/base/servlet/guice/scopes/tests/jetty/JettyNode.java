@@ -72,12 +72,17 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 		testAppHandler.getSessionHandler().setSessionCache(sessionCache);
 
 		start();
-		this.port = Arrays.stream(getConnectors())
-			.filter(NetworkConnector.class::isInstance)
-			.map(NetworkConnector.class::cast)
-			.map(NetworkConnector::getLocalPort)
-			.findFirst()
-			.orElseThrow();
+		try {
+			this.port = Arrays.stream(getConnectors())
+				.filter(NetworkConnector.class::isInstance)
+				.findFirst()
+				.map(NetworkConnector.class::cast)
+				.map(NetworkConnector::getLocalPort)
+				.orElseThrow();
+		} catch (Throwable e) {
+			stop();
+			throw e;
+		}
 	}
 
 
