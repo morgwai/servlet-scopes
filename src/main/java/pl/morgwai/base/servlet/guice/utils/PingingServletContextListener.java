@@ -69,8 +69,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 		return DEFAULT_FAILURE_LIMIT;
 	}
 
-	/** For {@link #getPingFailureLimit()}. */
-	public static final int DEFAULT_FAILURE_LIMIT = 1;
+	static final int DEFAULT_FAILURE_LIMIT = 1;
 
 
 

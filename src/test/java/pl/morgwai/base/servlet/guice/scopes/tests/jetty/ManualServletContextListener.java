@@ -17,7 +17,6 @@ import com.google.inject.*;
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
-import pl.morgwai.base.servlet.guice.utils.PingingServletContextListener;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
@@ -45,7 +44,7 @@ public class ManualServletContextListener implements ServletContextListener {
 			pingerService = new WebsocketPingerService(
 				intervalFromProperty != null ? Long.parseLong(intervalFromProperty) : 500L,
 				TimeUnit.MILLISECONDS,
-				PingingServletContextListener.DEFAULT_FAILURE_LIMIT
+				1
 			);
 			final ServletContext appDeployment = initialization.getServletContext();
 			servletModule = new ServletModule(appDeployment);

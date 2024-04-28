@@ -118,7 +118,7 @@ public class TyrusServer implements Server {
 		final var pingerService = new WebsocketPingerService(
 			intervalFromProperty != null ? Long.parseLong(intervalFromProperty) : 500L,
 			TimeUnit.MILLISECONDS,
-			PingingServletContextListener.DEFAULT_FAILURE_LIMIT
+			1
 		);
 		appDeployment.setAttribute(WebsocketPingerService.class.getName(), pingerService);
 
