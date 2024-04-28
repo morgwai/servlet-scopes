@@ -360,12 +360,16 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	/**
 	 * Returns the timeout for {@link ServletModule#awaitTerminationOfAllExecutors(long, TimeUnit)
 	 * termination of all Executors} obtained from {@link #servletModule}.
-	 * By default {@code 5} seconds.
+	 * By default {@value #DEFAULT_EXECUTORS_TERMINATION_TIMEOUT_SECONDS} seconds.
 	 * <p>
 	 * This method is called by {@link #contextDestroyed(ServletContextEvent)} and may be overridden
 	 * if a different value needs to be used.</p>
 	 */
-	protected Duration getExecutorsTerminationTimeout() { return Duration.ofSeconds(5); }
+	protected Duration getExecutorsTerminationTimeout() {
+		return Duration.ofSeconds(DEFAULT_EXECUTORS_TERMINATION_TIMEOUT_SECONDS);
+	}
+
+	static final long DEFAULT_EXECUTORS_TERMINATION_TIMEOUT_SECONDS = 5L;
 
 
 
