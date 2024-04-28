@@ -188,6 +188,11 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			throw new RuntimeException(
 					"deployment attribute \"" + Injector.class.getName() + "\" not present");
 		}
+		// In case of container-created Configurator instances `this.appDeployment` is used as a
+		// marker indicating whether initialize(...) has been called by modifyHandshake(...) (see
+		// below) and as subclasses may override initialize(...) adding additional steps *after*
+		// `super.initialize(...)`, we cannot do `this.appDeployment = appDeployment` here as then
+		// some Threads could see half-initialized instances as fully initialized.
 	}
 
 
@@ -252,14 +257,17 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		}
 		DynamicType.Builder<EndpointT> proxyClassBuilder = new ByteBuddy()
 			.subclass(endpointClass)
-			.name(GuiceServerEndpointConfigurator.class.getPackageName() + ".ProxyFor_"
-					+ endpointClass.getName().replace('.', '_'))
+			.name(
+				GuiceServerEndpointConfigurator.class.getPackageName() + ".ProxyFor_"
+						+ endpointClass.getName().replace('.', '_')
+			)
 			.defineField(
-					INVOCATION_HANDLER_FIELD_NAME,
-					EndpointProxyHandler.class,
-					Visibility.PACKAGE_PRIVATE)
+				INVOCATION_HANDLER_FIELD_NAME,
+				EndpointProxyHandler.class,
+				Visibility.PACKAGE_PRIVATE
+			)
 			.method(ElementMatchers.any())
-					.intercept(InvocationHandlerAdapter.toField(INVOCATION_HANDLER_FIELD_NAME));
+				.intercept(InvocationHandlerAdapter.toField(INVOCATION_HANDLER_FIELD_NAME));
 		final ServerEndpoint annotation = endpointClass.getAnnotation(ServerEndpoint.class);
 		if (annotation != null) proxyClassBuilder = proxyClassBuilder.annotateType(annotation);
 		try (
@@ -269,7 +277,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				.load(
 					GuiceServerEndpointConfigurator.class.getClassLoader(),
 					ClassLoadingStrategy.Default.INJECTION
-				).getLoaded();
+				)
+				.getLoaded();
 		}
 	}
 
@@ -294,8 +303,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 						fugitiveAnnotationType.equals(OnOpen.class)
 						&& !Arrays.asList(method.getParameterTypes()).contains(Session.class)
 					) {
-						throw new RuntimeException("method annotated with @OnOpen must have a"
-								+ " javax.websocket.Session param");
+						throw new RuntimeException("method annotated with @OnOpen must have a "
+								+ Session.class.getName() + " param");
 					}
 					break;
 				}
@@ -344,47 +353,49 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		if (httpSession != null) {
 			config.getUserProperties().put(HttpSession.class.getName(), httpSession);
 		}
+		if (this.appDeployment != null) return;
 
-		if (this.appDeployment == null) {
-			// container-created instance using param-less constructor:
-			// retrieve appDeployment and call initialize(...)
-			ServletContext appDeployment = null;
-			if (httpSession != null) {
-				appDeployment = ((HttpSession) httpSession).getServletContext();
-			} else {
-				// try retrieving from appDeployments Map (appDeploymentPath -> appDeployment)
-				final var requestPath = request.getRequestURI().getPath();
-				final var appDeploymentPath = requestPath.substring(
-						0, requestPath.lastIndexOf(config.getPath()));
-				final var appDeploymentRef = appDeployments.get(appDeploymentPath);
-				if (appDeploymentRef != null) appDeployment = appDeploymentRef.get();
+		// uninitialized container-created Configurator instance using param-less constructor:
+		// retrieve appDeployment and call initialize(...)
+		ServletContext appDeployment = null;
+		if (httpSession != null) {
+			appDeployment = ((HttpSession) httpSession).getServletContext();
+		} else {
+			// try retrieving from appDeployments Map (appDeploymentPath -> appDeployment)
+			final var requestPath = request.getRequestURI().getPath();
+			final var appDeploymentPath = requestPath.substring(
+					0, requestPath.lastIndexOf(config.getPath()));
+			final var appDeploymentRef = appDeployments.get(appDeploymentPath);
+			if (appDeploymentRef != null) appDeployment = appDeploymentRef.get();
 
-				if (appDeployment == null) {
-					final var noDeploymentForPathWarning = String.format(
-						NO_DEPLOYMENT_FOR_PATH_WARNING,
-						requestPath,
-						(appDeploymentPath.isBlank() ? "[rootApp]" : appDeploymentPath)
-					);
-					log.severe(noDeploymentForPathWarning);
-					System.err.println(noDeploymentForPathWarning);
-					try {
-						// pick first and hope for the best: this is guaranteed to work correctly
-						// only if this is the only app using this Configurator in a given
-						// ClassLoader (which is the default for standard war file deployments)
-						appDeployment = appDeployments.values().iterator().next().get();
-					} catch (NoSuchElementException e) {
-						final var noDeploymentsWarning =
-								String.format(NO_DEPLOYMENTS_WARNING, requestPath);
-						log.severe(noDeploymentsWarning);
-						System.err.println(noDeploymentsWarning);
-						throw new RuntimeException(noDeploymentsWarning);
-					}
+			if (appDeployment == null) {
+				final var noDeploymentForPathWarning = String.format(
+					NO_DEPLOYMENT_FOR_PATH_WARNING,
+					requestPath,
+					(appDeploymentPath.isBlank() ? "[rootApp]" : appDeploymentPath)
+				);
+				log.severe(noDeploymentForPathWarning);
+				System.err.println(noDeploymentForPathWarning);
+				try {
+					// pick first and hope for the best: this is guaranteed to work correctly only
+					// if this is the only app using this Configurator in a given ClassLoader (which
+					// is the default for standard war file deployments). In such case
+					// appDeployments Map will have at most 1 entry. This may help if a given
+					// deployment is matched by more than 1 path as described in
+					// ServletContext.getContextPath() javadoc.
+					appDeployment = appDeployments.values().iterator().next().get();
+				} catch (NoSuchElementException e) {
+					final var noDeploymentsWarning =
+							String.format(NO_DEPLOYMENTS_WARNING, requestPath);
+					log.severe(noDeploymentsWarning);
+					System.err.println(noDeploymentsWarning);
+					throw new RuntimeException(noDeploymentsWarning);
 				}
 			}
-			// multiple threads initializing the same Configurator, will set exactly the same values
-			initialize(appDeployment);
-			this.appDeployment = appDeployment;
 		}
+		// multiple Threads initializing the same Configurator, will set exactly the same values
+		initialize(appDeployment);
+		this.appDeployment = appDeployment;
 	}
 
 	static final String NO_DEPLOYMENT_FOR_PATH_WARNING = "could not find deployment for request "
