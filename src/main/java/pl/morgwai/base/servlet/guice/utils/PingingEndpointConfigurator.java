@@ -49,6 +49,8 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 		super(appDeployment);
 	}
 
+
+
 	@Override
 	protected void initialize(ServletContext appDeployment) {
 		super.initialize(appDeployment);
