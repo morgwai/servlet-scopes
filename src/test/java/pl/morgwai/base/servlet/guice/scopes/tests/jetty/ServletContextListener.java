@@ -3,9 +3,9 @@ package pl.morgwai.base.servlet.guice.scopes.tests.jetty;
 
 import java.util.LinkedList;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebListener;
-import javax.websocket.DeploymentException;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebListener;
+import jakarta.websocket.DeploymentException;
 
 import com.google.inject.Module;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;

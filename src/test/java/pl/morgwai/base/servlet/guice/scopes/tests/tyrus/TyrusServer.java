@@ -4,9 +4,9 @@ package pl.morgwai.base.servlet.guice.scopes.tests.tyrus;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import javax.websocket.*;
-import javax.websocket.server.ServerApplicationConfig;
-import javax.websocket.server.ServerEndpointConfig;
+import jakarta.websocket.*;
+import jakarta.websocket.server.ServerApplicationConfig;
+import jakarta.websocket.server.ServerEndpointConfig;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
