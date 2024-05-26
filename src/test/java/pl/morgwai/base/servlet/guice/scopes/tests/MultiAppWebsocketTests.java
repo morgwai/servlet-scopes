@@ -3,7 +3,7 @@ package pl.morgwai.base.servlet.guice.scopes.tests;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import javax.websocket.DeploymentException;
@@ -21,12 +21,16 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 
 
 	String secondAppWebsocketUrl;
+	String unregisteredDeploymentAppWebsocketUrl;
 
 
 
 	@Before
 	public void setupSecondApp() {
-		secondAppWebsocketUrl = ((MultiAppServer) server).getSecondAppWebsocketUrl();
+		final var multiAppServer = (MultiAppServer) server;
+		secondAppWebsocketUrl = multiAppServer.getSecondAppWebsocketUrl();
+		unregisteredDeploymentAppWebsocketUrl =
+				multiAppServer.getUnregisteredDeploymentAppWebsocketUrl();
 	}
 
 
@@ -38,17 +42,50 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 
 	@Test
 	public void testProgrammaticEndpointOnSecondApp() throws Exception {
-		test2SessionsWithServerEndpoint(secondAppWebsocketUrl + ProgrammaticEndpoint.PATH, true);
+		test2SessionsWithServerEndpoint(
+			secondAppWebsocketUrl + ProgrammaticEndpoint.PATH,
+			true
+		);
+	}
+
+	@Test
+	public void testProgrammaticEndpointOnUnregisteredDeploymentApp() throws Exception {
+		test2SessionsWithServerEndpoint(
+			unregisteredDeploymentAppWebsocketUrl + ProgrammaticEndpoint.PATH,
+			true
+		);
 	}
 
 	@Test
 	public void testAnnotatedEndpointOnSecondApp() throws Exception {
-		test2SessionsWithServerEndpoint(secondAppWebsocketUrl + AnnotatedEndpoint.PATH, true);
+		test2SessionsWithServerEndpoint(
+			secondAppWebsocketUrl + AnnotatedEndpoint.PATH,
+			true
+		);
+	}
+
+	@Test
+	public void testAnnotatedEndpointOnUnregisteredDeploymentApp() throws Exception {
+		test2SessionsWithServerEndpoint(
+			unregisteredDeploymentAppWebsocketUrl + AnnotatedEndpoint.PATH,
+			true
+		);
 	}
 
 	@Test
 	public void testRttReportingEndpointOnSecondApp() throws Exception {
-		test2SessionsWithServerEndpoint(secondAppWebsocketUrl + RttReportingEndpoint.PATH, false);
+		test2SessionsWithServerEndpoint(
+			secondAppWebsocketUrl + RttReportingEndpoint.PATH,
+			false
+		);
+	}
+
+	@Test
+	public void testRttReportingEndpointOnUnregisteredDeploymentApp() throws Exception {
+		test2SessionsWithServerEndpoint(
+			unregisteredDeploymentAppWebsocketUrl + RttReportingEndpoint.PATH,
+			false
+		);
 	}
 
 	@Test
@@ -59,52 +96,53 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 		);
 	}
 
-
-
-	public void testAppSeparation(String testAppWebsocketUrl, String secondAppWebsocketUrl)
-			throws InterruptedException, DeploymentException, IOException {
-		final var messages = new ArrayList<String>(2);
-
-		final var endpoint1 = new ClientEndpoint(messages::add, null, null);
-		final var uri1 = URI.create(testAppWebsocketUrl);
-		try (
-			final var ignored = clientWebsocketContainer.connectToServer(endpoint1, null, uri1);
-		) {
-			assertTrue("endpoint1 should be closed",
-					endpoint1.awaitClosure(500L, TimeUnit.MILLISECONDS));
-		}
-
-		final var endpoint2 = new ClientEndpoint(messages::add, null, null);
-		final var uri2 = URI.create(secondAppWebsocketUrl);
-		try (
-			final var ignored = clientWebsocketContainer.connectToServer(endpoint2, null, uri2);
-		) {
-			assertTrue("endpoint2 should be closed",
-					endpoint2.awaitClosure(500L, TimeUnit.MILLISECONDS));
-		}
-
-		assertNotEquals("Endpoint Configurators of separate apps should have separate Injectors",
-				messages.get(0), messages.get(1));
+	@Test
+	public void testAnnotatedExtendingEndpointOnUnregisteredDeploymentApp() throws Exception {
+		test2SessionsWithServerEndpoint(
+			unregisteredDeploymentAppWebsocketUrl + AnnotatedExtendingEndpoint.PATH,
+			true
+		);
 	}
 
 
+
+	public void testAppSeparation(String... websocketUrls)
+			throws InterruptedException, DeploymentException, IOException {
+		final List<String> responses = new ArrayList<>(websocketUrls.length);
+		for (var url: websocketUrls) {
+			final var endpoint = new ClientEndpoint(responses::add, null, null);
+			final var uri = URI.create(url);
+			try (
+				final var ignored = clientWebsocketContainer.connectToServer(endpoint, null, uri);
+			) {
+				assertTrue("endpoint should be closed",
+						endpoint.awaitClosure(500L, TimeUnit.MILLISECONDS));
+			}
+		}
+		assertEquals("responses from all URLs should be received",
+				websocketUrls.length, responses.size());
+		final Set<String> distinctResponses = new HashSet<>(websocketUrls.length);
+		distinctResponses.addAll(responses);
+		assertEquals("Endpoint Configurators of separate apps should have distinct Injectors",
+				websocketUrls.length, distinctResponses.size());
+	}
 
 	@Test
 	public void testAppSeparation() throws InterruptedException, DeploymentException, IOException {
 		testAppSeparation(
 			appWebsocketUrl + AppSeparationTestEndpoint.PATH,
-			secondAppWebsocketUrl + AppSeparationTestEndpoint.PATH
+			secondAppWebsocketUrl + AppSeparationTestEndpoint.PATH,
+			unregisteredDeploymentAppWebsocketUrl + AppSeparationTestEndpoint.PATH
 		);
 	}
-
-
 
 	@Test
 	public void testAppSeparationNoSession()
 			throws InterruptedException, DeploymentException, IOException {
 		testAppSeparation(
 			appWebsocketUrl + NoSessionAppSeparationTestEndpoint.PATH,
-			secondAppWebsocketUrl + NoSessionAppSeparationTestEndpoint.PATH
+			secondAppWebsocketUrl + NoSessionAppSeparationTestEndpoint.PATH,
+			unregisteredDeploymentAppWebsocketUrl + NoSessionAppSeparationTestEndpoint.PATH
 		);
 	}
 }

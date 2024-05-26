@@ -5,5 +5,7 @@ package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 
 public interface MultiAppServer extends Server {
 	String SECOND_APP_PATH = "";  // root app
+	String UNREGISTERED_DEPLOYMENT_APP_PATH = "/unregisteredDeploymentApp";
 	String getSecondAppWebsocketUrl();
+	String getUnregisteredDeploymentAppWebsocketUrl();
 }

@@ -58,10 +58,28 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 			}
 		);
 
-		final var appCollection = new ContextHandlerCollection();
-		appCollection.addHandler(testAppHandler);
-		appCollection.addHandler(secondAppHandler);
-		setHandler(appCollection);
+		final var unregisteredDeploymentAppHandler =
+				new ServletContextHandler(ServletContextHandler.SESSIONS);
+		unregisteredDeploymentAppHandler.setDisplayName("unregisteredDeploymentApp");
+		unregisteredDeploymentAppHandler.setContextPath(
+				MultiAppServer.UNREGISTERED_DEPLOYMENT_APP_PATH);
+		unregisteredDeploymentAppHandler.addEventListener(new ManualServletContextListener(false));
+		JavaxWebSocketServletContainerInitializer.configure(
+			unregisteredDeploymentAppHandler,
+			(servletContainer, websocketContainer) -> {
+				websocketContainer.setDefaultMaxTextMessageBufferSize(1023);
+				websocketContainer.addEndpoint(AnnotatedEndpoint.class);
+				websocketContainer.addEndpoint(AnnotatedExtendingEndpoint.class);
+				websocketContainer.addEndpoint(AppSeparationTestEndpoint.class);
+				websocketContainer.addEndpoint(NoSessionAppSeparationTestEndpoint.class);
+			}
+		);
+
+		final var deployments = new ContextHandlerCollection();
+		deployments.addHandler(testAppHandler);
+		deployments.addHandler(secondAppHandler);
+		deployments.addHandler(unregisteredDeploymentAppHandler);
+		setHandler(deployments);
 
 		start();
 		try {
@@ -79,16 +97,21 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 
 
 
+	static final String URL_PREFIX = "ws://localhost:";
+
 	@Override
 	public String getAppWebsocketUrl() {
-		return "ws://localhost:" + port + Server.APP_PATH;
+		return URL_PREFIX + port + Server.APP_PATH;
 	}
-
-
 
 	@Override
 	public String getSecondAppWebsocketUrl() {
-		return "ws://localhost:" + port + MultiAppServer.SECOND_APP_PATH;
+		return URL_PREFIX + port + MultiAppServer.SECOND_APP_PATH;
+	}
+
+	@Override
+	public String getUnregisteredDeploymentAppWebsocketUrl() {
+		return URL_PREFIX + port + MultiAppServer.UNREGISTERED_DEPLOYMENT_APP_PATH;
 	}
 
 

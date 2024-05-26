@@ -377,13 +377,16 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				log.severe(noDeploymentForPathWarning);
 				System.err.println(noDeploymentForPathWarning);
 				try {
-					// pick first and hope for the best: this is guaranteed to work correctly only
-					// if this is the only app using this Configurator in a given ClassLoader (which
-					// is the default for standard war file deployments). In such case
-					// appDeployments Map will have at most 1 entry. This may help if a given
-					// deployment is matched by more than 1 path as described in
-					// ServletContext.getContextPath() javadoc.
-					appDeployment = appDeployments.values().iterator().next().get();
+					// pick first non-null deployment and ask it for a reference to the desired one
+					// (this should also cover cases when the desired appDeployment is matched by
+					// more than 1 path (as described in ServletContext.getContextPath() javadoc)
+					// and request comes to a non-primary path)
+					ServletContext randomDeployment;
+					final var deploymentIterator = appDeployments.values().iterator();
+					do {
+						randomDeployment = deploymentIterator.next().get();
+					} while (randomDeployment == null);
+					appDeployment = randomDeployment.getContext(appDeploymentPath);
 				} catch (NoSuchElementException e) {
 					final var noDeploymentsWarning =
 							String.format(NO_DEPLOYMENTS_WARNING, requestPath);
