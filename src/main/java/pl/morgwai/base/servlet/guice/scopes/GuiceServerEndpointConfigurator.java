@@ -294,17 +294,17 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * @throws RuntimeException if the check fails.
 	 */
 	private void checkIfRequiredEndpointMethodsPresent(Class<?> endpointClass) {
-		final var fugitiveMethodAnnotationTypes = getRequiredEndpointMethodAnnotationTypes();
-		final var fugitiveMethodAnnotationTypesIterator = fugitiveMethodAnnotationTypes.iterator();
-		while (fugitiveMethodAnnotationTypesIterator.hasNext()) {
-			// remove annotation from fugitiveMethodAnnotationTypes each time a corresponding method
+		final var wantedMethodAnnotationTypes = getRequiredEndpointMethodAnnotationTypes();
+		final var wantedAnnotationTypeIterator = wantedMethodAnnotationTypes.iterator();
+		while (wantedAnnotationTypeIterator.hasNext()) {
+			// remove annotation from wantedMethodAnnotationTypes each time a corresponding method
 			// is found within endpointClass
-			final var fugitiveAnnotationType = fugitiveMethodAnnotationTypesIterator.next();
+			final var wantedAnnotationType = wantedAnnotationTypeIterator.next();
 			for (var method: endpointClass.getMethods()) {
-				if (method.isAnnotationPresent(fugitiveAnnotationType)) {
-					fugitiveMethodAnnotationTypesIterator.remove();
+				if (method.isAnnotationPresent(wantedAnnotationType)) {
+					wantedAnnotationTypeIterator.remove();
 					if (
-						fugitiveAnnotationType.equals(OnOpen.class)
+						wantedAnnotationType.equals(OnOpen.class)
 						&& !Arrays.asList(method.getParameterTypes()).contains(Session.class)
 					) {
 						throw new RuntimeException("method annotated with @OnOpen must have a "
@@ -314,9 +314,9 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				}
 			}
 		}
-		if ( !fugitiveMethodAnnotationTypes.isEmpty()) {
+		if ( !wantedMethodAnnotationTypes.isEmpty()) {
 			throw new RuntimeException("endpoint class must have a method annotated with @"
-					+ fugitiveMethodAnnotationTypes.iterator().next().getSimpleName());
+					+ wantedMethodAnnotationTypes.iterator().next().getSimpleName());
 		}
 	}
 
@@ -394,11 +394,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 						System.err.println(noDeploymentForPathWarning);
 					}  // else: request to a non-primary path
 				} catch (NoSuchElementException e) {
-					final var noDeploymentsWarning =
-							String.format(NO_DEPLOYMENTS_WARNING, requestPath);
-					log.severe(noDeploymentsWarning);
-					System.err.println(noDeploymentsWarning);
-					throw new RuntimeException(noDeploymentsWarning);
+					final var noDeploymentsError = String.format(NO_DEPLOYMENTS_ERROR, requestPath);
+					log.severe(noDeploymentsError);
+					System.err.println(noDeploymentsError);
+					throw new RuntimeException(noDeploymentsError);
 				}
 			}
 		}
@@ -410,7 +409,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	static final String NO_DEPLOYMENT_FOR_PATH_WARNING = "could not find a deployment for the "
 			+ "request path %s (calculated app deployment path: %s ), "
 			+ "GuiceServerEndpointConfigurator.registerDeployment(...) probably wasn't called";
-	static final String NO_DEPLOYMENTS_WARNING = "could not find *ANY* deployment when configuring "
+	static final String NO_DEPLOYMENTS_ERROR = "could not find *ANY* deployment when configuring "
 			+ "Endpoint for the request path %s, "
 			+ "GuiceServerEndpointConfigurator.registerDeployment(...) probably wasn't called";
 
