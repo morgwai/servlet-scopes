@@ -48,6 +48,10 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  *         .configurator(configurator)
  *         .build()
  * );}</pre>
+ * <p>(additionally
+ * {@link #getProxyClass(Class) configurator.getProxyClass(MyProgrammaticEndpoint.class)} may be
+ * called to pre-build a dynamic class of a context-aware proxy for {@code MyProgrammaticEndpoint})
+ * </p>
  * <p>
  * To use this {@code Configurator} for @{@link ServerEndpoint} annotated {@code Endpoints}, the
  * following setup must be performed:</p>
@@ -233,10 +237,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	/**
-	 * Exposed for proxy class pre-building in
-	 * {@link GuiceServletContextListener#addEndpoint(Class, String)}.
+	 * Returns a dynamic class of a context-aware proxy for {@code endpointClass}.
+	 * Exposed for proxy class pre-building in {@link javax.servlet.ServletContextListener}s.
 	 */
-	<EndpointT> Class<? extends EndpointT> getProxyClass(Class<EndpointT> endpointClass) {
+	public <EndpointT> Class<? extends EndpointT> getProxyClass(Class<EndpointT> endpointClass) {
 		@SuppressWarnings("unchecked")
 		final Class<? extends EndpointT> proxyClass = (Class<? extends EndpointT>)
 				proxyClasses.computeIfAbsent(endpointClass, this::createProxyClass);

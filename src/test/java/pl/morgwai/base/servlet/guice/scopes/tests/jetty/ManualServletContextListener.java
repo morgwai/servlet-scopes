@@ -134,6 +134,8 @@ public class ManualServletContextListener implements ServletContextListener {
 					.configurator(endpointConfigurator)
 					.build()
 			);
+			endpointConfigurator.getProxyClass(ProgrammaticEndpoint.class);
+
 
 			final var echoWebsocketPageServlet =
 					appDeployment.createServlet(EchoWebsocketPageServlet.class);
@@ -149,6 +151,7 @@ public class ManualServletContextListener implements ServletContextListener {
 					.configurator(endpointConfigurator)
 					.build()
 			);
+			endpointConfigurator.getProxyClass(RttReportingEndpoint.class);
 
 			final var rttReportingPageServlet =
 					appDeployment.createServlet(ResourceServlet.class);
