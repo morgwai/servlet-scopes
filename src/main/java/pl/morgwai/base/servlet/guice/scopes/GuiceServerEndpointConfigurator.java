@@ -403,11 +403,11 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		this.appDeployment = appDeployment;
 	}
 
-	static final String NO_DEPLOYMENT_FOR_PATH_WARNING = "could not find deployment for request "
-			+ "path %s (calculated app deployment path: %s ), "
+	static final String NO_DEPLOYMENT_FOR_PATH_WARNING = "could not find a deployment for the "
+			+ "request path %s (calculated app deployment path: %s ), "
 			+ "GuiceServerEndpointConfigurator.registerDeployment(...) probably wasn't called";
 	static final String NO_DEPLOYMENTS_WARNING = "could not find *ANY* deployment when configuring "
-			+ "Endpoint for request path %s, "
+			+ "Endpoint for the request path %s, "
 			+ "GuiceServerEndpointConfigurator.registerDeployment(...) probably wasn't called";
 
 
