@@ -369,24 +369,26 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			if (appDeploymentRef != null) appDeployment = appDeploymentRef.get();
 
 			if (appDeployment == null) {
-				final var noDeploymentForPathWarning = String.format(
-					NO_DEPLOYMENT_FOR_PATH_WARNING,
-					requestPath,
-					(appDeploymentPath.isBlank() ? "[rootApp]" : appDeploymentPath)
-				);
-				log.severe(noDeploymentForPathWarning);
-				System.err.println(noDeploymentForPathWarning);
+				// pick first non-null deployment and ask it for a reference to the desired one
+				// (this should also cover cases when the desired appDeployment is matched by more
+				// than 1 path (as described in ServletContext.getContextPath() javadoc) and request
+				// comes to a non-primary path)
 				try {
-					// pick first non-null deployment and ask it for a reference to the desired one
-					// (this should also cover cases when the desired appDeployment is matched by
-					// more than 1 path (as described in ServletContext.getContextPath() javadoc)
-					// and request comes to a non-primary path)
 					ServletContext randomDeployment;
 					final var deploymentIterator = appDeployments.values().iterator();
 					do {
 						randomDeployment = deploymentIterator.next().get();
 					} while (randomDeployment == null);
 					appDeployment = randomDeployment.getContext(appDeploymentPath);
+					if (appDeploymentPath.equals(appDeployment.getContextPath())) {
+						final var noDeploymentForPathWarning = String.format(
+							NO_DEPLOYMENT_FOR_PATH_WARNING,
+							requestPath,
+							appDeploymentPath.isBlank() ? "[rootApp]" : appDeploymentPath
+						);
+						log.severe(noDeploymentForPathWarning);
+						System.err.println(noDeploymentForPathWarning);
+					}  // else: request to a non-primary path
 				} catch (NoSuchElementException e) {
 					final var noDeploymentsWarning =
 							String.format(NO_DEPLOYMENTS_WARNING, requestPath);
