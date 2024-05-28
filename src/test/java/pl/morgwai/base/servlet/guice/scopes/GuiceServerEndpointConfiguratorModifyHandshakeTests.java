@@ -24,7 +24,7 @@ import static pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurat
 
 
 
-public class GuiceServerEndpointConfiguratorTests extends EasyMockSupport {
+public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMockSupport {
 
 
 
