@@ -384,7 +384,10 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 						randomDeployment = deploymentIterator.next().get();
 					} while (randomDeployment == null);
 					appDeployment = randomDeployment.getContext(appDeploymentPath);
-					if (appDeploymentPath.equals(appDeployment.getContextPath())) {
+					if (
+						appDeployment == null  // access restricted by container
+						|| appDeploymentPath.equals(appDeployment.getContextPath())
+					) {
 						final var noDeploymentForPathWarning = String.format(
 							NO_DEPLOYMENT_FOR_PATH_WARNING,
 							requestPath,
@@ -392,6 +395,9 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 						);
 						log.severe(noDeploymentForPathWarning);
 						System.err.println(noDeploymentForPathWarning);
+						if (appDeployment == null) {
+							throw new RuntimeException(noDeploymentForPathWarning);
+						}
 					}  // else: request to a non-primary path
 				} catch (NoSuchElementException e) {
 					final var noDeploymentsError = String.format(NO_DEPLOYMENTS_ERROR, requestPath);
