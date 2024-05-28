@@ -377,33 +377,27 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 				// (this should also cover cases when the desired appDeployment is matched by more
 				// than 1 path (as described in ServletContext.getContextPath() javadoc) and request
 				// comes to a non-primary path)
-				try {
-					ServletContext randomDeployment;
-					final var deploymentIterator = appDeployments.values().iterator();
-					do {
-						randomDeployment = deploymentIterator.next().get();
-					} while (randomDeployment == null);
-					appDeployment = randomDeployment.getContext(appDeploymentPath);
-					if (
-						appDeployment == null  // access restricted by container
-						|| appDeploymentPath.equals(appDeployment.getContextPath())
-					) {
-						final var noDeploymentForPathWarning = String.format(
-							NO_DEPLOYMENT_FOR_PATH_WARNING,
-							requestPath,
-							appDeploymentPath.isBlank() ? "[rootApp]" : appDeploymentPath
-						);
-						log.severe(noDeploymentForPathWarning);
-						System.err.println(noDeploymentForPathWarning);
-						if (appDeployment == null) {
-							throw new RuntimeException(noDeploymentForPathWarning);
-						}
-					}  // else: request to a non-primary path
-				} catch (NoSuchElementException e) {
-					final var noDeploymentsError = String.format(NO_DEPLOYMENTS_ERROR, requestPath);
-					log.severe(noDeploymentsError);
-					System.err.println(noDeploymentsError);
-					throw new RuntimeException(noDeploymentsError);
+				for (var deploymentRef: appDeployments.values()) {
+					final var randomDeployment = deploymentRef.get();
+					if (randomDeployment != null) {
+						appDeployment = randomDeployment.getContext(appDeploymentPath);
+						if (appDeployment != null) break;
+					}
+				}
+				if (
+					appDeployment == null
+					|| appDeploymentPath.equals(appDeployment.getContextPath())
+				) {
+					final var deploymentNotFoundMessage = String.format(
+						DEPLOYMENT_NOT_FOUND_MESSAGE,
+						requestPath,
+						appDeploymentPath.isBlank() ? "[rootApp]" : appDeploymentPath
+					);
+					log.severe(deploymentNotFoundMessage);
+					System.err.println(deploymentNotFoundMessage);
+					if (appDeployment == null) {
+						throw new NoSuchElementException(deploymentNotFoundMessage);
+					}
 				}
 			}
 		}
@@ -412,11 +406,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		this.appDeployment = appDeployment;
 	}
 
-	static final String NO_DEPLOYMENT_FOR_PATH_WARNING = "could not find a deployment for the "
+	static final String DEPLOYMENT_NOT_FOUND_MESSAGE = "could not find a deployment for the "
 			+ "request path %s (calculated app deployment path: %s ), "
-			+ "GuiceServerEndpointConfigurator.registerDeployment(...) probably wasn't called";
-	static final String NO_DEPLOYMENTS_ERROR = "could not find *ANY* deployment when configuring "
-			+ "Endpoint for the request path %s, "
 			+ "GuiceServerEndpointConfigurator.registerDeployment(...) probably wasn't called";
 
 

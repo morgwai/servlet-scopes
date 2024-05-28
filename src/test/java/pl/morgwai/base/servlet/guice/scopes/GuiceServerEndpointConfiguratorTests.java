@@ -207,15 +207,15 @@ public class GuiceServerEndpointConfiguratorTests extends EasyMockSupport {
 		try {
 			configurator.modifyHandshake(mockConfig, mockRequest, mockResponse);
 			fail("RuntimeException expected");
-		} catch (RuntimeException noDeploymentForPathException) {
+		} catch (RuntimeException expectedException) {
 			assertEquals(
-				"exception message should be NO_DEPLOYMENT_FOR_PATH_WARNING",
+				"expectedException message should be DEPLOYMENT_NOT_FOUND_MESSAGE",
 				String.format(
-					NO_DEPLOYMENT_FOR_PATH_WARNING,
+					DEPLOYMENT_NOT_FOUND_MESSAGE,
 					DEPLOYMENT_PATH + WEBSOCKET_PATH,
 					DEPLOYMENT_PATH
 				),
-				noDeploymentForPathException.getMessage()
+				expectedException.getMessage()
 			);
 			assertNull("ctxTracker should NOT be initialized",
 					configurator.ctxTracker);
@@ -236,11 +236,15 @@ public class GuiceServerEndpointConfiguratorTests extends EasyMockSupport {
 		try {
 			configurator.modifyHandshake(mockConfig, mockRequest, mockResponse);
 			fail("RuntimeException expected");
-		} catch (RuntimeException noDeploymentsException) {
+		} catch (RuntimeException expectedException) {
 			assertEquals(
-				"exception message should be NO_DEPLOYMENTS_ERROR",
-				String.format(NO_DEPLOYMENTS_ERROR, DEPLOYMENT_PATH + WEBSOCKET_PATH),
-				noDeploymentsException.getMessage()
+				"expectedException message should be DEPLOYMENT_NOT_FOUND_MESSAGE",
+				String.format(
+					DEPLOYMENT_NOT_FOUND_MESSAGE,
+					DEPLOYMENT_PATH + WEBSOCKET_PATH,
+					DEPLOYMENT_PATH
+				),
+				expectedException.getMessage()
 			);
 			assertNull("ctxTracker should NOT be initialized",
 					configurator.ctxTracker);
