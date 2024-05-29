@@ -6,7 +6,7 @@ import java.net.URI;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import javax.websocket.DeploymentException;
+import jakarta.websocket.DeploymentException;
 
 import org.junit.Before;
 import org.junit.Test;

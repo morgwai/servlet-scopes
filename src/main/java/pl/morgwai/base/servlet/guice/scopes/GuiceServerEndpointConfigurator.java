@@ -11,11 +11,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpSession;
-import javax.websocket.*;
-import javax.websocket.server.*;
-import javax.websocket.server.ServerEndpointConfig.Configurator;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.*;
+import jakarta.websocket.server.*;
+import jakarta.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.Injector;
 import com.google.inject.Scope;
@@ -60,16 +60,16 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  *     the app-wide {@link Injector} must be
  *     {@link ServletContext#setAttribute(String, Object) stored as a deployment attribute} under
  *     the {@link Class#getName() fully-qualified name} of {@link Injector} class in {@link
- *     javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
- *     contextInitialized(event)} method of app's {@link javax.servlet.ServletContextListener}.
+ *     jakarta.servlet.ServletContextListener#contextInitialized(jakarta.servlet.ServletContextEvent)
+ *     contextInitialized(event)} method of app's {@link jakarta.servlet.ServletContextListener}.
  *   </li>
  *   <li>
  *     {@link #registerDeployment(ServletContext)} and {@link #deregisterDeployment(ServletContext)}
  *     static methods must be called respectively in {@link
- *     javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
+ *     jakarta.servlet.ServletContextListener#contextInitialized(jakarta.servlet.ServletContextEvent)
  *     contextInitialized(event)} and {@link
- *     javax.servlet.ServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)
- *     contextDestroyed(event)} methods of app's {@link javax.servlet.ServletContextListener}.
+ *     jakarta.servlet.ServletContextListener#contextDestroyed(jakarta.servlet.ServletContextEvent)
+ *     contextDestroyed(event)} methods of app's {@link jakarta.servlet.ServletContextListener}.
  *   </li>
  * </ol>
  * <p>
@@ -120,7 +120,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * {@code Configurator} instances to call {@link #initialize(ServletContext)}.
 	 * <p>
 	 * This method is called automatically by
-	 * {@link GuiceServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)},
+	 * {@link GuiceServletContextListener#contextInitialized(jakarta.servlet.ServletContextEvent)},
 	 * it must be called manually in apps that don't use it.</p>
 	 * @see #modifyHandshake(ServerEndpointConfig, HandshakeRequest, HandshakeResponse)
 	 */
@@ -134,7 +134,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 * Removes a reference to {@code appDeployment}.
 	 * <p>
 	 * This method is called automatically by
-	 * {@link GuiceServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)},
+	 * {@link GuiceServletContextListener#contextDestroyed(jakarta.servlet.ServletContextEvent)},
 	 * it must be called manually in apps that don't use it.</p>
 	 */
 	public static void deregisterDeployment(ServletContext appDeployment) {
@@ -238,7 +238,7 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	/**
 	 * Returns a dynamic class of a context-aware proxy for {@code endpointClass}.
-	 * Exposed for proxy class pre-building in {@link javax.servlet.ServletContextListener}s.
+	 * Exposed for proxy class pre-building in {@link jakarta.servlet.ServletContextListener}s.
 	 */
 	public <EndpointT> Class<? extends EndpointT> getProxyClass(Class<EndpointT> endpointClass) {
 		@SuppressWarnings("unchecked")

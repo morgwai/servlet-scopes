@@ -1,7 +1,7 @@
 // Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
-import javax.websocket.MessageHandler;
+import jakarta.websocket.MessageHandler;
 
 import org.junit.Test;
 

@@ -4,8 +4,8 @@ package pl.morgwai.base.servlet.guice.scopes;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.http.HttpSession;
-import javax.websocket.*;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.*;
 
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
