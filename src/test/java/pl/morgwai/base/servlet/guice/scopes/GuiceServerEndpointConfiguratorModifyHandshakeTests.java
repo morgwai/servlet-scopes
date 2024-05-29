@@ -28,9 +28,9 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 
 
 
-	static final String DEPLOYMENT_PATH = "/mockPath";
-	static final String NON_PRIMARY_PATH = "/nonPrimaryMockPath";
-	static final String SECOND_DEPLOYMENT = "/second";
+	static final String MOCK_DEPLOYMENT_PATH = "/mockDeploymentPath";
+	static final String NON_PRIMARY_MOCK_DEPLOYMENT_PATH = "/nonPrimaryMockDeploymentPath";
+	static final String SECOND_DEPLOYMENT_PATH = "/secondDeploymentPath";
 	static final String WEBSOCKET_PATH = "/websocket/mock";
 
 	/** Test subject. */
@@ -45,7 +45,7 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 	/** Returned by {@link #mockConfig}. */
 	final Map<String, Object> userProperties = new HashMap<>(1);
 	/** Returned by {@link #mockRequest}, overridden at the beginning of some tests. */
-	URI requestUri = URI.create("ws://localhost:666" + DEPLOYMENT_PATH + WEBSOCKET_PATH);
+	URI requestUri = URI.create("ws://localhost:666" + MOCK_DEPLOYMENT_PATH + WEBSOCKET_PATH);
 
 	ServletContext mockDeployment;
 	@Mock ServerEndpointConfig mockConfig;
@@ -72,11 +72,16 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 			.anyTimes();
 
 		mockDeployment = new StandaloneWebsocketContainerServletContext(
-			DEPLOYMENT_PATH,
+			MOCK_DEPLOYMENT_PATH,
 			"mockApp"
 		) {
 			@Override public ServletContext getContext(String path) {
-				if (path.equals(DEPLOYMENT_PATH) || path.equals(NON_PRIMARY_PATH)) return this;
+				if (
+					path.equals(MOCK_DEPLOYMENT_PATH)
+					|| path.equals(NON_PRIMARY_MOCK_DEPLOYMENT_PATH)
+				) {
+					return this;
+				}
 				return null;
 			}
 		};
@@ -141,7 +146,8 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 
 	@Test
 	public void testModifyHandshakeFindByNonPrimaryPath() {
-		requestUri = URI.create("ws://localhost:666" + NON_PRIMARY_PATH + WEBSOCKET_PATH);
+		requestUri = URI.create(
+				"ws://localhost:666" + NON_PRIMARY_MOCK_DEPLOYMENT_PATH + WEBSOCKET_PATH);
 		expect(mockRequest.getHttpSession())
 			.andReturn(null)
 			.anyTimes();
@@ -166,11 +172,14 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 		replayAll();
 
 		final var secondDeployment = new StandaloneWebsocketContainerServletContext(
-			SECOND_DEPLOYMENT,
+			SECOND_DEPLOYMENT_PATH,
 			"secondApp"
 		) {
 			@Override public ServletContext getContext(String path) {
-				if (path.equals(DEPLOYMENT_PATH) || path.equals(NON_PRIMARY_PATH)) {
+				if (
+					path.equals(MOCK_DEPLOYMENT_PATH)
+					|| path.equals(NON_PRIMARY_MOCK_DEPLOYMENT_PATH)
+				) {
 					return mockDeployment;
 				}
 				if (path.equals(getContextPath())) return this;
@@ -196,7 +205,7 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 		replayAll();
 
 		final var secondDeployment = new StandaloneWebsocketContainerServletContext(
-			SECOND_DEPLOYMENT,
+			SECOND_DEPLOYMENT_PATH,
 			"secondApp"
 		) {
 			@Override public ServletContext getContext(String path) {
@@ -212,8 +221,8 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 				"expectedException message should be DEPLOYMENT_NOT_FOUND_MESSAGE",
 				String.format(
 					DEPLOYMENT_NOT_FOUND_MESSAGE,
-					DEPLOYMENT_PATH + WEBSOCKET_PATH,
-					DEPLOYMENT_PATH
+					MOCK_DEPLOYMENT_PATH + WEBSOCKET_PATH,
+					MOCK_DEPLOYMENT_PATH
 				),
 				expectedException.getMessage()
 			);
@@ -241,8 +250,8 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 				"expectedException message should be DEPLOYMENT_NOT_FOUND_MESSAGE",
 				String.format(
 					DEPLOYMENT_NOT_FOUND_MESSAGE,
-					DEPLOYMENT_PATH + WEBSOCKET_PATH,
-					DEPLOYMENT_PATH
+					MOCK_DEPLOYMENT_PATH + WEBSOCKET_PATH,
+					MOCK_DEPLOYMENT_PATH
 				),
 				expectedException.getMessage()
 			);
