@@ -25,6 +25,8 @@ public class EndpointProxyTests extends EasyMockSupport {
 	/** Test subject. */
 	TestEndpoint endpointProxy;
 
+	TestEndpoint testEndpoint;
+	Class<? extends TestEndpoint> proxyClass;
 	final GuiceServerEndpointConfigurator configurator = new GuiceServerEndpointConfigurator();
 	final ContextTracker<ContainerCallContext> ctxTracker = new ContextTracker<>();
 	@Mock Session mockConnection;
@@ -41,15 +43,9 @@ public class EndpointProxyTests extends EasyMockSupport {
 			.andReturn(userProperties)
 			.anyTimes();
 		replayAll();
-		final var proxyClass = configurator.getProxyClass(TestEndpoint.class);
+		proxyClass = configurator.getProxyClass(TestEndpoint.class);
 		endpointProxy = proxyClass.getConstructor().newInstance();
-		final var endpointProxyHandler = new EndpointProxyHandler(
-			configurator.getAdditionalDecorator(
-					new TestEndpoint(ctxTracker, mockConnection, mockHttpSession)),
-			ctxTracker
-		);
-		proxyClass.getDeclaredField(INVOCATION_HANDLER_FIELD_NAME)
-				.set(endpointProxy, endpointProxyHandler);
+		testEndpoint = new TestEndpoint(ctxTracker, mockConnection, mockHttpSession);
 	}
 
 	@After
@@ -60,7 +56,18 @@ public class EndpointProxyTests extends EasyMockSupport {
 
 
 	@Test
-	public void testOnOpenThenOnClose() {
+	public void testOnOpenThenOnClose() throws Exception {
+		final var endpointProxyHandler = new EndpointProxyHandler(
+			(proxy, method, args) -> {
+				assertNotNull("additional decorator should be executed within a Context",
+						ctxTracker.getCurrentContext());
+				return method.invoke(testEndpoint, args);
+			},
+			ctxTracker
+		);
+		proxyClass.getDeclaredField(INVOCATION_HANDLER_FIELD_NAME)
+				.set(endpointProxy, endpointProxyHandler);
+
 		endpointProxy.onOpen(mockConnection, null);
 		endpointProxy.onClose(mockConnection, null);
 	}
@@ -68,7 +75,20 @@ public class EndpointProxyTests extends EasyMockSupport {
 
 
 	@Test
-	public void testToStringBeforeOnOpen() {
+	public void testToStringBeforeOnOpen() throws Exception {
+		final var endpointProxyHandler = new EndpointProxyHandler(
+			(proxy, method, args) -> {
+				if ( !method.getName().equals("toString")) {
+					assertNotNull("additional decorator should be executed within a Context",
+							ctxTracker.getCurrentContext());
+				}
+				return method.invoke(testEndpoint, args);
+			},
+			ctxTracker
+		);
+		proxyClass.getDeclaredField(INVOCATION_HANDLER_FIELD_NAME)
+				.set(endpointProxy, endpointProxyHandler);
+
 		var ignored = endpointProxy.toString();
 		endpointProxy.onOpen(mockConnection, null);
 		endpointProxy.onClose(mockConnection, null);
