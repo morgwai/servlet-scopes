@@ -1,6 +1,7 @@
 // Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
+import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -186,12 +187,16 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 				return null;
 			}
 		};
+		final var leakedDeploymentPath = "/leaked1";  // must be placed at the beginning of the Map
+		GuiceServerEndpointConfigurator.appDeployments.put(  // test skipping leaked deployments
+				leakedDeploymentPath, new WeakReference<>(null));
 		GuiceServerEndpointConfigurator.registerDeployment(secondDeployment);
 		try {
 			configurator.modifyHandshake(mockConfig, mockRequest, mockResponse);
 			verifyInitialization();
 		} finally {
 			GuiceServerEndpointConfigurator.deregisterDeployment(secondDeployment);
+			GuiceServerEndpointConfigurator.appDeployments.remove(leakedDeploymentPath);
 		}
 	}
 
