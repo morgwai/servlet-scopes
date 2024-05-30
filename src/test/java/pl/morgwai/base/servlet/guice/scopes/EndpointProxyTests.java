@@ -132,8 +132,6 @@ public class EndpointProxyTests extends EasyMockSupport {
 			assertSame("connectionProxy should be wrapping the connection passed to the method",
 					mockConnection, ((WebsocketConnectionProxy) connectionProxy).wrappedConnection);
 			openEventCtx = (WebsocketEventContext) ctxTracker.getCurrentContext();
-			assertNotNull("Endpoint methods should be executed within a WebsocketEventContext",
-					openEventCtx);
 			assertSame("openEventCtx should be referencing the HttpSession from userProperties",
 					mockHttpSession, openEventCtx.httpSession);
 			connectionCtx = openEventCtx.connectionContext;
