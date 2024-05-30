@@ -7,12 +7,11 @@ import java.util.Map;
 import javax.servlet.http.HttpSession;
 import javax.websocket.*;
 
-import org.easymock.EasyMockSupport;
-import org.easymock.Mock;
+import org.easymock.*;
 import org.junit.*;
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
-import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
 import static pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator.*;
 
@@ -26,11 +25,12 @@ public class EndpointProxyTests extends EasyMockSupport {
 	TestEndpoint endpointProxy;
 
 	TestEndpoint testEndpoint;
-	Class<? extends TestEndpoint> proxyClass;
+	@Mock Session mockConnection;
+	final Map<String, Object> userProperties = new HashMap<>(2);
+
 	final GuiceServerEndpointConfigurator configurator = new GuiceServerEndpointConfigurator();
 	final ContextTracker<ContainerCallContext> ctxTracker = new ContextTracker<>();
-	@Mock Session mockConnection;
-	final Map<String, Object> userProperties = new HashMap<>(1);
+	Class<? extends TestEndpoint> proxyClass;
 	@Mock HttpSession mockHttpSession;
 
 
@@ -38,12 +38,13 @@ public class EndpointProxyTests extends EasyMockSupport {
 	@Before
 	public void setup() throws Exception {
 		injectMocks(this);
+		proxyClass = configurator.getProxyClass(TestEndpoint.class);
+
 		userProperties.put(HttpSession.class.getName(), mockHttpSession);
 		expect(mockConnection.getUserProperties())
 			.andReturn(userProperties)
 			.anyTimes();
 		replayAll();
-		proxyClass = configurator.getProxyClass(TestEndpoint.class);
 		endpointProxy = proxyClass.getConstructor().newInstance();
 		testEndpoint = new TestEndpoint(ctxTracker, mockConnection, mockHttpSession);
 	}
@@ -92,6 +93,42 @@ public class EndpointProxyTests extends EasyMockSupport {
 		var ignored = endpointProxy.toString();
 		endpointProxy.onOpen(mockConnection, null);
 		endpointProxy.onClose(mockConnection, null);
+	}
+
+
+
+	@Test
+	public void testTwoSeparateEndpoints() throws Exception {
+		final var endpointProxyHandler = new EndpointProxyHandler(
+			configurator.getAdditionalDecorator(testEndpoint),
+			ctxTracker
+		);
+		proxyClass.getDeclaredField(INVOCATION_HANDLER_FIELD_NAME)
+				.set(endpointProxy, endpointProxyHandler);
+
+		final var secondUserProperties = new HashMap<String, Object>(2);
+		secondUserProperties.put(HttpSession.class.getName(), mockHttpSession);
+		final Session secondConnection = createMock(Session.class);
+		expect(secondConnection.getUserProperties())
+			.andReturn(secondUserProperties)
+			.anyTimes();
+		replay(secondConnection);
+		final var secondProxy = proxyClass.getConstructor().newInstance();
+		final var secondEndpoint = new TestEndpoint(ctxTracker, secondConnection, mockHttpSession);
+		final var secondHandler = new EndpointProxyHandler(
+			configurator.getAdditionalDecorator(secondEndpoint),
+			ctxTracker
+		);
+		proxyClass.getDeclaredField(INVOCATION_HANDLER_FIELD_NAME)
+				.set(secondProxy, secondHandler);
+
+		endpointProxy.onOpen(mockConnection, null);
+		secondProxy.onOpen(secondConnection, null);
+		assertNotSame("each connection should have a separate WebsocketConnectionContext",
+				testEndpoint.connectionCtx, secondEndpoint.connectionCtx);
+		assertNotSame("each method invocation should have a separate WebsocketEventContext",
+				testEndpoint.openEventCtx, secondEndpoint.openEventCtx);
+		verify(secondConnection);
 	}
 
 
