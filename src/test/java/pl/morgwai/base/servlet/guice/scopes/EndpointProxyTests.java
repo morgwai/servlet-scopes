@@ -1,6 +1,8 @@
 // Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -78,12 +80,35 @@ public class EndpointProxyTests extends EasyMockSupport {
 	@Test
 	public void testToStringBeforeOnOpen() throws Exception {
 		final var endpointProxyHandler = new EndpointProxyHandler(
-			(proxy, method, args) -> {
-				if ( !method.getName().equals("toString")) {
-					assertNotNull("additional decorator should be executed within a Context",
-							ctxTracker.getCurrentContext());
+			new InvocationHandler() {
+
+				boolean onOpenCalled = false;
+
+				@Override
+				public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+					if (args != null) {
+						for (var arg: args) {
+							if (arg instanceof Session) {
+								onOpenCalled = true;
+								break;
+							}
+						}
+					}
+					if (onOpenCalled) {
+						assertNotNull(
+							"onOpen(...) and any subsequent method calls should be executed within "
+									+ "a Context",
+							ctxTracker.getCurrentContext()
+						);
+					} else {
+						assertNull(
+							"methods invoked before onOpen(...) should be executed outside of any "
+									+ "Context",
+							ctxTracker.getCurrentContext()
+						);
+					}
+					return method.invoke(testEndpoint, args);
 				}
-				return method.invoke(testEndpoint, args);
 			},
 			ctxTracker
 		);
