@@ -361,49 +361,51 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 		// uninitialized container-created Configurator instance using param-less constructor:
 		// retrieve appDeployment and call initialize(...)
-		ServletContext appDeployment = null;
-		if (httpSession != null) {
-			appDeployment = ((HttpSession) httpSession).getServletContext();
-		} else {
-			// try retrieving from appDeployments Map (appDeploymentPath -> appDeployment)
-			final var requestPath = request.getRequestURI().getPath();
-			final var appDeploymentPath = requestPath.substring(
-					0, requestPath.lastIndexOf(config.getPath()));
-			final var appDeploymentRef = appDeployments.get(appDeploymentPath);
-			if (appDeploymentRef != null) appDeployment = appDeploymentRef.get();
+		synchronized (this) {
+			if (this.appDeployment != null) return;
+			ServletContext appDeployment = null;
+			if (httpSession != null) {
+				appDeployment = ((HttpSession) httpSession).getServletContext();
+			} else {
+				// try retrieving from appDeployments Map (appDeploymentPath -> appDeployment)
+				final var requestPath = request.getRequestURI().getPath();
+				final var appDeploymentPath = requestPath.substring(
+						0, requestPath.lastIndexOf(config.getPath()));
+				final var appDeploymentRef = appDeployments.get(appDeploymentPath);
+				if (appDeploymentRef != null) appDeployment = appDeploymentRef.get();
 
-			if (appDeployment == null) {
-				// pick first non-null deployment and ask it for a reference to the desired one
-				// (this should also cover cases when the desired appDeployment is matched by more
-				// than 1 path (as described in ServletContext.getContextPath() javadoc) and request
-				// comes to a non-primary path)
-				for (var deploymentRef: appDeployments.values()) {
-					final var randomDeployment = deploymentRef.get();
-					if (randomDeployment != null) {
-						appDeployment = randomDeployment.getContext(appDeploymentPath);
-						if (appDeployment != null) break;
+				if (appDeployment == null) {
+					// pick first non-null deployment and ask it for a reference to the desired one
+					// (this should also cover cases when the desired appDeployment is matched by
+					// more than 1 path (as described in ServletContext.getContextPath() javadoc)
+					// and request comes to a non-primary path)
+					for (var deploymentRef: appDeployments.values()) {
+						final var randomDeployment = deploymentRef.get();
+						if (randomDeployment != null) {
+							appDeployment = randomDeployment.getContext(appDeploymentPath);
+							if (appDeployment != null) break;
+						}
 					}
-				}
-				if (
-					appDeployment == null
-					|| appDeploymentPath.equals(appDeployment.getContextPath())
-				) {
-					final var deploymentNotFoundMessage = String.format(
-						DEPLOYMENT_NOT_FOUND_MESSAGE,
-						requestPath,
-						appDeploymentPath.isBlank() ? "[rootApp]" : appDeploymentPath
-					);
-					log.severe(deploymentNotFoundMessage);
-					System.err.println(deploymentNotFoundMessage);
-					if (appDeployment == null) {
-						throw new NoSuchElementException(deploymentNotFoundMessage);
+					if (
+						appDeployment == null
+						|| appDeploymentPath.equals(appDeployment.getContextPath())
+					) {
+						final var deploymentNotFoundMessage = String.format(
+							DEPLOYMENT_NOT_FOUND_MESSAGE,
+							requestPath,
+							appDeploymentPath.isBlank() ? "[rootApp]" : appDeploymentPath
+						);
+						log.severe(deploymentNotFoundMessage);
+						System.err.println(deploymentNotFoundMessage);
+						if (appDeployment == null) {
+							throw new NoSuchElementException(deploymentNotFoundMessage);
+						}
 					}
 				}
 			}
+			initialize(appDeployment);
+			this.appDeployment = appDeployment;
 		}
-		// multiple Threads initializing the same Configurator, will set exactly the same values
-		initialize(appDeployment);
-		this.appDeployment = appDeployment;
 	}
 
 	static final String DEPLOYMENT_NOT_FOUND_MESSAGE = "could not find a deployment for the "
