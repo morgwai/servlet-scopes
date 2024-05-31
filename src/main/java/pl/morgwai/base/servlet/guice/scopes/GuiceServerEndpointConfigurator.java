@@ -179,8 +179,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 	/**
 	 * Initializes this instance member fields with references from {@code appDeployment}
-	 * {@link ServletContext#getAttribute(String) attributes}. Called either by
-	 * {@link #GuiceServerEndpointConfigurator(ServletContext)} or by
+	 * {@link ServletContext#getAttribute(String) attributes}.
+	 * Called either by {@link #GuiceServerEndpointConfigurator(ServletContext)} or by
 	 * {@link #modifyHandshake(ServerEndpointConfig, HandshakeRequest, HandshakeResponse)} in case
 	 * of container-created instances for {@code Endpoints} annotated with {@link ServerEndpoint}.
 	 */

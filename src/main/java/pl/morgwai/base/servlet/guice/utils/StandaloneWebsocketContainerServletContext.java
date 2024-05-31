@@ -12,11 +12,11 @@ import javax.servlet.descriptor.JspConfigDescriptor;
 
 
 /**
- * Fake {@link ServletContext} useful for storing attributes necessary to configure
+ * A fake {@link ServletContext} useful for configuring
  * {@link pl.morgwai.base.servlet.guice.scopes.ServletModule} and
  * {@link pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator} in standalone
- * websocket container apps where there is no "real" {@link ServletContext}. Most methods throw
- * {@link UnsupportedOperationException} except the below:
+ * websocket container apps.
+ * Most methods throw an {@link UnsupportedOperationException} except the below ones:
  * <ul>
  *     <li>{@link #getContextPath()}</li>
  *     <li>{@link #getServletContextName()}</li>
@@ -152,7 +152,7 @@ public class StandaloneWebsocketContainerServletContext implements ServletContex
 
 
 
-	// all other below methods throw UnsupportedOperationException
+	// all the other below methods throw UnsupportedOperationException
 
 	@Override
 	public ServletContext getContext(String path) { throw new UnsupportedOperationException(); }

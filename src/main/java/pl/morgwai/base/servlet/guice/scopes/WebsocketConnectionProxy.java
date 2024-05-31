@@ -65,8 +65,8 @@ public class WebsocketConnectionProxy implements Session {
 
 	/**
 	 * Asks {@link ServiceLoader SPI}-provided factory to create a new proxy for {@code connection}.
-	 * If there's no factory specific for the given {@link Session} implementation, uses
-	 * {@link #WebsocketConnectionProxy(Session, ContextTracker, boolean)}.
+	 * If there's no factory specific for the given {@link Session} implementation, then
+	 * {@link #WebsocketConnectionProxy(Session, ContextTracker, boolean)} is used.
 	 */
 	static WebsocketConnectionProxy newProxy(
 		Session connection,

@@ -13,9 +13,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 
 /**
- * Subclass of {@link GuiceServletContextListener} that automatically registers and deregisters
- * {@code Endpoints} added with {@link #addEndpoint(Class, String)} to the associated
- * {@link WebsocketPingerService}.
+ * Subclass of {@link GuiceServletContextListener} that automatically registers its programmatic
+ * {@code Endpoints} to its associated {@link WebsocketPingerService}.
+ * @see PingingEndpointConfigurator
  */
 public abstract class PingingServletContextListener extends GuiceServletContextListener {
 
@@ -23,7 +23,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 	/**
 	 * The app-wide pinger service to which {@link #addEndpoint(Class, String)} method registers
-	 * {@code Endpoints}. Initialized with the result of {@link #createPingerService()}.
+	 * {@code Endpoints}.
+	 * Initialized with the result of {@link #createPingerService()}.
 	 * <p>
 	 * The app-wide pinger service is also stored as a
 	 * {@link javax.servlet.ServletContext#getAttribute(String) deployment attribute} under
@@ -34,7 +35,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 	/**
-	 * Allows to override {@link #pingerService}'s mode. By default {@code false}.
+	 * Allows to override {@link #pingerService}'s mode.
+	 * By default {@code false}.
 	 * <p>
 	 * This method is called by {@link #createPingerService()}, it may use {@link #appDeployment}
 	 * and {@link #injector}.</p>
@@ -114,10 +116,11 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 	/**
-	 * Creates {@link #pingerService the app-wide pinger service}. By default it calls
-	 * {@link #isPingerInKeepAliveOnlyMode()}, {@link #getPingIntervalMillis()} and
-	 * {@link #getPingFailureLimit()}, {@link #getHashFunctionName()}, {@link #createScheduler()}
-	 * and {@link #shouldSynchronizePingSending()} to configure the service.
+	 * Creates {@link #pingerService the app-wide pinger service}.
+	 * By default it calls {@link #isPingerInKeepAliveOnlyMode()}, {@link #getPingIntervalMillis()}
+	 * and {@link #getPingFailureLimit()}, {@link #getHashFunctionName()},
+	 * {@link #createScheduler()} and {@link #shouldSynchronizePingSending()} to configure the
+	 * service.
 	 * <p>
 	 * This method is called once in a {@link #createEndpointConfigurator()} and may be overridden
 	 * if other customizations are required. It may use {@link #appDeployment} and

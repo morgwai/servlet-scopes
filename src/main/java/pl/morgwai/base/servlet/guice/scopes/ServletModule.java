@@ -32,8 +32,8 @@ public class ServletModule implements Module {
 	 * Scopes objects to the {@code Context} of either an
 	 * {@link ServletRequestContext HttpServletRequests} or a
 	 * {@link WebsocketEventContext websocket event}.
-	 * Depending which is active (as returned by {@link #containerCallContextTracker}) at the moment
-	 * of scoping.
+	 * The choice is determined by which type is active at the moment of a given
+	 * {@link Provider#get() provisioning} (as returned by {@link #containerCallContextTracker}).
 	 */
 	public final Scope containerCallScope =
 			new ContextScope<>("ServletModule.containerCallScope", containerCallContextTracker);
