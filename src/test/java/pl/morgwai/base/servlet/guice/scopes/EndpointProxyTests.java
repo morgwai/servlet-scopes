@@ -5,6 +5,8 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpSession;
 import javax.websocket.*;
@@ -181,7 +183,14 @@ public class EndpointProxyTests extends EasyMockSupport {
 		proxyClass.getDeclaredField(INVOCATION_HANDLER_FIELD_NAME)
 				.set(endpointProxy, endpointProxyHandler);
 
-		var ignored = endpointProxy.toString();
+		final var log = Logger.getLogger(EndpointProxyHandler.class.getName());
+		final var levelBackup = log.getLevel();
+		log.setLevel(Level.OFF);
+		try {
+			var ignored = endpointProxy.toString();
+		} finally {
+			log.setLevel(levelBackup);
+		}
 		endpointProxy.onOpen(mockConnection, null);
 		endpointProxy.onClose(mockConnection, null);
 	}

@@ -5,6 +5,8 @@ import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
@@ -263,5 +265,21 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 			assertNull("ctxTracker should NOT be initialized",
 					configurator.ctxTracker);
 		}
+	}
+
+
+
+	static final Logger log = Logger.getLogger(GuiceServerEndpointConfigurator.class.getName());
+	static Level levelBackup;
+
+	@BeforeClass
+	public static void suppressErrorLogs() {
+		levelBackup = log.getLevel();
+		log.setLevel(Level.OFF);
+	}
+
+	@AfterClass
+	public static void restoreLogLevel() {
+		log.setLevel(levelBackup);
 	}
 }

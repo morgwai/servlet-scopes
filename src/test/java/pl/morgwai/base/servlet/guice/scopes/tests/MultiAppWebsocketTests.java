@@ -5,11 +5,14 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.websocket.DeploymentException;
 
 import org.junit.Before;
 import org.junit.Test;
+import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 
 import static org.junit.Assert.*;
@@ -139,10 +142,17 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 	@Test
 	public void testAppSeparationNoSession()
 			throws InterruptedException, DeploymentException, IOException {
-		testAppSeparation(
-			appWebsocketUrl + NoSessionAppSeparationTestEndpoint.PATH,
-			secondAppWebsocketUrl + NoSessionAppSeparationTestEndpoint.PATH,
-			unregisteredDeploymentAppWebsocketUrl + NoSessionAppSeparationTestEndpoint.PATH
-		);
+		final var log = Logger.getLogger(GuiceServerEndpointConfigurator.class.getName());
+		final var levelBackup = log.getLevel();
+		log.setLevel(Level.OFF);
+		try {
+			testAppSeparation(
+				appWebsocketUrl + NoSessionAppSeparationTestEndpoint.PATH,
+				secondAppWebsocketUrl + NoSessionAppSeparationTestEndpoint.PATH,
+				unregisteredDeploymentAppWebsocketUrl + NoSessionAppSeparationTestEndpoint.PATH
+			);
+		} finally {
+			log.setLevel(levelBackup);
+		}
 	}
 }
