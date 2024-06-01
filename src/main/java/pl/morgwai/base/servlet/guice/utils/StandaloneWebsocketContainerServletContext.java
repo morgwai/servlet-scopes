@@ -19,6 +19,7 @@ import javax.servlet.descriptor.JspConfigDescriptor;
  * Most methods throw an {@link UnsupportedOperationException} except the below ones:
  * <ul>
  *     <li>{@link #getContextPath()}</li>
+ *     <li>{@link #getContext(String)}</li>
  *     <li>{@link #getServletContextName()}</li>
  *     <li>{@link #getVirtualServerName()}</li>
  *     <li>{@link #getAttribute(String)}</li>
@@ -84,6 +85,14 @@ public class StandaloneWebsocketContainerServletContext implements ServletContex
 	@Override
 	public String getContextPath() {
 		return contextPath;
+	}
+
+
+
+	/** Returns itself if {@code path} equals {@link #getContextPath()}, {@code null} otherwise. */
+	@Override
+	public ServletContext getContext(String path) {
+		return (path.equals(contextPath)) ? this : null;
 	}
 
 
@@ -154,8 +163,6 @@ public class StandaloneWebsocketContainerServletContext implements ServletContex
 
 	// all the other below methods throw UnsupportedOperationException
 
-	@Override
-	public ServletContext getContext(String path) { throw new UnsupportedOperationException(); }
 	@Override public int getMajorVersion() { throw new UnsupportedOperationException(); }
 	@Override public int getMinorVersion() { throw new UnsupportedOperationException(); }
 	@Override public int getEffectiveMajorVersion() { throw new UnsupportedOperationException(); }
