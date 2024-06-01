@@ -6,7 +6,7 @@
 
 	<groupId>pl.morgwai.base</groupId>
 	<artifactId>servlet-scopes</artifactId>
-	<version>16.2-SNAPSHOT-javax</version><!--jakarta-->
+	<version>16.2-javax</version><!--jakarta-->
 
 	<name>Servlet and Websocket Guice Scopes</name>
 	<description>containerCallScope (either a HttpServletRequest or a websocket endpoint event), websocketConnectionScope (javax.websocket.Session) and httpSessionScope</description>
