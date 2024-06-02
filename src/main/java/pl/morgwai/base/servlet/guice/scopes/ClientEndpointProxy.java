@@ -55,7 +55,7 @@ public class ClientEndpointProxy extends Endpoint {
 		if (httpSession != null) {
 			connection.getUserProperties().put(HttpSession.class.getName(), httpSession);
 		}
-		connectionProxy = new WebsocketConnectionProxy(connection, ctxTracker, false);
+		connectionProxy = new WebsocketConnectionProxy(connection, ctxTracker);
 		connectionCtx = new WebsocketConnectionContext(connectionProxy);
 		new WebsocketEventContext(connectionCtx, httpSession, ctxTracker).executeWithinSelf(
 				() -> wrappedEndpoint.onOpen(connectionProxy, config));
