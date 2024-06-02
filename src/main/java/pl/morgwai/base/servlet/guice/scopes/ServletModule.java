@@ -5,7 +5,6 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
 
 import com.google.inject.Module;
 import com.google.inject.*;
@@ -114,17 +113,29 @@ public class ServletModule implements Module {
 	/** {@code Key} of {@link #allTrackers}. */
 	public static final Key<List<ContextTracker<?>>> allTrackersKey = Key.get(allTrackersType);
 
-	/** Set in {@link GuiceServletContextListener#contextInitialized(ServletContextEvent)}. */
+
+
+	/** {@code appDeployment} to be bound in {@link #configure(Binder)}. */
+	public void setAppDeployment(ServletContext appDeployment) {
+		if (this.appDeployment != null) {
+			throw new IllegalStateException("appDeployment already set");
+		}
+		this.appDeployment = appDeployment;
+	}
 	ServletContext appDeployment;
 
-
-
-	/** Creates a new module. For use in apps that don't use {@link GuiceServletContextListener}. */
+	/**
+	 * Constructs a new instance and {@link #setAppDeployment(ServletContext) sets appDeployment}.
+	 */
 	public ServletModule(ServletContext appDeployment) {
 		this.appDeployment = appDeployment;
 	}
-	/** For {@link GuiceServletContextListener#servletModule}. */
-	ServletModule() {}
+
+	/**
+	 * Constructs a new instance.
+	 * {@link #setAppDeployment(ServletContext) appDeployment} may be set later if needed.
+	 */
+	public ServletModule() {}
 
 
 
@@ -134,7 +145,8 @@ public class ServletModule implements Module {
 	 * <ul>
 	 *   <li>{@link #allTrackersKey} to {@link #allTrackers}</li>
 	 *   <li>{@link ContextBinder} to {@link #contextBinder}</li>
-	 *   <li>{@link ServletContext} to {@link #appDeployment}</li>
+	 *   <li>{@link ServletContext} to {@link #setAppDeployment(ServletContext) appDeployment} (if
+	 *       it's not {@code null})</li>
 	 *   <li>{@link #containerCallContextTrackerKey} to {@link #containerCallContextTracker}</li>
 	 *   <li>
 	 *       {@link ContainerCallContext}, {@link WebsocketConnectionContext} and
@@ -145,7 +157,7 @@ public class ServletModule implements Module {
 	 */
 	@Override
 	public void configure(Binder binder) {
-		binder.bind(ServletContext.class).toInstance(appDeployment);
+		if (appDeployment != null) binder.bind(ServletContext.class).toInstance(appDeployment);
 		binder.bind(allTrackersKey).toInstance(allTrackers);
 		binder.bind(ContextBinder.class).toInstance(contextBinder);
 		binder.bind(containerCallContextTrackerKey).toInstance(containerCallContextTracker);

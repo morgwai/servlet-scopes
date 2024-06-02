@@ -16,7 +16,8 @@ import javax.websocket.CloseReason.CloseCodes;
 import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
 import org.eclipse.jetty.websocket.javax.common.JavaxWebSocketContainer;
 import org.junit.*;
-import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
+import pl.morgwai.base.guice.scopes.ContextTracker;
+import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 import pl.morgwai.base.utils.concurrent.Awaitable;
 
@@ -40,8 +41,12 @@ public abstract class WebsocketIntegrationTests {
 	protected Server server;
 	protected String appWebsocketUrl;
 
-	protected CookieManager cookieManager;
-	protected org.eclipse.jetty.client.HttpClient wsHttpClient;
+	protected final ServletModule clientServletModule = new ServletModule();
+	protected final ContextTracker<ContainerCallContext> clientCtxTracker =
+			clientServletModule.containerCallContextTracker;
+	protected final CookieManager cookieManager = new CookieManager();
+	protected final org.eclipse.jetty.client.HttpClient wsHttpClient =
+			new org.eclipse.jetty.client.HttpClient();
 	protected WebSocketContainer clientWebsocketContainer;
 
 
@@ -52,12 +57,10 @@ public abstract class WebsocketIntegrationTests {
 
 
 	@Before
-	public void setupServer() throws Exception {
+	public void setup() throws Exception {
 		server = createServer();
 		appWebsocketUrl = server.getAppWebsocketUrl();
 
-		cookieManager = new CookieManager();
-		wsHttpClient = new org.eclipse.jetty.client.HttpClient();
 		wsHttpClient.setCookieStore(cookieManager.getCookieStore());
 		clientWebsocketContainer = JavaxWebSocketClientContainerProvider.getContainer(wsHttpClient);
 	}
@@ -129,7 +132,11 @@ public abstract class WebsocketIntegrationTests {
 				}
 			}
 		);
-		final var connection = clientWebsocketContainer.connectToServer(clientEndpoint, null, url);
+		final var connection = clientWebsocketContainer.connectToServer(
+			new ClientEndpointProxy(clientEndpoint, clientCtxTracker),
+			null,
+			url
+		);
 		if (sendTestMessage) connection.getAsyncRemote().sendText(testMessage);
 		testMessageSent.countDown();
 		try {

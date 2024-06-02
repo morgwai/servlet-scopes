@@ -321,7 +321,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 					: appDeployment.getContextPath().isEmpty()
 							? "rootApp" : "app at " + appDeployment.getContextPath();
 			log.info(deploymentName + " is being deployed");
-			servletModule.appDeployment = appDeployment;
+			servletModule.setAppDeployment(appDeployment);
 			endpointContainer = (ServerContainer)
 					appDeployment.getAttribute(ServerContainer.class.getName());
 			appDeployment.addListener(new HttpSessionContext.SessionContextCreator());

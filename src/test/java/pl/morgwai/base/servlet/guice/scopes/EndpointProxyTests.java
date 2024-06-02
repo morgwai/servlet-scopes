@@ -1,8 +1,6 @@
-// Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
+// Copyright 2024 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -11,50 +9,56 @@ import java.util.logging.Logger;
 import javax.servlet.http.HttpSession;
 import javax.websocket.*;
 
-import org.easymock.*;
+import org.easymock.EasyMockSupport;
+import org.easymock.Mock;
 import org.junit.*;
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
-import static pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator.*;
 
 
 
-public class EndpointProxyTests extends EasyMockSupport {
+public abstract class EndpointProxyTests extends EasyMockSupport {
 
 
 
 	/** Test subject. */
-	TestEndpoint endpointProxy;
+	protected Endpoint endpointProxy;
 
-	TestEndpoint testEndpoint;
-	@Mock Session mockConnection;
+	/** {@link Endpoint} wrapped by {@link #endpointProxy the test subject}. */
+	protected TestEndpoint testEndpoint;
+	@Mock protected Session mockConnection;
 	final Map<String, Object> userProperties = new HashMap<>(2);
 
-	final GuiceServerEndpointConfigurator configurator = new GuiceServerEndpointConfigurator();
-	final ContextTracker<ContainerCallContext> ctxTracker = new ContextTracker<>();
-	Class<? extends TestEndpoint> proxyClass;
-	@Mock HttpSession mockHttpSession;
+	protected final ContextTracker<ContainerCallContext> ctxTracker = new ContextTracker<>();
+
+	@Mock protected HttpSession mockHttpSession;
 
 
 
 	@Before
-	public void setup() throws Exception {
+	public final void setup() throws Exception {
 		injectMocks(this);
-		proxyClass = configurator.getProxyClass(TestEndpoint.class);
-
 		userProperties.put(HttpSession.class.getName(), mockHttpSession);
 		expect(mockConnection.getUserProperties())
 			.andReturn(userProperties)
 			.anyTimes();
-		replayAll();
-		endpointProxy = proxyClass.getConstructor().newInstance();
+
 		testEndpoint = new TestEndpoint(ctxTracker, mockConnection, mockHttpSession);
+		endpointProxy = createEndpointProxy(testEndpoint, ctxTracker, mockHttpSession);
 	}
 
+	protected abstract Endpoint createEndpointProxy(
+		Endpoint toWrap,
+		ContextTracker<ContainerCallContext> ctxTracker,
+		HttpSession httpSession
+	) throws Exception;
+
+
+
 	@After
-	public void verifyMocks() {
+	public final void verifyMocks() {
 		verifyAll();
 	}
 
@@ -68,19 +72,19 @@ public class EndpointProxyTests extends EasyMockSupport {
 
 
 
-		public TestEndpoint() {
-			this(null, null, null);
-		}
-
-
-
 		public TestEndpoint(
 			ContextTracker<ContainerCallContext> ctxTracker,
-			Session mockConnection, HttpSession mockHttpSession
+			Session mockConnection,
+			HttpSession mockHttpSession
 		) {
 			this.ctxTracker = ctxTracker;
 			this.mockConnection = mockConnection;
 			this.mockHttpSession = mockHttpSession;
+		}
+
+		/** Required by {@link ServerEndpointProxyTests} to create proxy instances. */
+		public TestEndpoint() {
+			this(null, null, null);
 		}
 
 
@@ -90,6 +94,7 @@ public class EndpointProxyTests extends EasyMockSupport {
 
 
 
+		/** Verifies that all {@code Context}s have been properly setup by the test subject. */
 		@Override public void onOpen(Session connectionProxy, EndpointConfig config) {
 			assertTrue("connection should be wrapped with a proxy",
 					connectionProxy instanceof WebsocketConnectionProxy);
@@ -105,6 +110,11 @@ public class EndpointProxyTests extends EasyMockSupport {
 
 
 
+		/**
+		 * Verifies that its {@link WebsocketEventContext} has changed while
+		 * its {@link WebsocketConnectionContext} and {@link HttpSession} have remained the same as
+		 * in {@link #onOpen(Session, EndpointConfig) onOpen(...)}.
+		 */
 		@Override public void onClose(Session connectionProxy, CloseReason closeReason) {
 			assertTrue("connection should be wrapped with a proxy",
 					connectionProxy instanceof WebsocketConnectionProxy);
@@ -128,16 +138,7 @@ public class EndpointProxyTests extends EasyMockSupport {
 
 	@Test
 	public void testOnOpenThenOnClose() throws Exception {
-		final var endpointProxyHandler = new EndpointProxyHandler(
-			(proxy, method, args) -> {
-				assertNotNull("additional decorator should be executed within a Context",
-						ctxTracker.getCurrentContext());
-				return method.invoke(testEndpoint, args);
-			},
-			ctxTracker
-		);
-		proxyClass.getDeclaredField(INVOCATION_HANDLER_FIELD_NAME)
-				.set(endpointProxy, endpointProxyHandler);
+		replayAll();
 
 		endpointProxy.onOpen(mockConnection, null);
 		endpointProxy.onClose(mockConnection, null);
@@ -147,41 +148,7 @@ public class EndpointProxyTests extends EasyMockSupport {
 
 	@Test
 	public void testToStringBeforeOnOpen() throws Exception {
-		final var endpointProxyHandler = new EndpointProxyHandler(
-			new InvocationHandler() {
-
-				boolean onOpenCalled = false;
-
-				@Override
-				public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-					if (args != null) {
-						for (var arg: args) {
-							if (arg instanceof Session) {
-								onOpenCalled = true;
-								break;
-							}
-						}
-					}
-					if (onOpenCalled) {
-						assertNotNull(
-							"onOpen(...) and any subsequent method calls should be executed within "
-									+ "a Context",
-							ctxTracker.getCurrentContext()
-						);
-					} else {
-						assertNull(
-							"methods invoked before onOpen(...) should be executed outside of any "
-									+ "Context",
-							ctxTracker.getCurrentContext()
-						);
-					}
-					return method.invoke(testEndpoint, args);
-				}
-			},
-			ctxTracker
-		);
-		proxyClass.getDeclaredField(INVOCATION_HANDLER_FIELD_NAME)
-				.set(endpointProxy, endpointProxyHandler);
+		replayAll();
 
 		final var log = Logger.getLogger(EndpointProxyHandler.class.getName());
 		final var levelBackup = log.getLevel();
@@ -199,35 +166,36 @@ public class EndpointProxyTests extends EasyMockSupport {
 
 	@Test
 	public void testTwoSeparateEndpoints() throws Exception {
-		final var endpointProxyHandler = new EndpointProxyHandler(
-			configurator.getAdditionalDecorator(testEndpoint),
-			ctxTracker
-		);
-		proxyClass.getDeclaredField(INVOCATION_HANDLER_FIELD_NAME)
-				.set(endpointProxy, endpointProxyHandler);
+		replayAll();
 
+		// create the second Endpoint, its Proxy and all mocks
 		final var secondUserProperties = new HashMap<String, Object>(2);
 		secondUserProperties.put(HttpSession.class.getName(), mockHttpSession);
 		final Session secondConnection = createMock(Session.class);
 		expect(secondConnection.getUserProperties())
 			.andReturn(secondUserProperties)
 			.anyTimes();
-		replay(secondConnection);
-		final var secondProxy = proxyClass.getConstructor().newInstance();
 		final var secondEndpoint = new TestEndpoint(ctxTracker, secondConnection, mockHttpSession);
-		final var secondHandler = new EndpointProxyHandler(
-			configurator.getAdditionalDecorator(secondEndpoint),
-			ctxTracker
-		);
-		proxyClass.getDeclaredField(INVOCATION_HANDLER_FIELD_NAME)
-				.set(secondProxy, secondHandler);
+		final var secondProxy = createSecondProxy(secondEndpoint, ctxTracker, mockHttpSession);
+		replay(secondConnection);
 
+		// open both Endpoint connections and verify there's no interference
 		endpointProxy.onOpen(mockConnection, null);
 		secondProxy.onOpen(secondConnection, null);
 		assertNotSame("each connection should have a separate WebsocketConnectionContext",
 				testEndpoint.connectionCtx, secondEndpoint.connectionCtx);
 		assertNotSame("each method invocation should have a separate WebsocketEventContext",
 				testEndpoint.openEventCtx, secondEndpoint.openEventCtx);
+
+		// close both Endpoint connections and verify mocks
+		endpointProxy.onClose(mockConnection, null);
+		secondProxy.onClose(secondConnection, null);
 		verify(secondConnection);
 	}
+
+	protected abstract Endpoint createSecondProxy(
+		Endpoint secondEndpoint,
+		ContextTracker<ContainerCallContext> ctxTracker,
+		HttpSession httpSession
+	) throws Exception;
 }
