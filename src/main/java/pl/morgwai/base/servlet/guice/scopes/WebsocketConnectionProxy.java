@@ -65,7 +65,7 @@ public class WebsocketConnectionProxy implements Session {
 	/**
 	 * Asks {@link ServiceLoader SPI}-provided factory to create a new proxy for {@code connection}.
 	 * If there's no factory specific for the given {@link Session} implementation, then
-	 * {@link #WebsocketConnectionProxy(Session, ContextTracker, boolean)} is used.
+	 * {@link #WebsocketConnectionProxy(Session, ContextTracker)} is used.
 	 */
 	static WebsocketConnectionProxy newProxy(
 		Session connection,
@@ -73,28 +73,36 @@ public class WebsocketConnectionProxy implements Session {
 	) {
 		final var proxyFactory = proxyFactories.get(connection.getClass());
 		if (proxyFactory != null) return proxyFactory.newProxy(connection, ctxTracker);
-		return new WebsocketConnectionProxy(connection, ctxTracker, false);
+		return new WebsocketConnectionProxy(connection, ctxTracker);
+	}
+
+
+
+	/** Constructs a new proxy for {@code connection}. */
+	protected WebsocketConnectionProxy(
+		Session connection,
+		ContextTracker<ContainerCallContext> containerCallContextTracker
+	) {
+		this.wrappedConnection = connection;
+		this.ctxTracker = containerCallContextTracker;
+		this.httpSession = (HttpSession)
+				wrappedConnection.getUserProperties().get(HttpSession.class.getName());
 	}
 
 
 
 	/**
-	 * Constructs a new proxy for {@code connection}.
-	 * @param remote weather {@code connection} is a remote {@link Session} from another cluster
-	 *     node. In such case, there will be no attempt to retrieve {@link #httpSession} from
-	 *     {@link Session#getUserProperties() userProperties}. This is useful when creating proxies
-	 *     for remote {@link Session}s in {@link #getOpenSessions()} in a clustered environment.
+	 * Constructs a new proxy for a <b>remote</b> {@code connection}.
+	 * In case of remote connections, no attempt to retrieve an {@link HttpSession} is made.
 	 */
-	protected WebsocketConnectionProxy(
+	private WebsocketConnectionProxy(
 		Session connection,
 		ContextTracker<ContainerCallContext> containerCallContextTracker,
-		boolean remote
+		Void remote
 	) {
 		this.wrappedConnection = connection;
 		this.ctxTracker = containerCallContextTracker;
-		this.httpSession = (HttpSession) (
-			remote ? null : wrappedConnection.getUserProperties().get(HttpSession.class.getName())
-		);
+		this.httpSession = null;
 	}
 
 
@@ -126,7 +134,7 @@ public class WebsocketConnectionProxy implements Session {
 			if (peerConnectionCtx.getConnection() == null) {
 				// peerConnection from another cluster node, that supports userProperties clustering
 				peerConnectionCtx.connectionProxy =
-						new WebsocketConnectionProxy(peerConnection, ctxTracker, true);
+						new WebsocketConnectionProxy(peerConnection, ctxTracker, null);
 			}
 			proxies.add(peerConnectionCtx.getConnection());
 		}

@@ -112,7 +112,7 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 		replayAll();
 
 		wsConnectionProxy = new WebsocketConnectionProxy(
-				wsConnection, servletModule.containerCallContextTracker, true);
+				wsConnection, servletModule.containerCallContextTracker);
 		wsConnectionCtx = new WebsocketConnectionContext(wsConnectionProxy);
 		wsEventCtx = new WebsocketEventContext(
 				wsConnectionCtx, null, servletModule.containerCallContextTracker);

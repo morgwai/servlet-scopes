@@ -27,7 +27,7 @@ public class ContextSerializationTests {
 			.andReturn(connectionProperties)
 			.anyTimes();
 		replay(connectionMock);
-		final var connectionProxy = new WebsocketConnectionProxy(connectionMock, null, true);
+		final var connectionProxy = new WebsocketConnectionProxy(connectionMock, null);
 		final var ctx = new WebsocketConnectionContext(connectionProxy);
 		testContextSerialization(ctx);
 		verify(connectionMock);
