@@ -35,10 +35,10 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 	public static final String NODE_ID_ATTRIBUTE = "nodeId";
 
 	public static final String SESSION_ID_PROPERTY = "sessionId";
-	public static final String SESSION_NODE_ID_PROPERTY = "sessionStoredNodeId";
-	public static final String CONTEXT_NODE_ID_PROPERTY = "contextStoredNodeId";
-	public static final String NON_SERIALIZABLE_CONTEXT_NODE_ID_PROPERTY =
-			"nonSerializableContextStoredNodeId";
+	public static final String SESSION_STORED_NODE_ID_PROPERTY = "sessionStoredNodeId";
+	public static final String CONTEXT_STORED_NODE_ID_PROPERTY = "contextStoredNodeId";
+	public static final String CONTEXT_STORED_NON_SERIALIZABLE_NODE_ID_PROPERTY =
+			"contextStoredNonSerializableNodeId";
 
 	public int getPort() { return port; }
 	final int port;
@@ -135,7 +135,7 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 	 *   <li>
 	 *     {@link #NODE_ID_ATTRIBUTE}
 	 *     {@link HttpSession#getAttribute(String) session attribute} at
-	 *     {@link #SESSION_NODE_ID_PROPERTY}.<br/>
+	 *     {@link #SESSION_STORED_NODE_ID_PROPERTY}.<br/>
 	 *     If the {@link HttpSession#isNew() HttpSession is new}, then {@code "null"} is output and
 	 *     the {@link HttpSession#setAttribute(String, Object) attribute is set} for subsequent
 	 *     requests to the value of {@link #NODE_ID_ATTRIBUTE}
@@ -145,13 +145,13 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 	 *   <li>
 	 *     {@link HttpSessionContext HttpSession-scoped} value of {@link #NODE_ID_ATTRIBUTE}
 	 *     {@link javax.servlet.ServletContext#getInitParameter(String) deployment init-param}
-	 *     at {@link #CONTEXT_NODE_ID_PROPERTY}.
+	 *     at {@link #CONTEXT_STORED_NODE_ID_PROPERTY}.
 	 *   </li>
 	 *   <li>
 	 *     {@link HttpSessionContext HttpSession-scoped} value of {@link #NODE_ID_ATTRIBUTE}
 	 *     {@link javax.servlet.ServletContext#getInitParameter(String) deployment init-param}
 	 *     wrapped with a {@link NonSerializableObject} at
-	 *     {@link #NON_SERIALIZABLE_CONTEXT_NODE_ID_PROPERTY}.
+	 *     {@link #CONTEXT_STORED_NON_SERIALIZABLE_NODE_ID_PROPERTY}.
 	 *   </li>
 	 * </ul>
 	 */
@@ -175,10 +175,13 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 			}
 			final var outputData = new Properties();
 			outputData.setProperty(SESSION_ID_PROPERTY, session.getId());
-			outputData.setProperty(SESSION_NODE_ID_PROPERTY, String.valueOf(sessionStoredNodeId));
-			outputData.setProperty(CONTEXT_NODE_ID_PROPERTY, nodeIdProvider.get());
 			outputData.setProperty(
-				NON_SERIALIZABLE_CONTEXT_NODE_ID_PROPERTY,
+				SESSION_STORED_NODE_ID_PROPERTY,
+				String.valueOf(sessionStoredNodeId)
+			);
+			outputData.setProperty(CONTEXT_STORED_NODE_ID_PROPERTY, nodeIdProvider.get());
+			outputData.setProperty(
+				CONTEXT_STORED_NON_SERIALIZABLE_NODE_ID_PROPERTY,
 				nonSerializableNodeIdProvider.get().value
 			);
 			try (

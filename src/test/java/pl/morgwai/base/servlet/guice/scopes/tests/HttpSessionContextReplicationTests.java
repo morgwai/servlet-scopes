@@ -30,10 +30,9 @@ public class HttpSessionContextReplicationTests {
 
 
 
-	static final String NODE1_ID = "node1";
-	static final String NODE2_ID = "node2";
-	JettyNode node1;
-	JettyNode node2;
+	static final String FIRST_NODE_ID = "first";
+	static final String SECOND_NODE_ID = "second";
+	JettyNode firstNode, secondNode;
 
 	static final String URL_PREFIX = "http://localhost:";
 	CookieManager cookieManager;
@@ -54,66 +53,76 @@ public class HttpSessionContextReplicationTests {
 
 	@After
 	public void shutdown() throws Exception {
-		if (node1 != null) {
-			if ( !node1.isStopped()) node1.stop();
-			node1.join();
-			node1.destroy();
+		if (firstNode != null) {
+			if ( !firstNode.isStopped()) firstNode.stop();
+			firstNode.join();
+			firstNode.destroy();
 		}
-		if (node2 != null) {
-			if ( !node2.isStopped()) node2.stop();
-			node2.join();
-			node2.destroy();
+		if (secondNode != null) {
+			if ( !secondNode.isStopped()) secondNode.stop();
+			secondNode.join();
+			secondNode.destroy();
 		}
 	}
 
 
 
 	void testHttpSessionContextReplication(
-		SessionDataStore store1,
-		SessionDataStore store2,
-		boolean startNode2rightAway,
+		SessionDataStore firstNodeStore,
+		SessionDataStore secondNodeStore,
+		boolean startSecondNodeRightAway,
 		boolean customSerialization
 	) throws Exception {
-
-		// start node(s) and get data from node1
-		node1 = new JettyNode(0, NODE1_ID, store1, customSerialization);
-		if (startNode2rightAway) {
+		firstNode = new JettyNode(0, FIRST_NODE_ID, firstNodeStore, customSerialization);
+		if (startSecondNodeRightAway) {
 			// FileSessionDataStore's files may be accessed by only 1 node process at a time, so
-			// the start of node2 needs to be delayed in such case, otherwise (JDBCSessionDataStore
-			// case) start it right away
-			node2 = new JettyNode(0, NODE2_ID, store2, customSerialization);
+			// the start of secondNode needs to be delayed in such case, otherwise
+			// (JDBCSessionDataStore case) start it right away
+			secondNode = new JettyNode(0, SECOND_NODE_ID, secondNodeStore, customSerialization);
 		}
-		final var url1 = URL_PREFIX + node1.getPort() + APP_PATH + NODE_INFO_SERVLET_PATH;
-		final var request1 = HttpRequest.newBuilder(URI.create(url1))
-			.GET()
-			.timeout(Duration.ofSeconds(2))
-			.build();
-		final var responseNode1 = new Properties();
-		responseNode1.load(httpClient.send(request1, BodyHandlers.ofInputStream()).body());
-		node1.stop();
+		final var firstNodeResponse = sendRequestAndParseResponse(firstNode);
+		firstNode.stop();
 
-		// get data from node2 (start it first if needed)
-		if (node2 == null) node2 = new JettyNode(0, NODE2_ID, store2, customSerialization);
-		final var url2 = URL_PREFIX + node2.getPort() + APP_PATH + NODE_INFO_SERVLET_PATH;
-		final var request2 = HttpRequest.newBuilder(URI.create(url2))
-			.GET()
-			.timeout(Duration.ofSeconds(2))
-			.build();
-		final var responseNode2 = new Properties();
-		responseNode2.load(httpClient.send(request2, BodyHandlers.ofInputStream()).body());
+		if (secondNode == null) {
+			secondNode = new JettyNode(0, SECOND_NODE_ID, secondNodeStore, customSerialization);
+		}
+		final var secondNodeResponse = sendRequestAndParseResponse(secondNode);
 
-		// verify that Context data was properly replicated between nodes
+		// sanity checks
 		assertEquals(
 			"session should be replicated between nodes",
-			responseNode1.getProperty(SESSION_ID_PROPERTY),
-			responseNode2.getProperty(SESSION_ID_PROPERTY)
+			firstNodeResponse.getProperty(SESSION_ID_PROPERTY),
+			secondNodeResponse.getProperty(SESSION_ID_PROPERTY)
 		);
-		assertEquals("serializable session attribute should be replicated",
-				NODE1_ID, responseNode2.getProperty(SESSION_NODE_ID_PROPERTY));
-		assertEquals("serializable session-scoped object should be replicated",
-				NODE1_ID, responseNode2.getProperty(CONTEXT_NODE_ID_PROPERTY));
-		assertEquals("non-serializable session-scoped object should NOT be replicated",
-				NODE2_ID, responseNode2.getProperty(NON_SERIALIZABLE_CONTEXT_NODE_ID_PROPERTY));
+		assertEquals(
+			"serializable session attribute should be replicated",
+			FIRST_NODE_ID,
+			secondNodeResponse.getProperty(SESSION_STORED_NODE_ID_PROPERTY)
+		);
+
+		// verify Context data replication
+		assertEquals(
+			"serializable session-scoped object should be replicated",
+			FIRST_NODE_ID,
+			secondNodeResponse.getProperty(CONTEXT_STORED_NODE_ID_PROPERTY)
+		);
+		assertEquals(
+			"non-serializable session-scoped object should NOT be replicated",
+			SECOND_NODE_ID,
+			secondNodeResponse.getProperty(CONTEXT_STORED_NON_SERIALIZABLE_NODE_ID_PROPERTY)
+		);
+	}
+
+	Properties sendRequestAndParseResponse(JettyNode node) throws Exception {
+		final var url = URL_PREFIX + node.getPort() + APP_PATH + NODE_INFO_SERVLET_PATH;
+		final var request = HttpRequest.newBuilder(URI.create(url))
+			.GET()
+			.timeout(Duration.ofSeconds(2))
+			.build();
+		final var rawResponse = httpClient.send(request, BodyHandlers.ofInputStream());
+		final var response = new Properties();
+		response.load(rawResponse.body());
+		return response;
 	}
 
 
