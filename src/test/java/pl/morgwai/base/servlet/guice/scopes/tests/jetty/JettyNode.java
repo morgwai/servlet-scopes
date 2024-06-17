@@ -15,6 +15,8 @@ import com.google.inject.name.Names;
 import org.eclipse.jetty.server.NetworkConnector;
 import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.util.component.LifeCycle;
+
 import pl.morgwai.base.servlet.guice.scopes.GuiceServletContextListener;
 import pl.morgwai.base.servlet.guice.scopes.HttpSessionContext;
 
@@ -71,6 +73,11 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 		sessionCache.setSessionDataStore(sessionStore);
 		testAppHandler.getSessionHandler().setSessionCache(sessionCache);
 
+		addEventListener(new LifeCycle.Listener() {
+			@Override public void lifeCycleStopped(LifeCycle event) {
+				destroy();
+			}
+		});
 		start();
 		try {
 			this.port = Arrays.stream(getConnectors())
@@ -222,7 +229,6 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 		final var node = new JettyNode(port, nodeId, sessionStore, customSerialization);
 		node.setStopAtShutdown(true);
 		node.join();
-		node.destroy();
 		System.out.println("exiting, bye!");
 	}
 

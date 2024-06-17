@@ -6,6 +6,7 @@ import java.util.Arrays;
 import org.eclipse.jetty.server.NetworkConnector;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.websocket.javax.server.config.JavaxWebSocketServletContainerInitializer;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 
@@ -81,7 +82,11 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 		deployments.addHandler(unregisteredDeploymentAppHandler);
 		setHandler(deployments);
 
-		start();
+		addEventListener(new LifeCycle.Listener() {
+			@Override public void lifeCycleStopped(LifeCycle event) {
+				destroy();
+			}
+		});		start();
 		try {
 			this.port = Arrays.stream(getConnectors())
 				.filter(NetworkConnector.class::isInstance)
@@ -119,8 +124,6 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 	@Override
 	public void shutdown() throws Exception {
 		stop();
-		join();
-		destroy();
 	}
 
 
@@ -137,7 +140,6 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 		final var server = new JettyServer(port);
 		server.setStopAtShutdown(true);
 		server.join();
-		server.destroy();
 		System.out.println("exiting, bye!");
 	}
 
