@@ -59,7 +59,7 @@ public abstract class WebsocketIntegrationTests {
 	@Before
 	public void setup() throws Exception {
 		server = createServer();
-		appWebsocketUrl = server.getAppWebsocketUrl();
+		appWebsocketUrl = server.getTestAppWebsocketUrl();
 
 		wsHttpClient.setCookieStore(cookieManager.getCookieStore());
 		clientWebsocketContainer = JavaxWebSocketClientContainerProvider.getContainer(wsHttpClient);
@@ -75,7 +75,7 @@ public abstract class WebsocketIntegrationTests {
 		wsHttpClient.stop();
 		wsHttpClient.destroy();
 
-		server.shutdown();
+		server.stop();
 	}
 
 

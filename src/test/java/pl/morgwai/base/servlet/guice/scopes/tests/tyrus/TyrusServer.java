@@ -51,14 +51,14 @@ public class TyrusServer implements Server {
 
 
 	@Override
-	public String getAppWebsocketUrl() {
+	public String getTestAppWebsocketUrl() {
 		return "ws://localhost:" + tyrus.getPort() + deploymentPath;
 	}
 
 
 
 	@Override
-	public void shutdown() {
+	public void stop() {
 		tyrus.stop();
 	}
 
@@ -114,9 +114,11 @@ public class TyrusServer implements Server {
 		appDeployment.setAttribute(Injector.class.getName(), injector);
 
 		// create and store pingerService
-		final var intervalFromProperty = System.getProperty(Server.PING_INTERVAL_MILLIS_PROPERTY);
+		final var intervalFromProperty = System.getProperty(PING_INTERVAL_MILLIS_PROPERTY);
 		final var pingerService = new WebsocketPingerService(
-			intervalFromProperty != null ? Long.parseLong(intervalFromProperty) : 500L,
+			intervalFromProperty != null
+					? Long.parseLong(intervalFromProperty)
+					: DEFAULT_PING_INTERVAL_MILLIS,
 			TimeUnit.MILLISECONDS,
 			1
 		);

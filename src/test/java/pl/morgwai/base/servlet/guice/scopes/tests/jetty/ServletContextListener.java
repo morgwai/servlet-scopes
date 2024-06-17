@@ -11,6 +11,8 @@ import com.google.inject.Module;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 import pl.morgwai.base.servlet.guice.utils.PingingServletContextListener;
 
+import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server.*;
+
 
 
 @WebListener
@@ -79,7 +81,9 @@ public class ServletContextListener extends PingingServletContextListener {
 
 	@Override
 	protected long getPingIntervalMillis() {
-		final var intervalFromProperty = System.getProperty(Server.PING_INTERVAL_MILLIS_PROPERTY);
-		return intervalFromProperty != null ? Long.parseLong(intervalFromProperty) : 500L;
+		final var intervalFromProperty = System.getProperty(PING_INTERVAL_MILLIS_PROPERTY);
+		return intervalFromProperty != null
+				? Long.parseLong(intervalFromProperty)
+				: DEFAULT_PING_INTERVAL_MILLIS;
 	}
 }

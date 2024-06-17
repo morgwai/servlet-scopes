@@ -28,7 +28,7 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 
 		final var testAppHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		testAppHandler.setDisplayName("testApp");
-		testAppHandler.setContextPath(Server.APP_PATH);
+		testAppHandler.setContextPath(Server.TEST_APP_PATH);
 		testAppHandler.addEventListener(new ServletContextListener());
 		JavaxWebSocketServletContainerInitializer.configure(
 			testAppHandler,
@@ -105,8 +105,8 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 	static final String URL_PREFIX = "ws://localhost:";
 
 	@Override
-	public String getAppWebsocketUrl() {
-		return URL_PREFIX + port + Server.APP_PATH;
+	public String getTestAppWebsocketUrl() {
+		return URL_PREFIX + port + Server.TEST_APP_PATH;
 	}
 
 	@Override
@@ -117,13 +117,6 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 	@Override
 	public String getUnregisteredDeploymentAppWebsocketUrl() {
 		return URL_PREFIX + port + MultiAppServer.UNREGISTERED_DEPLOYMENT_APP_PATH;
-	}
-
-
-
-	@Override
-	public void shutdown() throws Exception {
-		stop();
 	}
 
 

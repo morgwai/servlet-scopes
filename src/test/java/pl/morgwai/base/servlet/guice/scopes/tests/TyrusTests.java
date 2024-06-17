@@ -20,8 +20,8 @@ public class TyrusTests extends WebsocketIntegrationTests {
 
 	@Override
 	protected Server createServer() throws Exception {
-		appDeployment = TyrusServer.createDeployment(Server.APP_PATH);
-		return new TyrusServer(-1, Server.APP_PATH);
+		appDeployment = TyrusServer.createDeployment(Server.TEST_APP_PATH);
+		return new TyrusServer(-1, Server.TEST_APP_PATH);
 	}
 
 

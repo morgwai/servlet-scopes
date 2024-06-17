@@ -19,6 +19,8 @@ import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
+import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server.*;
+
 
 
 /**
@@ -51,10 +53,11 @@ public class ManualServletContextListener implements ServletContextListener {
 	@Override
 	public final void contextInitialized(ServletContextEvent initialization) {
 		try {
-			final var intervalFromProperty =
-					System.getProperty(Server.PING_INTERVAL_MILLIS_PROPERTY);
+			final var intervalFromProperty = System.getProperty(PING_INTERVAL_MILLIS_PROPERTY);
 			pingerService = new WebsocketPingerService(
-				intervalFromProperty != null ? Long.parseLong(intervalFromProperty) : 500L,
+				intervalFromProperty != null
+						? Long.parseLong(intervalFromProperty)
+						: DEFAULT_PING_INTERVAL_MILLIS,
 				TimeUnit.MILLISECONDS,
 				1
 			);
