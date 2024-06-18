@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.websocket.DeploymentException;
+import jakarta.websocket.DeploymentException;
 
 import org.junit.Before;
 import org.junit.Test;

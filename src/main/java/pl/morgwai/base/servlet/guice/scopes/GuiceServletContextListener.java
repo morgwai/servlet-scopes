@@ -8,13 +8,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.servlet.*;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.websocket.DeploymentException;
-import javax.websocket.server.ServerContainer;
-import javax.websocket.server.ServerEndpointConfig;
-import javax.websocket.server.ServerEndpointConfig.Configurator;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.websocket.DeploymentException;
+import jakarta.websocket.server.ServerContainer;
+import jakarta.websocket.server.ServerEndpointConfig;
+import jakarta.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.Module;
 import com.google.inject.*;
@@ -35,7 +35,7 @@ import static pl.morgwai.base.servlet.guice.scopes.HttpSessionContext.CUSTOM_SER
  * for programmatically adding {@link Servlet}s, {@link Filter}s and websocket {@code Endpoints}.
  * <p>
  * Usually a single subclass of this class should be created in a given app and either annotated
- * with {@link javax.servlet.annotation.WebListener @WebListener} or enlisted in the app's
+ * with {@link jakarta.servlet.annotation.WebListener @WebListener} or enlisted in the app's
  * {@code web.xml} file in a {@code <listener>} element.</p>
  * <p>
  * Note that it is not mandatory for app {@link ServletContextListener}s to extend this class: all
@@ -209,7 +209,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/**
 	 * Adds at {@code urlPatterns} a {@link Filter} that ensures each incoming request has an
-	 * {@link javax.servlet.http.HttpSession} created.
+	 * {@link jakarta.servlet.http.HttpSession} created.
 	 * This is necessary for websocket {@code Endpoints} that use
 	 * {@link ServletModule#httpSessionScope httpSessionScope}.
 	 * <p>
@@ -231,7 +231,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * <p>
 	 * Note that this instance will be shared among all {@code Endpoints} created by
 	 * {@link #addEndpoint(Class, String)}, but {@code Endpoints} annotated with
-	 * {@link javax.websocket.server.ServerEndpoint} will have their separate instances even if they
+	 * {@link jakarta.websocket.server.ServerEndpoint} will have their separate instances even if they
 	 * use the same {@link Configurator} class as this one.</p>
 	 */
 	protected GuiceServerEndpointConfigurator endpointConfigurator;
@@ -260,7 +260,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * Pre-builds a dynamic proxy class for {@code endpointClass} in advance. For use in
 	 * {@link #configureServletsFiltersEndpoints()}.
 	 * </p>
-	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.</p>
+	 * Useful mostly for unannotated endpoints extending {@link jakarta.websocket.Endpoint}.</p>
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path) throws DeploymentException {
 		addEndpoint(endpointClass, path, endpointConfigurator);
@@ -271,7 +271,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * Adds an {@code Endpoint} using {@code configurator}.
 	 * For use in {@link #configureServletsFiltersEndpoints()}.
 	 * <p>
-	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.</p>
+	 * Useful mostly for unannotated endpoints extending {@link jakarta.websocket.Endpoint}.</p>
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path, Configurator configurator)
 			throws DeploymentException {

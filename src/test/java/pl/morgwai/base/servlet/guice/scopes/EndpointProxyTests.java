@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.servlet.http.HttpSession;
-import javax.websocket.*;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.*;
 
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;

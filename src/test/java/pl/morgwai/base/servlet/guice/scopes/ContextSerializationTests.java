@@ -4,8 +4,8 @@ package pl.morgwai.base.servlet.guice.scopes;
 import java.io.IOException;
 import java.util.HashMap;
 
-import javax.servlet.http.HttpSession;
-import javax.websocket.Session;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.Session;
 
 import org.junit.Test;
 import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
