@@ -73,6 +73,10 @@ public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator
 
 
 
+	/**
+	 * Returns a handler that additionally registers/deregisters {@code endpoint}'s
+	 * {@link Session connection} to the associated {@link WebsocketPingerService}.
+	 */
 	@Override
 	protected InvocationHandler getAdditionalDecorator(Object endpoint) {
 		return new EndpointDecorator(endpoint);
