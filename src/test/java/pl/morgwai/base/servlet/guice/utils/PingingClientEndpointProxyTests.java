@@ -3,13 +3,13 @@ package pl.morgwai.base.servlet.guice.utils;
 
 import javax.servlet.http.HttpSession;
 import javax.websocket.Endpoint;
-
-import org.easymock.Mock;
 import org.junit.After;
 import org.junit.Before;
+import org.easymock.Mock;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
-import pl.morgwai.base.servlet.guice.scopes.*;
+import pl.morgwai.base.servlet.guice.scopes.ClientEndpointProxyTests;
+import pl.morgwai.base.servlet.guice.scopes.ContainerCallContext;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 

@@ -2,7 +2,6 @@
 package pl.morgwai.base.servlet.guice.scopes;
 
 import javax.websocket.MessageHandler;
-
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

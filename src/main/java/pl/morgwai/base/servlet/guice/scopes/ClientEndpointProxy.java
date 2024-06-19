@@ -2,7 +2,6 @@
 package pl.morgwai.base.servlet.guice.scopes;
 
 import java.net.URI;
-
 import javax.servlet.http.HttpSession;
 import javax.websocket.*;
 

@@ -6,25 +6,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
-
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.Session;
-
-import org.easymock.*;
 import org.junit.*;
+import org.easymock.*;
+
 import pl.morgwai.base.guice.scopes.ContextBoundRunnable;
 import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
 import pl.morgwai.base.utils.concurrent.NamingThreadFactory;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertTrue;
 
 
 

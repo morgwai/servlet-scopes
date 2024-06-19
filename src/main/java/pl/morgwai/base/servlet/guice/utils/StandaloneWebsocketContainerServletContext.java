@@ -4,7 +4,6 @@ package pl.morgwai.base.servlet.guice.utils;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
-
 import javax.servlet.*;
 import javax.servlet.ServletRegistration.Dynamic;
 import javax.servlet.descriptor.JspConfigDescriptor;

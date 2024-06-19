@@ -5,18 +5,16 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
-
 import javax.servlet.http.*;
 
-import com.google.inject.*;
 import com.google.inject.Module;
+import com.google.inject.*;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import org.eclipse.jetty.server.NetworkConnector;
 import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.component.LifeCycle;
-
 import pl.morgwai.base.servlet.guice.scopes.GuiceServletContextListener;
 import pl.morgwai.base.servlet.guice.scopes.HttpSessionContext;
 

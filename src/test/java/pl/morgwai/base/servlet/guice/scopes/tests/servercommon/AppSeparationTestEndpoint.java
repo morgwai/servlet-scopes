@@ -2,7 +2,6 @@
 package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 
 import java.io.IOException;
-
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;

@@ -6,7 +6,6 @@ import java.lang.reflect.ParameterizedType;
 import java.net.URI;
 import java.security.Principal;
 import java.util.*;
-
 import javax.servlet.http.HttpSession;
 import javax.websocket.*;
 import javax.websocket.RemoteEndpoint.Async;

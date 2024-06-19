@@ -6,7 +6,6 @@ import java.io.StringWriter;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.websocket.*;
 import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.RemoteEndpoint.Async;

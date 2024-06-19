@@ -3,11 +3,10 @@ package pl.morgwai.base.servlet.guice.scopes;
 
 import java.io.IOException;
 import java.util.HashMap;
-
 import javax.servlet.http.HttpSession;
 import javax.websocket.Session;
-
 import org.junit.Test;
+
 import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
 
 import static org.easymock.EasyMock.*;

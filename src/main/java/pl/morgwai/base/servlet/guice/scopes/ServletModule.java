@@ -3,7 +3,6 @@ package pl.morgwai.base.servlet.guice.scopes;
 
 import java.util.*;
 import java.util.concurrent.*;
-
 import javax.servlet.ServletContext;
 
 import com.google.inject.Module;

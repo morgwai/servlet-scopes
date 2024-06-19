@@ -7,15 +7,15 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.websocket.DeploymentException;
-
 import org.junit.Before;
 import org.junit.Test;
+
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 
 

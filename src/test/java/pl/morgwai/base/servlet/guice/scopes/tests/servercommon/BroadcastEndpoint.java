@@ -4,7 +4,6 @@ package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.websocket.*;
 import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.server.ServerEndpoint;

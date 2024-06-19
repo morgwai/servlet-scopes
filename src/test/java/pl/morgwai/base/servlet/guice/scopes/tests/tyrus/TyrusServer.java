@@ -3,19 +3,19 @@ package pl.morgwai.base.servlet.guice.scopes.tests.tyrus;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-
-import javax.websocket.*;
+import javax.websocket.DeploymentException;
+import javax.websocket.Endpoint;
 import javax.websocket.server.ServerApplicationConfig;
 import javax.websocket.server.ServerEndpointConfig;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 import com.google.inject.Module;
+import com.google.inject.*;
 import org.glassfish.tyrus.core.cluster.ClusterContext;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.ServletModule;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
-import pl.morgwai.base.servlet.guice.utils.*;
+import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
+import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 

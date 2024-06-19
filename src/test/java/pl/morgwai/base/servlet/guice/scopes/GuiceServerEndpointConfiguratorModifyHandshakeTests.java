@@ -7,17 +7,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 import javax.websocket.HandshakeResponse;
 import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerEndpointConfig;
-
-import com.google.inject.Injector;
+import org.junit.*;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
-import org.junit.*;
+
+import com.google.inject.Injector;
 import pl.morgwai.base.guice.scopes.ContextTracker;
 import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
 

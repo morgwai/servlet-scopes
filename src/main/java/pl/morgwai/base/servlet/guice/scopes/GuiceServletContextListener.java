@@ -7,7 +7,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.servlet.*;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -22,7 +21,6 @@ import com.google.inject.*;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toList;
-
 import static pl.morgwai.base.servlet.guice.scopes.HttpSessionContext.CUSTOM_SERIALIZATION_PARAM;
 
 

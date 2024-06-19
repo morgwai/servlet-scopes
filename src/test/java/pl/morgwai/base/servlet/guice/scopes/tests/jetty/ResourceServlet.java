@@ -2,7 +2,6 @@
 package pl.morgwai.base.servlet.guice.scopes.tests.jetty;
 
 import java.io.IOException;
-
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.*;

@@ -8,12 +8,11 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.*;
 import java.util.logging.Level;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.junit.Before;
 import org.junit.Test;
+
 import pl.morgwai.base.servlet.guice.scopes.tests.jetty.*;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 

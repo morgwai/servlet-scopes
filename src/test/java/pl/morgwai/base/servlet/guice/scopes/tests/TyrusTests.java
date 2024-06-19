@@ -2,8 +2,8 @@
 package pl.morgwai.base.servlet.guice.scopes.tests;
 
 import javax.websocket.Session;
-
 import org.junit.After;
+
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server;
 import pl.morgwai.base.servlet.guice.scopes.tests.tyrus.TyrusServer;
 import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;

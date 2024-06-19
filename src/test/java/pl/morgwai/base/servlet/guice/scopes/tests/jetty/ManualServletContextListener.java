@@ -4,7 +4,6 @@ package pl.morgwai.base.servlet.guice.scopes.tests.jetty;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
 import javax.servlet.ServletContextListener;
 import javax.servlet.*;
 import javax.servlet.annotation.WebListener;

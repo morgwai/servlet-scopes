@@ -9,14 +9,13 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.*;
-
 import javax.websocket.*;
 import javax.websocket.CloseReason.CloseCodes;
+import org.junit.*;
 
 import com.google.inject.*;
 import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
 import org.eclipse.jetty.websocket.javax.common.JavaxWebSocketContainer;
-import org.junit.*;
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 import pl.morgwai.base.utils.concurrent.Awaitable;
@@ -24,7 +23,6 @@ import pl.morgwai.base.utils.concurrent.Awaitable;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
-
 import static org.junit.Assert.*;
 import static pl.morgwai.base.jul.JulConfigurator.*;
 import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.EchoEndpoint.MESSAGE_PROPERTY;

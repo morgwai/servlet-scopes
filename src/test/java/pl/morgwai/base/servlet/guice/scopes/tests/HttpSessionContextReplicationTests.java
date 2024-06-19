@@ -11,15 +11,14 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.ConsoleHandler;
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
 
 import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.server.session.JDBCSessionDataStore.SessionTableSchema;
-import org.junit.*;
-import org.junit.rules.TemporaryFolder;
 import pl.morgwai.base.servlet.guice.scopes.tests.jetty.JettyNode;
 
 import static java.util.logging.Level.*;
-
 import static org.junit.Assert.assertEquals;
 import static pl.morgwai.base.jul.JulConfigurator.*;
 import static pl.morgwai.base.servlet.guice.scopes.tests.jetty.JettyNode.*;

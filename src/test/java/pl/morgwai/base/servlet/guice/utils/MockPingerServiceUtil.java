@@ -2,8 +2,8 @@
 package pl.morgwai.base.servlet.guice.utils;
 
 import javax.websocket.Session;
-
 import org.easymock.Capture;
+
 import pl.morgwai.base.servlet.guice.scopes.WebsocketConnectionProxy;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
