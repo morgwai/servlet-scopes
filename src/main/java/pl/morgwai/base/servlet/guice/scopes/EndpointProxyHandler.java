@@ -13,8 +13,8 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 /**
  * Executes each call to its wrapped {@code Endpoint} within websocket {@code Contexts}.
- * Creates a new separate {@link WebsocketEventContext} for method invocation with links to the
- * current {@link WebsocketConnectionContext} and {@link HttpSessionContext} if it's present.
+ * Creates a new separate {@link WebsocketEventContext} for each method invocation with references
+ * to the current {@link WebsocketConnectionContext} and {@link HttpSessionContext} (if present).
  */
 class EndpointProxyHandler implements InvocationHandler {
 
@@ -35,30 +35,35 @@ class EndpointProxyHandler implements InvocationHandler {
 
 
 
-	// the below 3 are created/retrieved when onOpen(...) call is intercepted
+	// the below 3 are created/retrieved in initialize(...) below
 	WebsocketConnectionProxy connectionProxy;
 	WebsocketConnectionContext connectionCtx;
 	HttpSession httpSession;
 
 
 
+	/**
+	 * Initializes state using {@code connection}.
+	 * Called by {@link #invoke(Object, Method, Object[])} when {@code onOpen(...)} call is
+	 * intercepted.
+	 */
+	void initialize(Session connection) {
+		final var userProperties = connection.getUserProperties();
+		httpSession = (HttpSession) userProperties.get(HttpSession.class.getName());
+		connectionProxy = WebsocketConnectionProxy.newProxy(connection, ctxTracker);
+		connectionCtx = new WebsocketConnectionContext(connectionProxy);
+	}
+
+
+
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
-		// replace the original wsConnection (Session) arg with a ctx-aware proxy
+		// replace the original wsConnection (Session) arg with connectionProxy
 		if (args != null) {
 			for (int i = 0; i < args.length; i++) {
 				if (args[i] instanceof Session) {
-					if (connectionProxy == null) {
-						// the first call to this Endpoint instance that has a Session param (most
-						// commonly onOpen(...)) : proxy the intercepted Session, create a new
-						// connectionCtx, retrieve the HttpSession from userProperties
-						final var connection = (Session) args[i];
-						final var userProperties = connection.getUserProperties();
-						httpSession = (HttpSession) userProperties.get(HttpSession.class.getName());
-						connectionProxy = WebsocketConnectionProxy.newProxy(connection, ctxTracker);
-						connectionCtx = new WebsocketConnectionContext(connectionProxy);
-					}
+					if (connectionProxy == null) initialize((Session) args[i]);  // onOpen(...)
 					args[i] = connectionProxy;
 					break;
 				}
@@ -66,14 +71,10 @@ class EndpointProxyHandler implements InvocationHandler {
 		}
 
 		if (connectionCtx == null) {
-			// the first call to this Endpoint instance and it is NOT onOpen(...) : this is usually
-			// a call from a debugger, most usually toString(). Session has not been intercepted
-			// yet, so contexts couldn't have been created: just call the method outside of contexts
-			// and hope for the best...
-			final var manualCallWarningMessage =
-					proxy.getClass().getSimpleName() + '.' + method.getName() + MANUAL_CALL_WARNING;
-			log.warning(manualCallWarningMessage);
-			System.err.println(manualCallWarningMessage);
+			// the first call to this Endpoint and it's NOT onOpen(...) : probably a debugger call,
+			// most usually toString(). initializeOnOpen(...) hasn't been called yet: call the
+			// method outside of contexts and hope for the best...
+			logManualCallWarning(proxy.getClass().getSimpleName() + '.' + method.getName());
 			return wrappedEndpoint.invoke(proxy, method, args);
 		}
 
@@ -91,7 +92,11 @@ class EndpointProxyHandler implements InvocationHandler {
 		);
 	}
 
-
+	void logManualCallWarning(String source) {
+		final var manualCallWarningMessage = source + MANUAL_CALL_WARNING;
+		log.warning(manualCallWarningMessage);
+		System.err.println(manualCallWarningMessage);
+	}
 
 	static final Logger log = Logger.getLogger(EndpointProxyHandler.class.getName());
 	static final String MANUAL_CALL_WARNING = ": calling manually methods of Endpoints, that were "
