@@ -1,6 +1,6 @@
 # Servlet and Websocket Guice Scopes
 
-`containerCallScope` (either a `HttpServletRequest` or a websocket endpoint event), `websocketConnectionScope` (`javax.websocket.Session`) and `httpSessionScope`.<br/>
+`containerCallScope` (either a `HttpServletRequest` or a websocket endpoint event), `websocketConnectionScope` (`javax.websocket.Session`) and `httpSessionScope` for use in websocket/`Servlet` server containers and websocket client containers.<br/>
 Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0<br/>
 <br/>
 **latest release: 16.2**<br/>
@@ -14,19 +14,24 @@ Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Ver
 
 Provides the below Guice scopes:
 
-### containerCallScope
+### [containerCallScope](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/ServletModule.html#containerCallScope)
 Scopes bindings to either an `HttpServletRequest` or a websocket event (connection opened/closed, message received, error occurred).<br/>
 Spans over a single container-initiated call to either one of servlet's `doXXX(...)` methods or to a websocket endpoint life-cycle method (annotated with one of the websocket annotations or overriding those of `javax.websocket.Endpoint` or of registered `javax.websocket.MessageHandler`s).<br/>
-Having a common scope for servlet requests and websocket events allows to inject scoped objects both in servlets and endpoints without a need for 2 separate bindings in user `Module`s.
+Having a common `Scope` for servlet requests and websocket events allows to inject scoped objects both in servlets and endpoints without a need for 2 separate bindings in user `Module`s.
+This `Scope` may be used both for on a client and on a server side.
 
-### websocketConnectionScope
+### [websocketConnectionScope](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/ServletModule.html#websocketConnectionScope)
 Scopes bindings to a websocket connection (`javax.websocket.Session`).<br/>
 Spans over a lifetime of a given endpoint instance: all calls to life-cycle methods of a given endpoint instance (annotated with `@OnOpen`, `@OnMessage`, `@OnError`, `@OnClose`, or overriding those of `javax.websocket.Endpoint` together with methods of registered `MessageHandler`s) are executed within the same associated `websocketConnectionScope`.
+This `Scope` may be used both for on a client and on a server side.
 
-### httpSessionScope
+
+### [httpSessionScope](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/ServletModule.html#httpSessionScope)
 Scopes bindings to a given `HttpSession`. Available both to servlets and websocket endpoints.
 
 All the above scopes are built using [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes), so they are automatically transferred to a new thread when dispatching using `AsyncContext.dispatch()` or `ServletContextTrackingExecutor` (see below).
+This `Scope` may be active only on a server side.
+
 
 
 ## MAIN USER CLASSES
@@ -51,6 +56,12 @@ A `ThreadPoolExecutor` that upon dispatching a task, automatically transfers all
 
 ### [ContextBinder](https://javadoc.io/doc/pl.morgwai.base/guice-context-scopes/latest/pl/morgwai/base/guice/scopes/ContextBinder.html)
 Binds tasks and callbacks (`Runnable`s, `Consumer`s, `BiConsumer`s, `Function`s and `BiFunction`s) to contexts that were active at the time of binding. This can be used to transfer `Context`s **almost** fully automatically when it's not possible to use `GrpcContextTrackingExecutor` when switching threads (for example when providing callbacks as arguments to async functions). See a usage sample below.
+
+### [ClientEndpointProxy](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/ClientEndpointProxy.html)
+Context-aware proxy for client `Endpoints`. Executes lifecycle methods of its wrapped `Endpoint` and of its registered `MessageHandlers` within websocket `Contexts`.
+
+### [PingingClientEndpointProxy](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/utils/PingingClientEndpointProxy.html)
+Subclass of `ClientEndpointProxy` that additionally automatically registers and deregisters its wrapped `Endpoint` to its associated [WebsocketPingerService](https://javadoc.io/doc/pl.morgwai.base/servlet-utils/latest/pl/morgwai/base/servlet/utils/WebsocketPingerService.html).
 
 
 ## USAGE
@@ -87,19 +98,48 @@ public class ServletContextListener extends GuiceServletContextListener {
 ```
 **NOTE:** If the servlet container being used uses mechanism other than the standard Java Serialization to persist/replicate `HttpSession`s, then a deployment [init-param](https://javadoc.io/static/jakarta.servlet/jakarta.servlet-api/5.0.0/jakarta/servlet/ServletContext.html#setInitParameter-java.lang.String-java.lang.String-) named `pl.morgwai.base.servlet.guice.scopes.HttpSessionContext.customSerialization` must be set to `true` either in `web.xml` or programmatically before any request is served (for example in `ServletContextListener.contextInitialized(event)`).
 
-Note: in cases where it is not possible to extend `GuiceServletContextListener`, all the configuration required to use `ServletModule` (with all its `Scopes` etc) and `GuiceServerEndpointConfigurator` / `PingingEndpointConfigurator`, can be done manually: see an example in [ManualServletContextListener](src/test/java/pl/morgwai/base/servlet/guice/scopes/tests/jetty/ManualServletContextListener.java).
+Note: in cases where it is not possible to extend `GuiceServletContextListener`, all the setup required to use `ServletModule` (with all its `Scopes` etc) and `GuiceServerEndpointConfigurator` / `PingingEndpointConfigurator`, can be done manually: see an example in [ManualServletContextListener](src/test/java/pl/morgwai/base/servlet/guice/scopes/tests/jetty/ManualServletContextListener.java).
 
-### Using annotated `Endpoints`
-Note: for `GuiceServerEndpointConfigurator` to work, app's `ServletContextListener` still needs to extend either `GuiceServletContextListener` or `PingingServletContextListener` as in the example above, even if there are no programmatic `Servlet`s nor `Endpoint`s.
+### Using annotated server `Endpoints`
 ```java
 @ServerEndpoint(
-        value = "/websocket/myAnnotatedSocket",
-        configurator = GuiceServerEndpointConfigurator.class)  // ...or PingingEndpointConfigurator
+    value = "/websocket/myAnnotatedSocket",
+    configurator = GuiceServerEndpointConfigurator.class  // ...or PingingEndpointConfigurator
+)
 public class MyAnnotatedEndpoint {
 
     @Inject Provider<MyService> myServiceProvider;  // will be injected automatically
 
     // endpoint implementation here...
+}
+```
+Note: in case of annotated `Endpoints`, it is still necessary either for app's `ServletContextListener` to extend `GuiceServletContextListener` / `PingingServletContextListener` or to perform the setup manually as explained before.
+
+### Client websocket app sample
+```java
+public class MyWebsocketClientApp {
+
+    public static void main(String[] args) throws Exception {
+        final var modules = new ArrayList<Module>();
+        final var servletModule = new ServletModule();
+        modules.add(servletModule);
+        modules.add((binder) -> {
+            binder.bind(MyClientEndpointDependency.class).in(servletModule.containerCallScope);
+            // more bindings here...
+        });
+        // more modules here...
+        final var injector = Guice.createInjector(modules);
+        final WebSocketContainer clientWebsocketContainer = createClientWebsocketContainer();
+        final var myClientEndpoint = injector.getInstance(MyClientEndpoint.class);
+        clientWebsocketContainer.connectToServer(
+            new ClientEndpointProxy(myClientEndpoint, servletModule.containerCallContextTracker),
+            null,
+            URI.create("wss://someapp.example.com/websocket/someservice")
+        );
+        myClientEndpoint.awaitClosure(10, SECONDS);
+    }
+
+    static WebSocketContainer createClientWebsocketContainer() {/* ... */}
 }
 ```
 
