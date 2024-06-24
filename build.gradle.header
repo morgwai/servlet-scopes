@@ -23,4 +23,7 @@ publishing {
 
 test {
 	systemProperty "pl.morgwai.level", System.getProperty("pl.morgwai.level")
+    if (project.hasProperty('excludeTests')) {
+        exclude project.property('excludeTests')
+    }
 }
