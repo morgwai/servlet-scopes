@@ -68,11 +68,11 @@ public class JettyTests extends MultiAppWebsocketTests {
 	 * Sends {@code request} to the {@link #server}, verifies and returns the response.
 	 * Specifically, verifies if the response code is 200, parses the body as {@link Properties} and
 	 * checks if property {@link TestServlet#RESPONDING_SERVLET} is equal to
-	 * {@code expectedTargetServletClass}.
+	 * {@code expectedRespondingServletClass}.
 	 * @return a Properties received from the {@link #server} (see
 	 *     {@link TestServlet#doAsyncHandling(HttpServletRequest, HttpServletResponse)}).
 	 */
-	Properties sendServletRequest(HttpRequest request, Class<?> expectedTargetServletClass)
+	Properties sendServletRequest(HttpRequest request, Class<?> expectedRespondingServletClass)
 			throws Exception {
 		final var response = httpClient.send(request, BodyHandlers.ofInputStream());
 		if (log.isLoggable(Level.FINE)) {
@@ -84,7 +84,7 @@ public class JettyTests extends MultiAppWebsocketTests {
 		responseContent.load(response.body());
 		assertEquals(
 			"processing should be dispatched to the correct servlet",
-			expectedTargetServletClass.getSimpleName(),
+			expectedRespondingServletClass.getSimpleName(),
 			responseContent.getProperty(TestServlet.RESPONDING_SERVLET)
 		);
 		return responseContent;
@@ -98,23 +98,23 @@ public class JettyTests extends MultiAppWebsocketTests {
 	 * @return a {@code List} containing both responses as returned by
 	 *     {@link #sendServletRequest(HttpRequest, Class)}.
 	 */
-	List<Properties> testAsyncCtxDispatch(String url, Class<?> expectedTargetServletClass)
+	List<Properties> testAsyncCtxDispatch(String url, Class<?> expectedRespondingServletClass)
 			throws Exception {
 		final var request = HttpRequest.newBuilder(URI.create(url)).GET()
 				.timeout(Duration.ofSeconds(2)).build();
-		final var responseLines = sendServletRequest(request, expectedTargetServletClass);
-		final var responseLines2 = sendServletRequest(request, expectedTargetServletClass);
+		final var firstReply = sendServletRequest(request, expectedRespondingServletClass);
+		final var secondReply = sendServletRequest(request, expectedRespondingServletClass);
 		assertEquals(
 			"session scoped object hash should remain the same",
-			responseLines.getProperty(HTTP_SESSION),
-			responseLines2.getProperty(HTTP_SESSION)
+			firstReply.getProperty(HTTP_SESSION),
+			secondReply.getProperty(HTTP_SESSION)
 		);
 		assertNotEquals(
 			"request scoped object hash should change",
-			responseLines.getProperty(CONTAINER_CALL),
-			responseLines2.getProperty(CONTAINER_CALL)
+			firstReply.getProperty(CONTAINER_CALL),
+			secondReply.getProperty(CONTAINER_CALL)
 		);
-		return List.of(responseLines, responseLines2);
+		return List.of(firstReply, secondReply);
 	}
 
 	@Test
@@ -190,174 +190,97 @@ public class JettyTests extends MultiAppWebsocketTests {
 	/** Performs several servlet and websocket requests in a single {@code HttpSession}. */
 	@Test
 	public void testAllInOne() throws Exception {
-		final var containerCallScopedHashes = new HashSet<>();
-		final var connectionScopedHashes = new HashSet<>();
+		final var containerCallScopedHashes = new HashSet<String>();
+		final var connectionScopedHashes = new HashSet<String>();
 
-		final var unwrappedAsyncCtxResponses = testAsyncCtxDispatch(
+		final var unwrappedAsyncCtxReplies = testAsyncCtxDispatch(
 			forwardingServletUrl + '?' + MODE_PARAM + '=' + MODE_UNWRAPPED,
 			ForwardingServlet.class
 		);
-		final var sessionScopedHash = unwrappedAsyncCtxResponses.get(0).getProperty(HTTP_SESSION);
-		containerCallScopedHashes.add(
-				unwrappedAsyncCtxResponses.get(0).getProperty(CONTAINER_CALL));
-		containerCallScopedHashes.add(
-				unwrappedAsyncCtxResponses.get(1).getProperty(CONTAINER_CALL));
+		final var sessionScopedHash = unwrappedAsyncCtxReplies.get(0).getProperty(HTTP_SESSION);
+		addAndVerifyContainerCallHashes(unwrappedAsyncCtxReplies, containerCallScopedHashes);
 
-		final var unwrappedTargetedAsyncCtxResponses = testAsyncCtxDispatch(
+		addAndVerifyServletReplies(
 			forwardingServletUrl + '?' + MODE_PARAM + '=' + MODE_UNWRAPPED
 					+ '&' + TARGET_PATH_PARAM + "=/" + TargetedServlet.class.getSimpleName(),
-			TargetedServlet.class
+			TargetedServlet.class,
+			containerCallScopedHashes,
+			sessionScopedHash
 		);
-		assertEquals(
-			"session scoped object hash should remain the same",
-			sessionScopedHash,
-			unwrappedTargetedAsyncCtxResponses.get(0).getProperty(HTTP_SESSION)
-		);
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					unwrappedTargetedAsyncCtxResponses.get(0).getProperty(CONTAINER_CALL))
-		);
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					unwrappedTargetedAsyncCtxResponses.get(1).getProperty(CONTAINER_CALL))
-		);
-
-		final var wrappedAsyncCtxResponses = testAsyncCtxDispatch(
+		addAndVerifyServletReplies(
 			forwardingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED,
-			AsyncServlet.class
+			AsyncServlet.class,
+			containerCallScopedHashes,
+			sessionScopedHash
 		);
-		assertEquals("session scoped object hash should remain the same",
-				sessionScopedHash, wrappedAsyncCtxResponses.get(0).getProperty(HTTP_SESSION));
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					wrappedAsyncCtxResponses.get(0).getProperty(CONTAINER_CALL))
-		);
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					wrappedAsyncCtxResponses.get(1).getProperty(CONTAINER_CALL))
-		);
-
-		final var wrappedTargetedAsyncCtxResponses = testAsyncCtxDispatch(
+		addAndVerifyServletReplies(
 			forwardingServletUrl + '?' + MODE_PARAM + '=' + MODE_WRAPPED
 					+ '&' + TARGET_PATH_PARAM + "=/" + TargetedServlet.class.getSimpleName(),
-			TargetedServlet.class
+			TargetedServlet.class,
+			containerCallScopedHashes,
+			sessionScopedHash
 		);
+		addAndVerifyWebsocketResults(
+			ProgrammaticEndpoint.PATH,
+			containerCallScopedHashes,
+			connectionScopedHashes,
+			sessionScopedHash
+		);
+		addAndVerifyWebsocketResults(
+			AnnotatedExtendingEndpoint.PATH,
+			containerCallScopedHashes,
+			connectionScopedHashes,
+			sessionScopedHash
+		);
+		addAndVerifyWebsocketResults(
+			AnnotatedEndpoint.PATH,
+			containerCallScopedHashes,
+			connectionScopedHashes,
+			sessionScopedHash
+		);
+	}
+
+	void addAndVerifyServletReplies(
+		String url,
+		Class<?> expectedRespondingServletClass,
+		Set<String> containerCallScopedHashes,
+		String sessionScopedHash
+	) throws Exception {
+		final var replies = testAsyncCtxDispatch(url, expectedRespondingServletClass);
+		assertEquals("session scoped object hash should remain the same",
+				sessionScopedHash, replies.get(0).getProperty(HTTP_SESSION));
+		addAndVerifyContainerCallHashes(replies, containerCallScopedHashes);
+	}
+
+	void addAndVerifyWebsocketResults(
+		String websocketPath,
+		Set<String> containerCallScopedHashes,
+		Set<String> connectionScopedHashes,
+		String sessionScopedHash
+	) throws Exception {
+		final var clientEndpoints = test2SessionsWithServerEndpoint(
+				appWebsocketUrl + websocketPath, true);
 		assertEquals(
 			"session scoped object hash should remain the same",
 			sessionScopedHash,
-			wrappedTargetedAsyncCtxResponses.get(0).getProperty(HTTP_SESSION)
+			clientEndpoints.get(0).serverReplies.get(0).getProperty(HTTP_SESSION)
 		);
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					wrappedTargetedAsyncCtxResponses.get(0).getProperty(CONTAINER_CALL))
-		);
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					wrappedTargetedAsyncCtxResponses.get(1).getProperty(CONTAINER_CALL))
-		);
+		for (var clientEndpoint: clientEndpoints) {
+			assertTrue("connection scoped object hash should change",
+					connectionScopedHashes.add(
+							clientEndpoint.serverReplies.get(0).getProperty(WEBSOCKET_CONNECTION)));
+			addAndVerifyContainerCallHashes(
+					clientEndpoint.serverReplies, containerCallScopedHashes);
+		}
+	}
 
-		final var programmaticEndpointResponses =
-				test2SessionsWithServerEndpoint(appWebsocketUrl + ProgrammaticEndpoint.PATH, true);
-		assertEquals("session scoped object hash should remain the same",
-				sessionScopedHash, programmaticEndpointResponses.get(0).getProperty(HTTP_SESSION));
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					programmaticEndpointResponses.get(0).getProperty(CONTAINER_CALL))
-		);
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					programmaticEndpointResponses.get(1).getProperty(CONTAINER_CALL))
-		);
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					programmaticEndpointResponses.get(2).getProperty(CONTAINER_CALL))
-		);
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					programmaticEndpointResponses.get(3).getProperty(CONTAINER_CALL))
-		);
-		connectionScopedHashes.add(
-				programmaticEndpointResponses.get(0).getProperty(WEBSOCKET_CONNECTION));
-		connectionScopedHashes.add(
-				programmaticEndpointResponses.get(2).getProperty(WEBSOCKET_CONNECTION));
-
-		final var extendingEndpointResponses = test2SessionsWithServerEndpoint(
-				appWebsocketUrl + AnnotatedExtendingProgrammaticEndpoint.PATH, true);
-		assertEquals("session scoped object hash should remain the same",
-				sessionScopedHash, extendingEndpointResponses.get(0).getProperty(HTTP_SESSION));
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					extendingEndpointResponses.get(0).getProperty(CONTAINER_CALL))
-		);
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					extendingEndpointResponses.get(1).getProperty(CONTAINER_CALL))
-		);
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					extendingEndpointResponses.get(2).getProperty(CONTAINER_CALL))
-		);
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					extendingEndpointResponses.get(3).getProperty(CONTAINER_CALL))
-		);
-		assertTrue(
-			"connection scoped object hash should change",
-			connectionScopedHashes.add(
-				extendingEndpointResponses.get(0).getProperty(WEBSOCKET_CONNECTION)));
-		assertTrue(
-			"connection scoped object hash should change",
-			connectionScopedHashes.add(
-					extendingEndpointResponses.get(2).getProperty(WEBSOCKET_CONNECTION))
-		);
-
-		final var annotatedEndpointResponses =
-				test2SessionsWithServerEndpoint(appWebsocketUrl + AnnotatedEndpoint.PATH, true);
-		assertEquals("session scoped object hash should remain the same",
-				sessionScopedHash, annotatedEndpointResponses.get(0).getProperty(HTTP_SESSION));
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					annotatedEndpointResponses.get(0).getProperty(CONTAINER_CALL))
-		);
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					annotatedEndpointResponses.get(1).getProperty(CONTAINER_CALL))
-		);
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					annotatedEndpointResponses.get(2).getProperty(CONTAINER_CALL))
-		);
-		assertTrue(
-			"call scoped object hash should change",
-			containerCallScopedHashes.add(
-					annotatedEndpointResponses.get(3).getProperty(CONTAINER_CALL))
-		);
-		assertTrue(
-			"connection scoped object hash should change",
-			connectionScopedHashes.add(
-					annotatedEndpointResponses.get(0).getProperty(WEBSOCKET_CONNECTION))
-		);
-		assertTrue(
-			"connection scoped object hash should change",
-			connectionScopedHashes.add(
-					annotatedEndpointResponses.get(2).getProperty(WEBSOCKET_CONNECTION))
-		);
+	void addAndVerifyContainerCallHashes(
+		List<Properties> replies,
+		Set<String> containerCallScopedHashes
+	) {
+		for (var reply: replies) {
+			assertTrue("call scoped object hash should change",
+					containerCallScopedHashes.add(reply.getProperty(CONTAINER_CALL)));
+		}
 	}
 }

@@ -13,10 +13,10 @@ import java.util.logging.*;
 import javax.websocket.*;
 import javax.websocket.CloseReason.CloseCodes;
 
+import com.google.inject.*;
 import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
 import org.eclipse.jetty.websocket.javax.common.JavaxWebSocketContainer;
 import org.junit.*;
-import pl.morgwai.base.guice.scopes.ContextTracker;
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 import pl.morgwai.base.utils.concurrent.Awaitable;
@@ -42,8 +42,7 @@ public abstract class WebsocketIntegrationTests {
 	protected String appWebsocketUrl;
 
 	protected final ServletModule clientServletModule = new ServletModule();
-	protected final ContextTracker<ContainerCallContext> clientCtxTracker =
-			clientServletModule.containerCallContextTracker;
+	protected final Injector clientInjector = Guice.createInjector(clientServletModule);
 	protected final CookieManager cookieManager = new CookieManager();
 	protected final org.eclipse.jetty.client.HttpClient wsHttpClient =
 			new org.eclipse.jetty.client.HttpClient();
@@ -87,118 +86,189 @@ public abstract class WebsocketIntegrationTests {
 
 
 
-	/**
-	 * Connects to a server endpoint at {@code url} and depending on {@code sendTestMessage} sends 1
-	 * test message. Returns a list containing 2 messages received from the server: the initial
-	 * welcome message and either the reply to the test message that was sent or an
-	 * {@link RttReportingEndpoint RTT report}.
-	 * <p>
-	 * Each message is split into lines. Each message is expected to have the format defined in
-	 * {@link EchoEndpoint}. Both messages are expected to be sent from the same HTTP session scope
-	 * and the same websocket connection scope.</p>
-	 */
-	protected List<Properties> testSingleSessionWithServerEndpoint(URI url, boolean sendTestMessage)
-			throws Exception {
-		final var testMessage = "test message for " + url;
-		final var replies = new ArrayList<Properties>(4);
-		final var testMessageSent = new CountDownLatch(1);
-		final var repliesReceived = new CountDownLatch(2);
-		final var testThread = Thread.currentThread();
-		final CloseReason[] closeReasonHolder = {null};
-		final var clientEndpoint = new ClientEndpoint(
-			(reply) -> {
-				if (replies.size() >= 2 && !sendTestMessage) return;  // extra pong
-				final var parsedReply = new Properties(5);
-				try {
-					parsedReply.load(new StringReader(reply));
-					replies.add(parsedReply);
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				} finally {
-					repliesReceived.countDown();
-				}
-			},
-			(connection, error) -> {},
-			(connection, closeReason) -> {
-				closeReasonHolder[0] = closeReason;
-				if (closeReason.getCloseCode().getCode() != CloseCodes.NORMAL_CLOSURE.getCode()) {
-					// server endpoint error: interrupt testThread awaiting for replies (they will
-					// probably never arrive), but not before testMessage is sent as
-					// getAsyncRemote.sendText(...) may clear interruption status.
-					try {
-						var ignored = testMessageSent.await(500L, TimeUnit.MILLISECONDS);
-					} catch (InterruptedException ignored) {}
-					testThread.interrupt();
-				}
+	public static class GuiceClientEndpoint extends AbstractClientEndpoint {
+
+		@Inject Provider<ContainerCallContext> clientEventCtxProvider;
+		@Inject Provider<WebsocketConnectionContext> clientConnectionCtxProvider;
+		final List<ContainerCallContext> clientEventCtxs = new ArrayList<>(4);
+		final List<WebsocketConnectionContext> clientConnectionCtxs = new ArrayList<>(4);
+
+		final List<Properties> serverReplies = new ArrayList<>(2);
+		final CountDownLatch allRepliesReceived = new CountDownLatch(2);
+
+		final CountDownLatch testMessageSent = new CountDownLatch(1);
+		final Thread testThread = Thread.currentThread();
+
+
+
+		@Override
+		public void onOpen(Session connection, EndpointConfig config) {
+			super.onOpen(connection, config);
+			clientEventCtxs.add(clientEventCtxProvider.get());
+			clientConnectionCtxs.add(clientConnectionCtxProvider.get());
+			connection.addMessageHandler(String.class, this::onMessage);
+		}
+
+
+
+		void onMessage(String reply) {
+			if (serverReplies.size() >= 2) return;  // extra pong in pinging Endpoint tests
+			clientEventCtxs.add(clientEventCtxProvider.get());
+			clientConnectionCtxs.add(clientConnectionCtxProvider.get());
+			final var parsedReply = new Properties(5);
+			try {
+				parsedReply.load(new StringReader(reply));
+				serverReplies.add(parsedReply);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			} finally {
+				allRepliesReceived.countDown();
 			}
-		);
-		final var connection = clientWebsocketContainer.connectToServer(
-			new ClientEndpointProxy(clientEndpoint, clientCtxTracker),
-			null,
-			url
-		);
-		if (sendTestMessage) connection.getAsyncRemote().sendText(testMessage);
-		testMessageSent.countDown();
-		try {
-			assertTrue("replies should be received",
-					repliesReceived.await(2L, SECONDS));
-			connection.close();
-			assertTrue ("client endpoint should be closed",
-					clientEndpoint.awaitClosure(2L, SECONDS));
-		} catch (InterruptedException e) {  // interrupted by clientEndpoint.closeHandler above
-			fail("abnormal close code: " + closeReasonHolder[0].getCloseCode());
 		}
-		assertEquals("onOpen reply should be a welcome",
-				WELCOME_MESSAGE, replies.get(0).getProperty(MESSAGE_PROPERTY));
-		if (sendTestMessage) {
-			assertEquals("2nd reply should be an echo",
-					testMessage, replies.get(1).getProperty(MESSAGE_PROPERTY));
+
+
+
+		@Override
+		public void onClose(Session session, CloseReason closeReason) {
+			clientEventCtxs.add(clientEventCtxProvider.get());
+			clientConnectionCtxs.add(clientConnectionCtxProvider.get());
+			super.onClose(session, closeReason);
+			if (closeReason.getCloseCode().getCode() != CloseCodes.NORMAL_CLOSURE.getCode()) {
+				// server endpoint error: interrupt testThread awaiting for replies (they will
+				// probably never arrive), but not before testMessage is sent as
+				// getAsyncRemote.sendText(...) may clear interruption status.
+				try {
+					var ignored = testMessageSent.await(500L, TimeUnit.MILLISECONDS);
+				} catch (InterruptedException ignored) {}
+				testThread.interrupt();
+			}
 		}
-		if (isHttpSessionAvailable()) {
-			assertEquals(
-				"HttpSession scoped object hash should remain the same",
-				replies.get(0).getProperty(HTTP_SESSION),
-				replies.get(1).getProperty(HTTP_SESSION)
-			);
-		}
-		assertEquals(
-			"connection scoped object hash should remain the same",
-			replies.get(0).getProperty(WEBSOCKET_CONNECTION),
-			replies.get(1).getProperty(WEBSOCKET_CONNECTION)
-		);
-		assertNotEquals(
-			"event scoped object hash should change",
-			replies.get(0).getProperty(CONTAINER_CALL),
-			replies.get(1).getProperty(CONTAINER_CALL)
-		);
-		return replies;
 	}
 
 
 
 	/**
-	 * Returns a list containing 4 messages received from the server via 2 calls to
-	 * {@link #testSingleSessionWithServerEndpoint(URI, boolean)} made via separate websocket
-	 * connections. All 4 messages are expected to be sent from the same HTTP session scope.
+	 * Connects to a server {@code Endpoint} at {@code url} and depending on {@code sendTestMessage}
+	 * sends 1 test message.
+	 * Afterwards verifies that:<ul>
+	 *   <li>the server side {@link Service#CONTAINER_CALL event-scoped} object has changed</li>
+	 *   <li>the server side {@link Service#WEBSOCKET_CONNECTION connection-scoped} object has
+	 *       remained the same</li>
+	 *   <li>the server side {@link Service#HTTP_SESSION HTTPSession-scoped} object has
+	 *       remained the same</li>
+	 *   <li>the client side {@link ContainerCallContext} object has changed</li>
+	 *   <li>the client side {@link WebsocketConnectionContext} object has remained the same</li>
+	 * </ul>
+	 * @return the {@link GuiceClientEndpoint} that was used to make the connection.
 	 */
-	protected List<Properties> test2SessionsWithServerEndpoint(String url, boolean sendTestMessage)
-			throws Exception {
-		final var uri = URI.create(url);
-		final var replies = testSingleSessionWithServerEndpoint(uri, sendTestMessage);
-		replies.addAll(testSingleSessionWithServerEndpoint(uri, sendTestMessage));
+	protected GuiceClientEndpoint testSingleSessionWithServerEndpoint(
+		URI url,
+		boolean sendTestMessage
+	) throws Exception {
+		final var testMessage = "test message for " + url;
+		final var clientEndpoint = clientInjector.getInstance(GuiceClientEndpoint.class);
+		final var connection = clientWebsocketContainer.connectToServer(
+			new ClientEndpointProxy(
+				clientEndpoint,
+				clientServletModule.containerCallContextTracker
+			),
+			null,
+			url
+		);
+		if (sendTestMessage) connection.getAsyncRemote().sendText(testMessage);
+		clientEndpoint.testMessageSent.countDown();
+
+		// server replies verifications
+		try {
+			assertTrue("replies should be received",
+					clientEndpoint.allRepliesReceived.await(2L, SECONDS));
+			connection.close();
+			assertTrue ("client endpoint should be closed",
+					clientEndpoint.awaitClosure(2L, SECONDS));
+		} catch (InterruptedException e) {  // interrupted by clientEndpoint.closeHandler above
+			fail("abnormal close code: " + clientEndpoint.getCloseReason().getCloseCode());
+		}
+		assertEquals("onOpen reply should be a welcome",
+				WELCOME_MESSAGE, clientEndpoint.serverReplies.get(0).getProperty(MESSAGE_PROPERTY));
+		if (sendTestMessage) {
+			assertEquals("2nd reply should be an echo",
+					testMessage, clientEndpoint.serverReplies.get(1).getProperty(MESSAGE_PROPERTY));
+		}
+		if (isHttpSessionAvailable()) {
+			assertEquals(
+				"server HttpSession scoped object hash should remain the same",
+				clientEndpoint.serverReplies.get(0).getProperty(HTTP_SESSION),
+				clientEndpoint.serverReplies.get(1).getProperty(HTTP_SESSION)
+			);
+		}
+		assertEquals(
+			"server connection scoped object hash should remain the same",
+			clientEndpoint.serverReplies.get(0).getProperty(WEBSOCKET_CONNECTION),
+			clientEndpoint.serverReplies.get(1).getProperty(WEBSOCKET_CONNECTION)
+		);
 		assertNotEquals(
-			"connection scoped object hash should change",
-			replies.get(0).getProperty(WEBSOCKET_CONNECTION),
-			replies.get(2).getProperty(WEBSOCKET_CONNECTION)
+			"server event scoped object hash should change",
+			clientEndpoint.serverReplies.get(0).getProperty(CONTAINER_CALL),
+			clientEndpoint.serverReplies.get(1).getProperty(CONTAINER_CALL)
+		);
+
+		// client ctxs verifications
+		final var clientEventCtxSet = new HashSet<>(clientEndpoint.clientEventCtxs);
+		assertEquals("clientEventCtx should be different each time",
+				clientEndpoint.clientEventCtxs.size(), clientEventCtxSet.size());
+		assertTrue("no clientEventCtx should be null",
+				clientEventCtxSet.stream()
+					.map(Objects::nonNull)
+					.reduce(Boolean::logicalAnd)
+					.orElseThrow()
+		);
+		assertNotNull(clientEndpoint.clientConnectionCtxs.get(0));
+		assertEquals("clientConnectionCtx should remain the same",
+				1, new HashSet<>(clientEndpoint.clientConnectionCtxs).size());
+
+		return clientEndpoint;
+	}
+
+
+
+	/**
+	 * Makes 2 connections to a server {@code Endpoint} at {@code url} using
+	 * {@link #testSingleSessionWithServerEndpoint(URI, boolean)}.
+	 * Afterwards verifies that:<ul>
+	 *   <li>the server side {@link Service#WEBSOCKET_CONNECTION connection-scoped} object has
+	 *       changed</li>
+	 *   <li>the server side {@link Service#HTTP_SESSION HTTPSession-scoped} object has
+	 *       remained the same</li>
+	 *   <li>the client side {@link WebsocketConnectionContext} object has changed</li>
+	 * </ul>
+	 * @return a {@code List} containing results of both
+	 *     {@link #testSingleSessionWithServerEndpoint(URI, boolean)} calls.
+	 */
+	protected List<GuiceClientEndpoint> test2SessionsWithServerEndpoint(
+		String url,
+		boolean sendTestMessage
+	) throws Exception {
+		final var uri = URI.create(url);
+		final var firstEndpoint = testSingleSessionWithServerEndpoint(uri, sendTestMessage);
+		final var secondEndpoint = testSingleSessionWithServerEndpoint(uri, sendTestMessage);
+		assertNotEquals(
+			"server connection scoped object hash should change",
+			firstEndpoint.serverReplies.get(0).getProperty(WEBSOCKET_CONNECTION),
+			secondEndpoint.serverReplies.get(0).getProperty(WEBSOCKET_CONNECTION)
 		);
 		if (isHttpSessionAvailable()) {
 			assertEquals(
-				"session scoped object hash should remain the same",
-				replies.get(0).getProperty(HTTP_SESSION),
-				replies.get(2).getProperty(HTTP_SESSION)
+				"server session scoped object hash should remain the same",
+				firstEndpoint.serverReplies.get(0).getProperty(HTTP_SESSION),
+				secondEndpoint.serverReplies.get(0).getProperty(HTTP_SESSION)
 			);
 		}
-		return replies;
+		assertNotEquals(
+			"clientConnectionCtx should change",
+			firstEndpoint.clientConnectionCtxs.get(0),
+			secondEndpoint.clientConnectionCtxs.get(0)
+		);
+		return List.of(firstEndpoint, secondEndpoint);
 	}
 
 
