@@ -315,12 +315,12 @@ public abstract class WebsocketIntegrationTests {
 	 */
 	protected Session testOpenConnectionToServerEndpoint(String type) throws Exception {
 		final var url = URI.create(appWebsocketUrl + WEBSOCKET_PATH + type);
-		final var endpoint = new ClientEndpoint(
+		final var clientEndpoint = new ClientEndpoint(
 			(message) -> {},
 			(connection, error) -> {},
 			(connection, closeReason) -> {}
 		);
-		return clientWebsocketContainer.connectToServer(endpoint, null, url);
+		return clientWebsocketContainer.connectToServer(clientEndpoint, null, url);
 	}
 
 

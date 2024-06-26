@@ -113,13 +113,14 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 			throws InterruptedException, DeploymentException, IOException {
 		final List<String> responses = new ArrayList<>(websocketUrls.length);
 		for (var url: websocketUrls) {
-			final var endpoint = new ClientEndpoint(responses::add, null, null);
+			final var clientEndpoint = new ClientEndpoint(responses::add, null, null);
 			final var uri = URI.create(url);
 			try (
-				final var ignored = clientWebsocketContainer.connectToServer(endpoint, null, uri);
+				final var ignored =
+						clientWebsocketContainer.connectToServer(clientEndpoint, null, uri);
 			) {
-				assertTrue("endpoint should be closed",
-						endpoint.awaitClosure(500L, TimeUnit.MILLISECONDS));
+				assertTrue("clientEndpoint should be closed",
+						clientEndpoint.awaitClosure(500L, TimeUnit.MILLISECONDS));
 			}
 		}
 		assertEquals("responses from all URLs should be received",
