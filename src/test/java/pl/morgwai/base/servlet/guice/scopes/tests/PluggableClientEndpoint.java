@@ -9,7 +9,7 @@ import static java.util.logging.Level.FINE;
 
 
 
-public class ClientEndpoint extends AbstractClientEndpoint {
+public class PluggableClientEndpoint extends AbstractClientEndpoint {
 
 
 
@@ -19,7 +19,7 @@ public class ClientEndpoint extends AbstractClientEndpoint {
 
 
 
-	public ClientEndpoint(
+	public PluggableClientEndpoint(
 		Whole<String> messageHandler,
 		BiConsumer<Session, Throwable> errorHandler,
 		BiConsumer<Session, CloseReason> closeHandler

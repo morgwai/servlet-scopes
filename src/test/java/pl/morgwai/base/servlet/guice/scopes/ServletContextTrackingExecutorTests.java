@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.websocket.CloseReason;
@@ -16,7 +15,6 @@ import org.junit.*;
 import org.easymock.*;
 
 import pl.morgwai.base.guice.scopes.ContextBoundRunnable;
-import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
 import pl.morgwai.base.utils.concurrent.NamingThreadFactory;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -29,7 +27,6 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 
 
 
-	final ServletContext mockDeployment = new StandaloneWebsocketContainerServletContext("/test");
 	final Map<String, Object> attributes = new HashMap<>(3);
 
 	@Mock HttpServletResponse servletResponse;
@@ -37,7 +34,7 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 	final Capture<Integer> statusCapture = Capture.newInstance();
 
 	@Mock HttpServletRequest servletRequest;
-	final ServletModule servletModule = new ServletModule(mockDeployment);
+	final WebsocketModule servletModule = new WebsocketModule();
 	final ServletRequestContext requestCtx =
 			new ServletRequestContext(servletRequest, servletModule.containerCallContextTracker);
 
