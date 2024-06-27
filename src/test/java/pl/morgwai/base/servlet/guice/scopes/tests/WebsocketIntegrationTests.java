@@ -2,15 +2,12 @@
 package pl.morgwai.base.servlet.guice.scopes.tests;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.net.CookieManager;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.*;
 import javax.websocket.*;
-import javax.websocket.CloseReason.CloseCodes;
 import org.junit.*;
 
 import com.google.inject.*;
@@ -23,6 +20,7 @@ import pl.morgwai.base.utils.concurrent.Awaitable;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
+import static javax.websocket.CloseReason.CloseCodes.NORMAL_CLOSURE;
 import static org.junit.Assert.*;
 import static pl.morgwai.base.jul.JulConfigurator.*;
 import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.EchoEndpoint.MESSAGE_PROPERTY;
@@ -39,8 +37,9 @@ public abstract class WebsocketIntegrationTests {
 	protected Server server;
 	protected String appWebsocketUrl;
 
-	protected final ServletModule clientServletModule = new ServletModule();
-	protected final Injector clientInjector = Guice.createInjector(clientServletModule);
+	protected final WebsocketModule clientWebsocketModule =
+			new WebsocketModule(TestGuiceClientEndpoint.class);
+	protected final Injector clientInjector = Guice.createInjector(clientWebsocketModule);
 	protected final CookieManager cookieManager = new CookieManager();
 	protected final org.eclipse.jetty.client.HttpClient wsHttpClient =
 			new org.eclipse.jetty.client.HttpClient();
@@ -84,71 +83,8 @@ public abstract class WebsocketIntegrationTests {
 
 
 
-	public static class GuiceClientEndpoint extends AbstractClientEndpoint {
-
-		@Inject Provider<ContainerCallContext> clientEventCtxProvider;
-		public List<ContainerCallContext> getClientEventCtxs() { return clientEventCtxs; }
-		private final List<ContainerCallContext> clientEventCtxs = new ArrayList<>(4);
-
-		@Inject Provider<WebsocketConnectionContext> clientConnectionCtxProvider;
-		public List<WebsocketConnectionContext> getClientConnectionCtxs() {
-			return clientConnectionCtxs;
-		}
-		private final List<WebsocketConnectionContext> clientConnectionCtxs = new ArrayList<>(4);
-
-		public List<Properties> getServerReplies() { return serverReplies; }
-		private final List<Properties> serverReplies = new ArrayList<>(2);
-		private final CountDownLatch allRepliesReceived = new CountDownLatch(2);
-
-
-
-		@Override
-		public void onOpen(Session connection, EndpointConfig config) {
-			super.onOpen(connection, config);
-			clientEventCtxs.add(clientEventCtxProvider.get());
-			clientConnectionCtxs.add(clientConnectionCtxProvider.get());
-			connection.addMessageHandler(String.class, this::onMessage);
-		}
-
-
-
-		void onMessage(String reply) {
-			if (serverReplies.size() >= 2) return;  // extra pong in pinging Endpoint tests
-			clientEventCtxs.add(clientEventCtxProvider.get());
-			clientConnectionCtxs.add(clientConnectionCtxProvider.get());
-			final var parsedReply = new Properties(5);
-			try {
-				parsedReply.load(new StringReader(reply));
-				serverReplies.add(parsedReply);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			} finally {
-				allRepliesReceived.countDown();
-			}
-		}
-
-
-
-		@Override
-		public void onClose(Session session, CloseReason closeReason) {
-			clientEventCtxs.add(clientEventCtxProvider.get());
-			clientConnectionCtxs.add(clientConnectionCtxProvider.get());
-			super.onClose(session, closeReason);
-			if (closeReason.getCloseCode().getCode() != CloseCodes.NORMAL_CLOSURE.getCode()) {
-				// server endpoint error: signal the main test Thread that may still be awaiting for
-				// replies as they will never arrive in such case
-				allRepliesReceived.countDown();
-			}
-		}
-
-
-
-		public boolean awaitAllReplies(long timeout, TimeUnit unit) throws InterruptedException {
-			return allRepliesReceived.await(timeout, unit);
-		}
-	}
-
-
+	@Inject @GuiceClientEndpoint
+	TestGuiceClientEndpoint clientEndpoint;
 
 	/**
 	 * Connects to a server {@code Endpoint} at {@code url} and depending on {@code sendTestMessage}
@@ -162,16 +98,14 @@ public abstract class WebsocketIntegrationTests {
 	 *   <li>the client side {@link ContainerCallContext} object has changed</li>
 	 *   <li>the client side {@link WebsocketConnectionContext} object has remained the same</li>
 	 * </ul>
-	 * @return the {@link GuiceClientEndpoint} that was used to make the connection.
+	 * @return the {@link TestGuiceClientEndpoint} that was used to make the connection.
 	 */
-	protected GuiceClientEndpoint testSingleSessionWithServerEndpoint(
+	protected TestGuiceClientEndpoint testSingleSessionWithServerEndpoint(
 		URI url,
 		boolean sendTestMessage
 	) throws Exception {
 		final var testMessage = "test message for " + url;
-		final var configurator = clientInjector.getInstance(GuiceEndpointConfigurator.class);
-		final var clientEndpoint =
-				configurator.getProxiedEndpointInstance(GuiceClientEndpoint.class);
+		clientInjector.injectMembers(this);
 		try (
 			final var connection = clientWebsocketContainer.connectToServer(
 				clientEndpoint,
@@ -185,11 +119,8 @@ public abstract class WebsocketIntegrationTests {
 		}
 		assertTrue ("clientEndpoint should be closed",
 				clientEndpoint.awaitClosure(2L, SECONDS));
-		assertEquals(
-			"clientEndpoint should be closed with NORMAL_CLOSURE code",
-			CloseCodes.NORMAL_CLOSURE.getCode(),
-			clientEndpoint.getCloseReason().getCloseCode().getCode()
-		);
+		assertEquals("clientEndpoint should be closed with NORMAL_CLOSURE code",
+				NORMAL_CLOSURE.getCode(), clientEndpoint.getCloseReason().getCloseCode().getCode());
 
 		// server replies verifications
 		final var firstReply = clientEndpoint.getServerReplies().get(0);
@@ -252,7 +183,7 @@ public abstract class WebsocketIntegrationTests {
 	 * @return a {@code List} containing results of both
 	 *     {@link #testSingleSessionWithServerEndpoint(URI, boolean)} calls.
 	 */
-	protected List<GuiceClientEndpoint> test2SessionsWithServerEndpoint(
+	protected List<TestGuiceClientEndpoint> test2SessionsWithServerEndpoint(
 		String url,
 		boolean sendTestMessage
 	) throws Exception {
@@ -325,7 +256,7 @@ public abstract class WebsocketIntegrationTests {
 	 */
 	protected Session testOpenConnectionToServerEndpoint(String type) throws Exception {
 		final var url = URI.create(appWebsocketUrl + WEBSOCKET_PATH + type);
-		final var clientEndpoint = new ClientEndpoint(
+		final var clientEndpoint = new PluggableClientEndpoint(
 			(message) -> {},
 			(connection, error) -> {},
 			(connection, closeReason) -> {}
@@ -383,7 +314,7 @@ public abstract class WebsocketIntegrationTests {
 		final var broadcastsReceived = new CountDownLatch(urls.length);
 		@SuppressWarnings("unchecked")
 		final List<String>[] messages = (List<String>[]) new List<?>[urls.length];
-		final ClientEndpoint[] clientEndpoints = new ClientEndpoint[urls.length];
+		final PluggableClientEndpoint[] clientEndpoints = new PluggableClientEndpoint[urls.length];
 		final Session[] connections =  new Session[urls.length];
 
 		try {
@@ -391,7 +322,7 @@ public abstract class WebsocketIntegrationTests {
 				// create clientEndpoints and open connections
 				messages[clientNumber] = new ArrayList<>(2);
 				final var localClientNumber = clientNumber;
-				clientEndpoints[clientNumber] = new ClientEndpoint(
+				clientEndpoints[clientNumber] = new PluggableClientEndpoint(
 					(message) -> {
 						messages[localClientNumber].add(message);
 						if (message.equals(BroadcastEndpoint.WELCOME_MESSAGE)) {
@@ -431,7 +362,7 @@ public abstract class WebsocketIntegrationTests {
 			Awaitable.awaitMultiple(
 				2L, SECONDS,
 				Arrays.stream(clientEndpoints)
-					.map(Awaitable.entryMapper(ClientEndpoint::toAwaitableOfClosure))
+					.map(Awaitable.entryMapper(PluggableClientEndpoint::toAwaitableOfClosure))
 			).isEmpty()
 		);
 		for (int clientNumber = 0; clientNumber < urls.length; clientNumber++) {

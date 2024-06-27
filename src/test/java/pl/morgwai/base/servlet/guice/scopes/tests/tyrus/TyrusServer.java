@@ -108,7 +108,7 @@ public class TyrusServer implements Server {
 		final var appDeployment = new StandaloneWebsocketContainerServletContext(path);
 
 		// create and store injector
-		final var servletModule = new ServletModule(appDeployment);
+		final var servletModule = new ServletModule(appDeployment, new WebsocketModule());
 		final var modules = new LinkedList<Module>();
 		modules.add(servletModule);
 		modules.add(new ServiceModule(servletModule, false));

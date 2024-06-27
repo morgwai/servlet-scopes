@@ -1,7 +1,10 @@
 // Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.utils;
 
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
+
+import javax.servlet.ServletContext;
 
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
@@ -121,9 +124,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 * {@link #createScheduler()} and {@link #shouldSynchronizePingSending()} to configure the
 	 * service.
 	 * <p>
-	 * This method is called once in a {@link #createEndpointConfigurator()} and may be overridden
-	 * if other customizations are required. It may use {@link #appDeployment} and
-	 * {@link #injector}.</p>
+	 * This method is called once in {@link #createWebsocketModule(Set)} and may be overridden
+	 * if further customizations are required.</p>
 	 */
 	protected WebsocketPingerService createPingerService() {
 		if (isPingerInKeepAliveOnlyMode()) {
@@ -149,14 +151,28 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 	/**
-	 * Overrides {@link #endpointConfigurator} to be a {@link PingingServerEndpointConfigurator}.
-	 * Also {@link #createPingerService() creates the app-wide pinger service} and stores it as a
-	 * {@link javax.servlet.ServletContext#setAttribute(String, Object) deployment attribute} under
-	 * {@link Class#getName() fully-qualified name} of {@link WebsocketPingerService} class.
+	 * todo: javadoc
+	 * Also {@link #createPingerService() creates the app-wide pinger service}.
 	 */
 	@Override
-	protected GuiceServerEndpointConfigurator createEndpointConfigurator() {
+	protected WebsocketModule createWebsocketModule(Set<Class<?>> clientEndpointClasses) {
 		pingerService = createPingerService();
+		return new PingingWebsocketModule(pingerService, clientEndpointClasses);
+	}
+
+
+
+	/**
+	 * Overrides {@link #endpointConfigurator} to be a {@link PingingServerEndpointConfigurator}.
+	 * Also stores {@link #pingerService the app-wide PingerService} as a
+	 * {@link javax.servlet.ServletContext#setAttribute(String, Object) deployment attribute} under
+	 * {@link Class#getName() fully-qualified name} of {@link WebsocketPingerService} class and
+	 * {@link #addShutdownHook(Runnable) schedules} it's {@link WebsocketPingerService#stop() stop}
+	 * at the app shutdown.
+	 */
+	@Override
+	protected GuiceServerEndpointConfigurator createEndpointConfigurator(
+			ServletContext appDeployment) {
 		addShutdownHook(pingerService::stop);
 		appDeployment.setAttribute(WebsocketPingerService.class.getName(), pingerService);
 		return new PingingServerEndpointConfigurator(appDeployment);

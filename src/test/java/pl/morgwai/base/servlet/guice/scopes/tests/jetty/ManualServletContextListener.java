@@ -61,7 +61,7 @@ public class ManualServletContextListener implements ServletContextListener {
 				1
 			);
 			final ServletContext appDeployment = initialization.getServletContext();
-			servletModule = new ServletModule(appDeployment);
+			servletModule = new ServletModule(appDeployment, new WebsocketModule());
 			final ServerContainer endpointContainer = ((ServerContainer)
 					appDeployment.getAttribute(ServerContainer.class.getName()));
 			appDeployment.addListener(new HttpSessionContext.SessionContextCreator());
@@ -179,12 +179,13 @@ public class ManualServletContextListener implements ServletContextListener {
 		if (registerDeployment)	{
 			GuiceServerEndpointConfigurator.deregisterDeployment(destruction.getServletContext());
 		}
-		servletModule.shutdownAllExecutors();
+		servletModule.websocketModule.shutdownAllExecutors();
 		List<ServletContextTrackingExecutor> unterminated;
 		try {
-			unterminated = servletModule.awaitTerminationOfAllExecutors(5L, TimeUnit.SECONDS);
+			unterminated = servletModule.websocketModule
+					.awaitTerminationOfAllExecutors(5L, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
-			unterminated = servletModule.getExecutors().stream()
+			unterminated = servletModule.websocketModule.getExecutors().stream()
 				.filter((executor) -> !executor.isTerminated())
 				.collect(Collectors.toList());
 		}

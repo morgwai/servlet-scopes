@@ -27,7 +27,8 @@ public class ServiceModule implements Module {
 
 	@Override
 	public void configure(Binder binder) {
-		final var executor = servletModule.newContextTrackingExecutor("testExecutor", 2);
+		final var executor =
+				servletModule.websocketModule.newContextTrackingExecutor("testExecutor", 2);
 		// usually Executors are bound with some name, but in this app there's only 1
 		binder.bind(ServletContextTrackingExecutor.class).toInstance(executor);
 
