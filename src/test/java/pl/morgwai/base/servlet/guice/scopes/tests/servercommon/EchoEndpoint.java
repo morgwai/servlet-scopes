@@ -45,6 +45,7 @@ public class EchoEndpoint {
 
 
 
+	@OnOpen
 	public void onOpen(Session connection, EndpointConfig config) {
 		this.connection = connection;
 		connection.setMaxIdleTimeout(5L * 60L * 1000L);
@@ -54,6 +55,7 @@ public class EchoEndpoint {
 
 
 
+	@OnMessage
 	public void onMessage(String message) {
 		if (message.equals(CLOSE_MESSAGE)) {
 			try {
@@ -149,6 +151,7 @@ public class EchoEndpoint {
 
 
 
+	@OnError
 	public void onError(Session connection, Throwable error) {
 		log.log(Level.WARNING, "error on connection " + connection.getId(), error);
 		error.printStackTrace();
@@ -161,6 +164,7 @@ public class EchoEndpoint {
 
 
 
+	@OnClose
 	public void onClose(CloseReason closeReason) {
 		log.info("closing " + connection.getId() + ", code: " + closeReason.getCloseCode() +
 				", reason: " + closeReason.getReasonPhrase());

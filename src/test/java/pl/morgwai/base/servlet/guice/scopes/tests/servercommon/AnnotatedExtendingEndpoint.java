@@ -1,18 +1,17 @@
-// Copyright 2023 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
+// Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 
 import javax.websocket.server.ServerEndpoint;
 
-import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
+import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
 
 
 
-/** Extending {@link ProgrammaticEndpoint} and annotated with {@link ServerEndpoint}. */
 @ServerEndpoint(
 	value = AnnotatedExtendingEndpoint.PATH,
-	configurator = GuiceServerEndpointConfigurator.class
+	configurator = PingingEndpointConfigurator.class
 )
-public class AnnotatedExtendingEndpoint extends ProgrammaticEndpoint {
+public class AnnotatedExtendingEndpoint extends EchoEndpoint {
 
 
 

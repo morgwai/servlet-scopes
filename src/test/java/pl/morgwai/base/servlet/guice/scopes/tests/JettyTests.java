@@ -292,7 +292,7 @@ public class JettyTests extends MultiAppWebsocketTests {
 				programmaticEndpointResponses.get(2).getProperty(WEBSOCKET_CONNECTION));
 
 		final var extendingEndpointResponses = test2SessionsWithServerEndpoint(
-				appWebsocketUrl + AnnotatedExtendingEndpoint.PATH, true);
+				appWebsocketUrl + AnnotatedExtendingProgrammaticEndpoint.PATH, true);
 		assertEquals("session scoped object hash should remain the same",
 				sessionScopedHash, extendingEndpointResponses.get(0).getProperty(HTTP_SESSION));
 		assertTrue(

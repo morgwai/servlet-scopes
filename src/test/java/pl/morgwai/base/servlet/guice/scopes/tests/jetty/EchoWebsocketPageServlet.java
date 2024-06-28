@@ -60,8 +60,9 @@ public class EchoWebsocketPageServlet extends ResourceServlet {
 			case ProgrammaticEndpoint.TYPE:
 				filtered = replaceWebsocketPath(resource, ProgrammaticEndpoint.PATH);
 				break;
-			case AnnotatedExtendingEndpoint.TYPE:
-				filtered = replaceWebsocketPath(resource, AnnotatedExtendingEndpoint.PATH);
+			case AnnotatedExtendingProgrammaticEndpoint.TYPE:
+				filtered =
+						replaceWebsocketPath(resource, AnnotatedExtendingProgrammaticEndpoint.PATH);
 				break;
 			case AnnotatedEndpoint.TYPE:
 				filtered = replaceWebsocketPath(resource, AnnotatedEndpoint.PATH);

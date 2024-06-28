@@ -91,6 +91,8 @@ public class TyrusServer implements Server {
 		public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> scanned) {
 			return Set.of(
 				AnnotatedEndpoint.class,
+				AnnotatedExtendingEndpoint.class,
+				AnnotatedMethodOverridingEndpoint.class,
 				OnOpenWithoutSessionParamEndpoint.class,
 				PingingWithoutOnCloseEndpoint.class,
 				AppSeparationTestEndpoint.class,

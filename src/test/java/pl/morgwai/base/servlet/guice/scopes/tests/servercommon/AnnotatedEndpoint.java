@@ -4,17 +4,18 @@ package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 
+import com.google.inject.Inject;
 import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator.RttObserver;
 
 
 
-/** Extends {@link EchoEndpoint} and annotates lifecycle methods with websocket annotations. */
+/** Delegates to its wrapped {@link EchoEndpoint} instance. */
 @ServerEndpoint(
 	value = AnnotatedEndpoint.PATH,
 	configurator = PingingEndpointConfigurator.class
 )
-public class AnnotatedEndpoint extends EchoEndpoint implements RttObserver {
+public class AnnotatedEndpoint implements RttObserver {
 
 
 
@@ -23,16 +24,20 @@ public class AnnotatedEndpoint extends EchoEndpoint implements RttObserver {
 
 
 
-	@OnOpen @Override
+	@Inject EchoEndpoint echoEndpoint;
+
+
+
+	@OnOpen
 	public void onOpen(Session connection, EndpointConfig config) {
-		super.onOpen(connection, config);
+		echoEndpoint.onOpen(connection, config);
 	}
 
 
 
-	@OnMessage @Override
+	@OnMessage
 	public void onMessage(String message) {
-		super.onMessage(message);
+		echoEndpoint.onMessage(message);
 	}
 
 
@@ -42,15 +47,15 @@ public class AnnotatedEndpoint extends EchoEndpoint implements RttObserver {
 
 
 
-	@OnError @Override
+	@OnError
 	public void onError(Session connection, Throwable error) {
-		super.onError(connection, error);
+		echoEndpoint.onError(connection, error);
 	}
 
 
 
-	@OnClose @Override
+	@OnClose
 	public void onClose(CloseReason closeReason) {
-		super.onClose(closeReason);
+		echoEndpoint.onClose(closeReason);
 	}
 }
