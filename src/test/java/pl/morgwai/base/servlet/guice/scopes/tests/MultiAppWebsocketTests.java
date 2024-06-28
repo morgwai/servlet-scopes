@@ -94,7 +94,7 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 	@Test
 	public void testAnnotatedExtendingEndpointOnSecondApp() throws Exception {
 		test2SessionsWithServerEndpoint(
-			secondAppWebsocketUrl + AnnotatedExtendingEndpoint.PATH,
+			secondAppWebsocketUrl + AnnotatedExtendingProgrammaticEndpoint.PATH,
 			true
 		);
 	}
@@ -102,7 +102,7 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 	@Test
 	public void testAnnotatedExtendingEndpointOnUnregisteredDeploymentApp() throws Exception {
 		test2SessionsWithServerEndpoint(
-			unregisteredDeploymentAppWebsocketUrl + AnnotatedExtendingEndpoint.PATH,
+			unregisteredDeploymentAppWebsocketUrl + AnnotatedExtendingProgrammaticEndpoint.PATH,
 			true
 		);
 	}

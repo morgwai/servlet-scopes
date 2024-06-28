@@ -214,14 +214,26 @@ public abstract class WebsocketIntegrationTests {
 	}
 
 	@Test
+	public void testAnnotatedExtendingEndpoint() throws Exception {
+		test2SessionsWithServerEndpoint(appWebsocketUrl + AnnotatedExtendingEndpoint.PATH, true);
+	}
+
+	@Test
+	public void testAnnotatedMethodOverridingEndpoint() throws Exception {
+		test2SessionsWithServerEndpoint(
+				appWebsocketUrl + AnnotatedMethodOverridingEndpoint.PATH, true);
+	}
+
+	@Test
 	public void testRttReportingEndpoint() throws Exception {
 		test2SessionsWithServerEndpoint(appWebsocketUrl + RttReportingEndpoint.PATH, false);
 	}
 
 	/** Not all servers support it. */
 	@Test
-	public void testAnnotatedExtendingEndpoint() throws Exception {
-		test2SessionsWithServerEndpoint(appWebsocketUrl + AnnotatedExtendingEndpoint.PATH, true);
+	public void testAnnotatedExtendingProgrammaticEndpoint() throws Exception {
+		test2SessionsWithServerEndpoint(
+				appWebsocketUrl + AnnotatedExtendingProgrammaticEndpoint.PATH, true);
 	}
 
 

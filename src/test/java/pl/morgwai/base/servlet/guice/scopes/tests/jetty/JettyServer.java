@@ -36,6 +36,8 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 				websocketContainer.setDefaultMaxTextMessageBufferSize(1023);
 				websocketContainer.addEndpoint(AnnotatedEndpoint.class);
 				websocketContainer.addEndpoint(AnnotatedExtendingEndpoint.class);
+				websocketContainer.addEndpoint(AnnotatedMethodOverridingEndpoint.class);
+				websocketContainer.addEndpoint(AnnotatedExtendingProgrammaticEndpoint.class);
 				websocketContainer.addEndpoint(OnOpenWithoutSessionParamEndpoint.class);
 				websocketContainer.addEndpoint(PingingWithoutOnCloseEndpoint.class);
 				websocketContainer.addEndpoint(AppSeparationTestEndpoint.class);
@@ -54,6 +56,8 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 				websocketContainer.setDefaultMaxTextMessageBufferSize(1023);
 				websocketContainer.addEndpoint(AnnotatedEndpoint.class);
 				websocketContainer.addEndpoint(AnnotatedExtendingEndpoint.class);
+				websocketContainer.addEndpoint(AnnotatedMethodOverridingEndpoint.class);
+				websocketContainer.addEndpoint(AnnotatedExtendingProgrammaticEndpoint.class);
 				websocketContainer.addEndpoint(AppSeparationTestEndpoint.class);
 				websocketContainer.addEndpoint(NoSessionAppSeparationTestEndpoint.class);
 			}
@@ -71,6 +75,8 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 				websocketContainer.setDefaultMaxTextMessageBufferSize(1023);
 				websocketContainer.addEndpoint(AnnotatedEndpoint.class);
 				websocketContainer.addEndpoint(AnnotatedExtendingEndpoint.class);
+				websocketContainer.addEndpoint(AnnotatedMethodOverridingEndpoint.class);
+				websocketContainer.addEndpoint(AnnotatedExtendingProgrammaticEndpoint.class);
 				websocketContainer.addEndpoint(AppSeparationTestEndpoint.class);
 				websocketContainer.addEndpoint(NoSessionAppSeparationTestEndpoint.class);
 			}

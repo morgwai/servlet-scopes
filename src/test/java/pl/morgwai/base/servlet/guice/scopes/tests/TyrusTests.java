@@ -53,5 +53,5 @@ public class TyrusTests extends WebsocketIntegrationTests {
 
 	/** TyrusServer does not support it. */
 	@Override
-	public void testAnnotatedExtendingEndpoint() {}
+	public void testAnnotatedExtendingProgrammaticEndpoint() {}
 }
