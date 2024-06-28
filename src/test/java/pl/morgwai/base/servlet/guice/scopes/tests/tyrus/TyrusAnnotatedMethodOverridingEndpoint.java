@@ -1,0 +1,24 @@
+// Copyright 2024 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
+package pl.morgwai.base.servlet.guice.scopes.tests.tyrus;
+
+import javax.websocket.*;
+import javax.websocket.server.ServerEndpoint;
+
+import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.AnnotatedMethodOverridingEndpoint;
+import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
+
+
+
+@ServerEndpoint(
+	value = AnnotatedMethodOverridingEndpoint.PATH,
+	configurator = PingingEndpointConfigurator.class
+)
+public class TyrusAnnotatedMethodOverridingEndpoint extends AnnotatedMethodOverridingEndpoint {
+
+
+
+	@OnOpen	@Override
+	public void onOpen(Session connection, EndpointConfig config) {
+		super.onOpen(connection, config);
+	}
+}

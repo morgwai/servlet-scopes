@@ -286,32 +286,46 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 		}
 	}
 
+
+
 	/**
-	 * Checks if {@code endpointClass} has all the required methods with appropriate
-	 * {@code Endpoint} lifecycle annotations as specified by
-	 * {@link #getRequiredEndpointMethodAnnotationTypes()} and if {@link OnOpen} annotated method
-	 * has a {@link Session} param.
+	 * Checks if annotated {@code endpointClass} has all the
+	 * {@link #getRequiredEndpointMethodAnnotationTypes() required} {@code Endpoint} life-cycle
+	 * methods.
+	 * Additionally checks if {@link OnOpen} annotated method has a {@link Session} param.
+	 * <p>
+	 * Note the discrepancy between container implementations: Tyrus requires overriding methods to
+	 * be re-annotated with @{@link OnOpen} / @{@link OnClose} etc, while Jetty forbids it.<br/>
+	 * By default this configurator does Jetty-style checking, so some {@code Endpoints} that don't
+	 * meet Tyrus requirements will be allowed to deploy and their overridden life-cycle methods
+	 * will not be called by the container.</p>
 	 * @throws RuntimeException if the check fails.
 	 */
-	private void checkIfRequiredEndpointMethodsPresent(Class<?> endpointClass) {
+	protected void checkIfRequiredEndpointMethodsPresent(Class<?> endpointClass) {
 		final var wantedMethodAnnotationTypes = getRequiredEndpointMethodAnnotationTypes();
 		final var wantedAnnotationTypeIterator = wantedMethodAnnotationTypes.iterator();
 		while (wantedAnnotationTypeIterator.hasNext()) {
 			// remove annotation from wantedMethodAnnotationTypes each time a corresponding method
 			// is found within endpointClass
 			final var wantedAnnotationType = wantedAnnotationTypeIterator.next();
-			for (var method: endpointClass.getMethods()) {
-				if (method.isAnnotationPresent(wantedAnnotationType)) {
-					wantedAnnotationTypeIterator.remove();
-					if (
-						wantedAnnotationType.equals(OnOpen.class)
-						&& !Arrays.asList(method.getParameterTypes()).contains(Session.class)
-					) {
-						throw new RuntimeException("method annotated with @OnOpen must have a "
-								+ Session.class.getName() + " param");
+			var methodFound = false;
+			var classUnderScan = endpointClass;
+			while ( !classUnderScan.equals(Object.class) && !methodFound) {
+				for (var method: classUnderScan.getMethods()) {
+					if (method.isAnnotationPresent(wantedAnnotationType)) {
+						wantedAnnotationTypeIterator.remove();
+						if (
+							wantedAnnotationType.equals(OnOpen.class)
+							&& !Arrays.asList(method.getParameterTypes()).contains(Session.class)
+						) {
+							throw new RuntimeException("method annotated with @OnOpen must have a "
+									+ Session.class.getName() + " param");
+						}
+						methodFound = true;
+						break;
 					}
-					break;
 				}
+				classUnderScan = classUnderScan.getSuperclass();
 			}
 		}
 		if ( !wantedMethodAnnotationTypes.isEmpty()) {
@@ -323,8 +337,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 
 
 	/**
-	 * Returns a set of annotations of {@code Endpoint} lifecycle methods that are required to be
-	 * present in {@code Endpoint} classes using this configurator.
+	 * Returns a set of annotations of {@code Endpoint} lifecycle methods required to be present by
+	 * this configurator.
 	 * By default a singleton of {@link OnOpen}. Subclasses may override this method if needed.
 	 * Overriding methods should call {@code super} and add their required annotations to the
 	 * obtained {@code Set} before returning it.

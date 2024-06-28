@@ -11,6 +11,9 @@ import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
 /**
  * Extends {@link EchoEndpoint} and overrides its {@link #onOpen(Session, EndpointConfig) @OnOpen}
  * method.
+ * , hence
+ * {@link pl.morgwai.base.servlet.guice.scopes.tests.tyrus.TyrusAnnotatedMethodOverridingEndpoint}
+ * exists.
  */
 @ServerEndpoint(
 	value = AnnotatedMethodOverridingEndpoint.PATH,
@@ -27,6 +30,15 @@ public class AnnotatedMethodOverridingEndpoint extends EchoEndpoint {
 
 	@Override
 	public void onOpen(Session connection, EndpointConfig config) {
+System.out.println("onOpen");
 		super.onOpen(connection, config);
+	}
+
+
+
+	@Override
+	public void onClose(CloseReason closeReason) {
+System.out.println("onClose");
+		super.onClose(closeReason);
 	}
 }
