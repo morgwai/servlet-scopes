@@ -100,9 +100,6 @@ public abstract class WebsocketIntegrationTests {
 		private final List<Properties> serverReplies = new ArrayList<>(2);
 		private final CountDownLatch allRepliesReceived = new CountDownLatch(2);
 
-		final CountDownLatch testMessageSent = new CountDownLatch(1);
-		final Thread testThread = Thread.currentThread();
-
 
 
 		@Override
@@ -138,13 +135,9 @@ public abstract class WebsocketIntegrationTests {
 			clientConnectionCtxs.add(clientConnectionCtxProvider.get());
 			super.onClose(session, closeReason);
 			if (closeReason.getCloseCode().getCode() != CloseCodes.NORMAL_CLOSURE.getCode()) {
-				// server endpoint error: interrupt testThread awaiting for replies (they will
-				// probably never arrive), but not before testMessage is sent as
-				// getAsyncRemote.sendText(...) may clear interruption status.
-				try {
-					var ignored = testMessageSent.await(500L, TimeUnit.MILLISECONDS);
-				} catch (InterruptedException ignored) {}
-				testThread.interrupt();
+				// server endpoint error: signal the main test Thread that may still be awaiting for
+				// replies as they will never arrive in such case
+				allRepliesReceived.countDown();
 			}
 		}
 
@@ -152,12 +145,6 @@ public abstract class WebsocketIntegrationTests {
 
 		public boolean awaitAllReplies(long timeout, TimeUnit unit) throws InterruptedException {
 			return allRepliesReceived.await(timeout, unit);
-		}
-
-
-
-		public void signalAllMessagesSent() {
-			testMessageSent.countDown();
 		}
 	}
 
@@ -185,24 +172,26 @@ public abstract class WebsocketIntegrationTests {
 		final var configurator = clientInjector.getInstance(GuiceEndpointConfigurator.class);
 		final var clientEndpoint =
 				configurator.getProxiedEndpointInstance(GuiceClientEndpoint.class);
-		final var connection = clientWebsocketContainer.connectToServer(
-			clientEndpoint,
-			null,
-			url
-		);
-		if (sendTestMessage) connection.getAsyncRemote().sendText(testMessage);
-		clientEndpoint.signalAllMessagesSent();
-
-		// server replies verifications
-		try {
+		try (
+			final var connection = clientWebsocketContainer.connectToServer(
+				clientEndpoint,
+				null,
+				url
+			);
+		) {
+			if (sendTestMessage) connection.getAsyncRemote().sendText(testMessage);
 			assertTrue("replies should be received",
 					clientEndpoint.awaitAllReplies(2L, SECONDS));
-			connection.close();
-			assertTrue ("client endpoint should be closed",
-					clientEndpoint.awaitClosure(2L, SECONDS));
-		} catch (InterruptedException e) {  // interrupted by clientEndpoint.closeHandler above
-			fail("abnormal close code: " + clientEndpoint.getCloseReason().getCloseCode());
 		}
+		assertTrue ("clientEndpoint should be closed",
+				clientEndpoint.awaitClosure(2L, SECONDS));
+		assertEquals(
+			"clientEndpoint should be closed with NORMAL_CLOSURE code",
+			CloseCodes.NORMAL_CLOSURE.getCode(),
+			clientEndpoint.getCloseReason().getCloseCode().getCode()
+		);
+
+		// server replies verifications
 		final var firstReply = clientEndpoint.getServerReplies().get(0);
 		final var secondReply = clientEndpoint.getServerReplies().get(1);
 		assertEquals("onOpen reply should be a welcome",
