@@ -30,15 +30,6 @@ public class AnnotatedMethodOverridingEndpoint extends EchoEndpoint {
 
 	@Override
 	public void onOpen(Session connection, EndpointConfig config) {
-System.out.println("onOpen");
 		super.onOpen(connection, config);
-	}
-
-
-
-	@Override
-	public void onClose(CloseReason closeReason) {
-System.out.println("onClose");
-		super.onClose(closeReason);
 	}
 }
