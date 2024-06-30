@@ -41,6 +41,9 @@ public class PingingWebsocketModule extends WebsocketModule {
 	public void configure(Binder binder) {
 		super.configure(binder);
 		binder.bind(WebsocketPingerService.class).toInstance(pingerService);
+		binder.bind(WebsocketPingerService.class)
+			.annotatedWith(PingingClientEndpoint.class)
+			.toInstance(pingerService);
 		for (var clientEndpointClass: clientEndpointClasses) {
 			bindClientEndpoint(binder, clientEndpointClass);
 		}

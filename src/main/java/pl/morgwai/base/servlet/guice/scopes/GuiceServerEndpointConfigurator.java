@@ -16,7 +16,6 @@ import javax.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.Injector;
 import com.google.inject.Scope;
-import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 
@@ -141,8 +140,8 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 
 
 
-	protected volatile ServletContext appDeployment;
-	protected GuiceEndpointConfigurator backingConfigurator;
+	volatile ServletContext appDeployment;
+	GuiceEndpointConfigurator backingConfigurator;
 
 
 
@@ -162,43 +161,30 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	 * Calls {@link #initialize(ServletContext)} right away.
 	 */
 	public GuiceServerEndpointConfigurator(ServletContext appDeployment) {
-		this.appDeployment = appDeployment;
 		initialize(appDeployment);
 	}
 
 
 
 	/**
-	 * Initializes this instance member fields with references from {@code appDeployment}
-	 * {@link ServletContext#getAttribute(String) attributes}.
+	 * Initializes {@link #backingConfigurator} using {@link Injector} obtained from
+	 * {@code appDeployment} {@link ServletContext#getAttribute(String) attribute}.
 	 * Called either by {@link #GuiceServerEndpointConfigurator(ServletContext)} or by
 	 * {@link #modifyHandshake(ServerEndpointConfig, HandshakeRequest, HandshakeResponse)} in case
 	 * of container-created instances for {@code Endpoints} annotated with {@link ServerEndpoint}.
 	 */
-	protected void initialize(ServletContext appDeployment) {
-		final var injector = (Injector) appDeployment.getAttribute(Injector.class.getName());
-		try {
-			backingConfigurator = newGuiceEndpointConfigurator(
-				injector,
-				injector.getInstance(ServletModule.ctxTrackerKey)
-			);
-		} catch (NullPointerException e) {
-			throw new RuntimeException(
-					"deployment attribute \"" + Injector.class.getName() + "\" not present");
-		}
-		// In case of container-created Configurator instances `this.appDeployment` is used as a
-		// marker indicating whether initialize(...) has been called by modifyHandshake(...) (see
-		// below) and as subclasses may override initialize(...) adding additional steps *after*
-		// `super.initialize(...)`, we cannot do `this.appDeployment = appDeployment` here as then
-		// some Threads could see half-initialized instances as fully initialized.
+	void initialize(ServletContext appDeployment) {
+		backingConfigurator = newGuiceEndpointConfigurator(
+				(Injector) appDeployment.getAttribute(Injector.class.getName()));
+		this.appDeployment = appDeployment;
 	}
 
 	// todo: javadoc
-	protected GuiceEndpointConfigurator newGuiceEndpointConfigurator(
-		Injector injector,
-		ContextTracker<ContainerCallContext> ctxTracker
-	) {
-		return new GuiceEndpointConfigurator(injector, ctxTracker) {
+	protected GuiceEndpointConfigurator newGuiceEndpointConfigurator(Injector injector) {
+		return new GuiceEndpointConfigurator(
+			injector,
+			injector.getInstance(ServletModule.ctxTrackerKey)
+		) {
 			@Override
 			protected <ProxyT> ProxyT createEndpointProxyInstance(Class<ProxyT> proxyClass)
 					throws InstantiationException, InvocationTargetException {
@@ -281,7 +267,6 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 			if (this.appDeployment != null) return;
 			final var appDeployment = getAppDeployment(config, request);
 			initialize(appDeployment);
-			this.appDeployment = appDeployment;
 		}
 	}
 

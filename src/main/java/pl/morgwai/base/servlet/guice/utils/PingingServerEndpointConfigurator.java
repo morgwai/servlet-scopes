@@ -6,7 +6,7 @@ import javax.servlet.ServletContext;
 import javax.websocket.OnClose;
 
 import com.google.inject.Injector;
-import pl.morgwai.base.guice.scopes.ContextTracker;
+import com.google.inject.Key;
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
@@ -16,16 +16,9 @@ import pl.morgwai.base.servlet.utils.WebsocketPingerService;
  * Subclass of {@link GuiceEndpointConfigurator} that additionally automatically registers and
  * deregisters {@code Endpoints} to its associated {@link WebsocketPingerService}.
  * In addition to usage instructions from the super class, annotated {@code Endpoints} <b>must</b>
- * have a method annotated with @{@link OnClose} and the app-wide {@link WebsocketPingerService}
- * must be {@link ServletContext#setAttribute(String, Object) stored as a deployment attribute}
- * under {@link Class#getName() fully-qualified name} of {@link WebsocketPingerService} class.
- * @see PingingServletContextListener
+ * have a method annotated with @{@link OnClose} to use this {@code Configurator}.
  */
 public class PingingServerEndpointConfigurator extends GuiceServerEndpointConfigurator {
-
-
-
-	WebsocketPingerService pingerService;
 
 
 
@@ -38,24 +31,12 @@ public class PingingServerEndpointConfigurator extends GuiceServerEndpointConfig
 
 
 	@Override
-	protected void initialize(ServletContext appDeployment) {
-		pingerService = (WebsocketPingerService)
-				appDeployment.getAttribute(WebsocketPingerService.class.getName());
-		if (pingerService == null) {
-			throw new RuntimeException(
-					"no \"" + WebsocketPingerService.class.getName() + "\" deployment attribute");
-		}
-		super.initialize(appDeployment);
-	}
-
-
-
-	@Override
-	protected GuiceEndpointConfigurator newGuiceEndpointConfigurator(
-		Injector injector,
-		ContextTracker<ContainerCallContext> ctxTracker
-	) {
-		return new PingingEndpointConfigurator(injector, ctxTracker, pingerService) {
+	protected GuiceEndpointConfigurator newGuiceEndpointConfigurator(Injector injector) {
+		return new PingingEndpointConfigurator(
+			injector,
+			injector.getInstance(WebsocketModule.ctxTrackerKey),
+			injector.getInstance(Key.get(WebsocketPingerService.class, PingingClientEndpoint.class))
+		) {
 			@Override
 			protected <ProxyT> ProxyT createEndpointProxyInstance(Class<ProxyT> proxyClass)
 					throws InstantiationException, InvocationTargetException {
