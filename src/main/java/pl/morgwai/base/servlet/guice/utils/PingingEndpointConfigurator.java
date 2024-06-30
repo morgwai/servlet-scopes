@@ -29,7 +29,7 @@ public class PingingEndpointConfigurator extends GuiceEndpointConfigurator {
 	public PingingEndpointConfigurator(
 		Injector injector,
 		ContextTracker<ContainerCallContext> ctxTracker,
-		WebsocketPingerService pingerService
+		@PingingClientEndpoint WebsocketPingerService pingerService
 	) {
 		super(injector, ctxTracker);
 		this.pingerService = pingerService;

@@ -16,6 +16,7 @@ import com.google.inject.*;
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 import pl.morgwai.base.servlet.guice.utils.PingingServerEndpointConfigurator;
+import pl.morgwai.base.servlet.guice.utils.PingingWebsocketModule;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Server.*;
@@ -62,7 +63,10 @@ public class ManualServletContextListener implements ServletContextListener {
 				1
 			);
 			final ServletContext appDeployment = initialization.getServletContext();
-			servletModule = new ServletModule(appDeployment, new WebsocketModule());
+			servletModule = new ServletModule(
+				appDeployment,
+				new PingingWebsocketModule(pingerService)
+			);
 			final ServerContainer endpointContainer = ((ServerContainer)
 					appDeployment.getAttribute(ServerContainer.class.getName()));
 			appDeployment.addListener(new HttpSessionContext.SessionContextCreator());
@@ -85,7 +89,6 @@ public class ManualServletContextListener implements ServletContextListener {
 			);
 
 			appDeployment.setAttribute(Injector.class.getName(), injector);
-			appDeployment.setAttribute(WebsocketPingerService.class.getName(), pingerService);
 			if (registerDeployment) {
 				GuiceServerEndpointConfigurator.registerDeployment(appDeployment);
 			}
