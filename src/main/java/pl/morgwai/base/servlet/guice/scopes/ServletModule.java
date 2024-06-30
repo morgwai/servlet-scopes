@@ -23,7 +23,7 @@ public class ServletModule implements Module {
 	/**
 	 * Scopes objects to the {@link HttpSessionContext Context of an HttpSessions}.
 	 * This {@code Scope} is induced by {@link ContainerCallContext}s obtained from
-	 * {@link #containerCallContextTracker}, so it may be active both within
+	 * {@link #ctxTracker}, so it may be active both within
 	 * {@link ServletRequestContext}s and {@link WebsocketEventContext}s.
 	 * <p>
 	 * <b>NOTE:</b> it is not possible to create an {@link javax.servlet.http.HttpSession} from the
@@ -44,11 +44,11 @@ public class ServletModule implements Module {
 	public final WebsocketModule websocketModule;
 
 	// todo: javadoc
-	public final ContextTracker<ContainerCallContext> containerCallContextTracker;
+	public final ContextTracker<ContainerCallContext> ctxTracker;
 	public final Scope containerCallScope;
 	public final Scope websocketConnectionScope;
 	public final List<ContextTracker<?>> allTrackers;
-	public final ContextBinder contextBinder;
+	public final ContextBinder ctxBinder;
 
 
 
@@ -69,15 +69,15 @@ public class ServletModule implements Module {
 		this.websocketModule = websocketModule;
 		httpSessionScope = new InducedContextScope<>(
 			"ServletModule.httpSessionScope",
-			websocketModule.containerCallContextTracker,
+			websocketModule.ctxTracker,
 			ContainerCallContext::getHttpSessionContext
 		);
 
-		containerCallContextTracker = websocketModule.containerCallContextTracker;
+		ctxTracker = websocketModule.ctxTracker;
 		containerCallScope = websocketModule.containerCallScope;
 		websocketConnectionScope = websocketModule.websocketConnectionScope;
 		allTrackers = websocketModule.allTrackers;
-		contextBinder = websocketModule.contextBinder;
+		ctxBinder = websocketModule.ctxBinder;
 	}
 
 	public ServletModule(ServletContext appDeployment, WebsocketModule websocketModule) {
@@ -92,6 +92,8 @@ public class ServletModule implements Module {
 	public void configure(Binder binder) {
 		if (appDeployment != null) binder.bind(ServletContext.class).toInstance(appDeployment);
 		binder.install(websocketModule);
+		binder.bind(HttpSessionContext.class).toProvider(
+				() -> ctxTracker.getCurrentContext().getHttpSessionContext());
 	}
 
 
@@ -103,8 +105,8 @@ public class ServletModule implements Module {
 
 
 
-	public static final Key<ContextTracker<ContainerCallContext>> containerCallContextTrackerKey =
-			WebsocketModule.containerCallContextTrackerKey;
+	public static final Key<ContextTracker<ContainerCallContext>> ctxTrackerKey =
+			WebsocketModule.ctxTrackerKey;
 	public static final Key<List<ContextTracker<?>>> allTrackersKey =
 			WebsocketModule.allTrackersKey;
 }

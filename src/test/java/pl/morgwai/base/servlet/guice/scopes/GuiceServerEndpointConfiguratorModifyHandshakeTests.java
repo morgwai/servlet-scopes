@@ -88,7 +88,7 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 			}
 		};
 		mockDeployment.setAttribute(Injector.class.getName(), mockInjector);
-		expect(mockInjector.getInstance(ServletModule.containerCallContextTrackerKey))
+		expect(mockInjector.getInstance(ServletModule.ctxTrackerKey))
 			.andReturn(ctxTracker)
 			.anyTimes();
 	}

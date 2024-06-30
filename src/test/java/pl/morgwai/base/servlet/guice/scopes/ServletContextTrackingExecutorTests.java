@@ -36,7 +36,7 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 	@Mock HttpServletRequest servletRequest;
 	final WebsocketModule servletModule = new WebsocketModule();
 	final ServletRequestContext requestCtx =
-			new ServletRequestContext(servletRequest, servletModule.containerCallContextTracker);
+			new ServletRequestContext(servletRequest, servletModule.ctxTracker);
 
 	@Mock Session wsConnection;
 	boolean wsConnectionClosed = false;
@@ -108,11 +108,9 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 
 		replayAll();
 
-		wsConnectionProxy = new WebsocketConnectionProxy(
-				wsConnection, servletModule.containerCallContextTracker);
+		wsConnectionProxy = new WebsocketConnectionProxy(wsConnection, servletModule.ctxTracker);
 		wsConnectionCtx = new WebsocketConnectionContext(wsConnectionProxy);
-		wsEventCtx = new WebsocketEventContext(
-				wsConnectionCtx, null, servletModule.containerCallContextTracker);
+		wsEventCtx = new WebsocketEventContext(wsConnectionCtx, null, servletModule.ctxTracker);
 	}
 
 
@@ -131,7 +129,7 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 		ctx.executeWithinSelf(() -> testSubject.execute(() -> {
 			try {
 				assertSame("context should be transferred when passing task to executor",
-						ctx, servletModule.containerCallContextTracker.getCurrentContext());
+						ctx, servletModule.ctxTracker.getCurrentContext());
 			} catch (AssertionError e) {
 				asyncError[0] = e;
 			} finally {

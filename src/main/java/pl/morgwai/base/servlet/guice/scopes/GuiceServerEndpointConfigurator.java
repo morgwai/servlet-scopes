@@ -180,7 +180,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 		try {
 			backingConfigurator = newGuiceEndpointConfigurator(
 				injector,
-				injector.getInstance(ServletModule.containerCallContextTrackerKey)
+				injector.getInstance(ServletModule.ctxTrackerKey)
 			);
 		} catch (NullPointerException e) {
 			throw new RuntimeException(
