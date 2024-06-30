@@ -14,21 +14,9 @@ public class TyrusTests extends WebsocketIntegrationTests {
 
 
 
-	protected StandaloneWebsocketContainerServletContext appDeployment;
-
-
-
 	@Override
 	protected Server createServer() throws Exception {
-		appDeployment = TyrusServer.createDeployment(Server.TEST_APP_PATH);
 		return new TyrusServer(-1, Server.TEST_APP_PATH);
-	}
-
-
-
-	@After
-	public void cleanupDeployment() {
-		TyrusServer.cleanupDeployment(appDeployment);
 	}
 
 

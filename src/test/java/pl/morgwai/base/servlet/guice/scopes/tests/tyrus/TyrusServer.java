@@ -13,8 +13,7 @@ import com.google.inject.*;
 import org.glassfish.tyrus.core.cluster.ClusterContext;
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
-import pl.morgwai.base.servlet.guice.utils.PingingServerEndpointConfigurator;
-import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
+import pl.morgwai.base.servlet.guice.utils.*;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -26,19 +25,40 @@ public class TyrusServer implements Server {
 
 
 	final String deploymentPath;
+	final StandaloneWebsocketContainerServletContext appDeployment;
+	final ExecutorManager executorManager;
+	final WebsocketPingerService pingerService;
 	final org.glassfish.tyrus.server.Server tyrus;
-
-
-
-	public TyrusServer(int port, String deploymentPath) throws DeploymentException {
-		this(port, deploymentPath, null);
-	}
 
 
 
 	public TyrusServer(int port, String deploymentPath, ClusterContext clusterCtx)
 			throws DeploymentException {
 		this.deploymentPath = deploymentPath;
+		appDeployment = new StandaloneWebsocketContainerServletContext(deploymentPath);
+		final var intervalFromProperty = System.getProperty(PING_INTERVAL_MILLIS_PROPERTY);
+		pingerService = new WebsocketPingerService(
+			intervalFromProperty != null
+				? Long.parseLong(intervalFromProperty)
+				: DEFAULT_PING_INTERVAL_MILLIS,
+			MILLISECONDS,
+			1
+		);
+		appDeployment.setAttribute(WebsocketPingerService.class.getName(), pingerService);
+		final var servletModule = new ServletModule(
+			appDeployment,
+			new PingingWebsocketModule(pingerService)
+		);
+		executorManager = new ExecutorManager(servletModule.ctxBinder);
+
+		// create and store injector
+		final var modules = new LinkedList<Module>();
+		modules.add(servletModule);
+		modules.add(new ServiceModule(servletModule, executorManager, false));
+		final Injector injector = Guice.createInjector(modules);
+		appDeployment.setAttribute(Injector.class.getName(), injector);
+		GuiceServerEndpointConfigurator.registerDeployment(appDeployment);
+
 		tyrus = new org.glassfish.tyrus.server.Server(
 			"localhost",
 			port,
@@ -47,6 +67,10 @@ public class TyrusServer implements Server {
 			TyrusConfig.class
 		);
 		tyrus.start();
+	}
+
+	public TyrusServer(int port, String deploymentPath) throws DeploymentException {
+		this(port, deploymentPath, null);
 	}
 
 
@@ -61,6 +85,18 @@ public class TyrusServer implements Server {
 	@Override
 	public void stop() {
 		tyrus.stop();
+		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
+		pingerService.stop();
+		executorManager.shutdownAllExecutors();
+		List<ServletContextTrackingExecutor> unterminated;
+		try {
+			unterminated = executorManager.awaitTerminationOfAllExecutors(100L, MILLISECONDS);
+		} catch (InterruptedException e) {
+			unterminated = executorManager.getExecutors().stream()
+				.filter((executor) -> !executor.isTerminated())
+				.collect(Collectors.toList());
+		}
+		for (var executor: unterminated) executor.shutdownNow();
 	}
 
 
@@ -97,60 +133,8 @@ public class TyrusServer implements Server {
 				TyrusAnnotatedMethodOverridingEndpoint.class,
 				OnOpenWithoutSessionParamEndpoint.class,
 				PingingWithoutOnCloseEndpoint.class,
-				AppSeparationTestEndpoint.class,
-				NoSessionAppSeparationTestEndpoint.class,
 				BroadcastEndpoint.class
 			);
 		}
-	}
-
-
-
-	public static StandaloneWebsocketContainerServletContext createDeployment(String path) {
-		final var appDeployment = new StandaloneWebsocketContainerServletContext(path);
-
-		// create and store injector
-		final var servletModule = new ServletModule(appDeployment, new WebsocketModule());
-		final var executorManager = new ExecutorManager(servletModule.ctxBinder);
-		appDeployment.setAttribute(ExecutorManager.class.getName(), executorManager);
-		final var modules = new LinkedList<Module>();
-		modules.add(servletModule);
-		modules.add(new ServiceModule(servletModule, executorManager, false));
-		final Injector injector = Guice.createInjector(modules);
-		appDeployment.setAttribute(Injector.class.getName(), injector);
-
-		// create and store pingerService
-		final var intervalFromProperty = System.getProperty(PING_INTERVAL_MILLIS_PROPERTY);
-		final var pingerService = new WebsocketPingerService(
-			intervalFromProperty != null
-					? Long.parseLong(intervalFromProperty)
-					: DEFAULT_PING_INTERVAL_MILLIS,
-			MILLISECONDS,
-			1
-		);
-		appDeployment.setAttribute(WebsocketPingerService.class.getName(), pingerService);
-
-		GuiceServerEndpointConfigurator.registerDeployment(appDeployment);
-		return appDeployment;
-	}
-
-
-
-	public static void cleanupDeployment(StandaloneWebsocketContainerServletContext appDeployment) {
-		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
-		((WebsocketPingerService)appDeployment.getAttribute(WebsocketPingerService.class.getName()))
-				.stop();
-		final var executorManager =
-				(ExecutorManager) appDeployment.getAttribute(ExecutorManager.class.getName());
-		executorManager.shutdownAllExecutors();
-		List<ServletContextTrackingExecutor> unterminated;
-		try {
-			unterminated = executorManager.awaitTerminationOfAllExecutors(100L, MILLISECONDS);
-		} catch (InterruptedException e) {
-			unterminated = executorManager.getExecutors().stream()
-				.filter((executor) -> !executor.isTerminated())
-				.collect(Collectors.toList());
-		}
-		for (var executor: unterminated) executor.shutdownNow();
 	}
 }
