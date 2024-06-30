@@ -174,7 +174,6 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	protected GuiceServerEndpointConfigurator createEndpointConfigurator(
 			ServletContext appDeployment) {
 		addShutdownHook(pingerService::stop);
-		appDeployment.setAttribute(WebsocketPingerService.class.getName(), pingerService);
 		return new PingingServerEndpointConfigurator(appDeployment);
 	}
 }

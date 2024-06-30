@@ -44,7 +44,6 @@ public class TyrusServer implements Server {
 			MILLISECONDS,
 			1
 		);
-		appDeployment.setAttribute(WebsocketPingerService.class.getName(), pingerService);
 		final var servletModule = new ServletModule(
 			appDeployment,
 			new PingingWebsocketModule(pingerService)
