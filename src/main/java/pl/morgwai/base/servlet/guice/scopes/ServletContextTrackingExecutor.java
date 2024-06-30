@@ -19,9 +19,8 @@ import pl.morgwai.base.utils.concurrent.TaskTrackingThreadPoolExecutor;
  * {@code Threads} using {@link ContextBinder}.
  * <p>
  * Instances should usually be created using
- * {@link ServletModule#newContextTrackingExecutor(String, int)
- * ServletModule.newContextTrackingExecutor(...)} helper methods family, so that they are
- * automatically terminated at the app shutdown.</p>
+ * {@link GuiceServletContextListener#executorManager} helper, so that they are automatically
+ * terminated at the app shutdown.</p>
  */
 public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecutor {
 
@@ -34,7 +33,7 @@ public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecut
 
 
 
-	/** See {@link ServletModule#newContextTrackingExecutor(String, int)}. */
+	/** See {@link ExecutorManager#newContextTrackingExecutor(String, int)}. */
 	public ServletContextTrackingExecutor(String name, ContextBinder ctxBinder, int poolSize) {
 		this(
 			name,
@@ -102,7 +101,7 @@ public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecut
 
 
 	/**
-	 * See {@link ServletModule#newContextTrackingExecutor(String, int, int, long, TimeUnit,
+	 * See {@link ExecutorManager#newContextTrackingExecutor(String, int, int, long, TimeUnit,
 	 * BlockingQueue, ThreadFactory, RejectedExecutionHandler)}.
 	 */
 	public ServletContextTrackingExecutor(
@@ -124,7 +123,7 @@ public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecut
 
 
 	/**
-	 * See {@link ServletModule#newContextTrackingExecutor(String, int, int, long, TimeUnit,
+	 * See {@link ExecutorManager#newContextTrackingExecutor(String, int, int, long, TimeUnit,
 	 * BlockingQueue, ThreadFactory)}.
 	 */
 	public ServletContextTrackingExecutor(
@@ -144,7 +143,7 @@ public class ServletContextTrackingExecutor extends TaskTrackingThreadPoolExecut
 
 
 
-	/** See {@link ServletModule#newContextTrackingExecutor(String, int, int)}. */
+	/** See {@link ExecutorManager#newContextTrackingExecutor(String, int, int)}. */
 	public ServletContextTrackingExecutor(
 		String name,
 		ContextBinder ctxBinder,

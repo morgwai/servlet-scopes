@@ -93,6 +93,9 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	protected final Scope websocketConnectionScope = servletModule.websocketConnectionScope;
 
+	// todo: javadoc
+	protected final ExecutorManager executorManager = new ExecutorManager(servletModule.ctxBinder);
+
 
 
 	/**
@@ -403,8 +406,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Returns the timeout for {@link WebsocketModule#awaitTerminationOfAllExecutors(long, TimeUnit)
-	 * termination of all Executors} obtained from {@link #servletModule}.
+	 * Returns the timeout for {@link ExecutorManager#awaitTerminationOfAllExecutors(long, TimeUnit)
+	 * termination of all Executors} obtained from {@link #executorManager}.
 	 * By default {@value #DEFAULT_EXECUTORS_TERMINATION_TIMEOUT_SECONDS} seconds.
 	 * <p>
 	 * This method is called by {@link #contextDestroyed(ServletContextEvent)} and may be overridden
@@ -445,8 +448,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * {@link WebsocketModule#shutdownAllExecutors() Shutdowns} and
-	 * {@link WebsocketModule#awaitTerminationOfAllExecutors(long, TimeUnit) awaits termination all
+	 * {@link ExecutorManager#shutdownAllExecutors() Shutdowns} and
+	 * {@link ExecutorManager#awaitTerminationOfAllExecutors(long, TimeUnit) awaits termination all
 	 * Executors} created by {@link #servletModule}.
 	 * If after the timeout returned by {@link #getExecutorsTerminationTimeout()} not all
 	 * {@code Executors} are terminated, calls {@link #handleUnterminatedExecutors(List)}.
@@ -455,13 +458,13 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	public final void contextDestroyed(ServletContextEvent destruction) {
 		log.info(deploymentName + " is shutting down");
 		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
-		servletModule.websocketModule.shutdownAllExecutors();
+		executorManager.shutdownAllExecutors();
 		List<ServletContextTrackingExecutor> unterminatedExecutors;
 		try {
-			unterminatedExecutors = servletModule.websocketModule.awaitTerminationOfAllExecutors(
+			unterminatedExecutors = executorManager.awaitTerminationOfAllExecutors(
 					getExecutorsTerminationTimeout().toNanos(), NANOSECONDS);
 		} catch (InterruptedException e) {
-			unterminatedExecutors = servletModule.websocketModule.getExecutors().stream()
+			unterminatedExecutors = executorManager.getExecutors().stream()
 				.filter(not(ServletContextTrackingExecutor::isTerminated))
 				.collect(toList());
 		}

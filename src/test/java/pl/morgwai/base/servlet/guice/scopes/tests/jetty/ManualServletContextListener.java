@@ -46,6 +46,7 @@ public class ManualServletContextListener implements ServletContextListener {
 
 	ServletModule servletModule;
 	WebsocketPingerService pingerService;
+	ExecutorManager executorManager;
 
 
 
@@ -65,10 +66,11 @@ public class ManualServletContextListener implements ServletContextListener {
 			final ServerContainer endpointContainer = ((ServerContainer)
 					appDeployment.getAttribute(ServerContainer.class.getName()));
 			appDeployment.addListener(new HttpSessionContext.SessionContextCreator());
+			executorManager = new ExecutorManager(servletModule.ctxBinder);
 
 			final var modules = new LinkedList<Module>();
 			modules.add(servletModule);
-			modules.add(new ServiceModule(servletModule, true));
+			modules.add(new ServiceModule(servletModule, executorManager, true));
 			final Injector injector = Guice.createInjector(modules);
 
 			final var requestCtxFilter = appDeployment.createFilter(RequestContextFilter.class);
@@ -179,13 +181,12 @@ public class ManualServletContextListener implements ServletContextListener {
 		if (registerDeployment)	{
 			GuiceServerEndpointConfigurator.deregisterDeployment(destruction.getServletContext());
 		}
-		servletModule.websocketModule.shutdownAllExecutors();
+		executorManager.shutdownAllExecutors();
 		List<ServletContextTrackingExecutor> unterminated;
 		try {
-			unterminated = servletModule.websocketModule
-					.awaitTerminationOfAllExecutors(5L, TimeUnit.SECONDS);
+			unterminated = executorManager.awaitTerminationOfAllExecutors(5L, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
-			unterminated = servletModule.websocketModule.getExecutors().stream()
+			unterminated = executorManager.getExecutors().stream()
 				.filter((executor) -> !executor.isTerminated())
 				.collect(Collectors.toList());
 		}
