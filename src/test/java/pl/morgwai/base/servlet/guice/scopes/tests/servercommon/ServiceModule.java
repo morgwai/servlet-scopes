@@ -4,8 +4,7 @@ package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.name.Names;
-import pl.morgwai.base.servlet.guice.scopes.ServletContextTrackingExecutor;
-import pl.morgwai.base.servlet.guice.scopes.ServletModule;
+import pl.morgwai.base.servlet.guice.scopes.*;
 
 
 
@@ -14,12 +13,18 @@ public class ServiceModule implements Module {
 
 
 	final ServletModule servletModule;
+	final ExecutorManager executorManager;
 	final boolean httpSessionAvailable;
 
 
 
-	public ServiceModule(ServletModule servletModule, boolean httpSessionAvailable) {
+	public ServiceModule(
+		ServletModule servletModule,
+		ExecutorManager executorManager,
+		boolean httpSessionAvailable
+	) {
 		this.servletModule = servletModule;
+		this.executorManager = executorManager;
 		this.httpSessionAvailable = httpSessionAvailable;
 	}
 
@@ -27,8 +32,7 @@ public class ServiceModule implements Module {
 
 	@Override
 	public void configure(Binder binder) {
-		final var executor =
-				servletModule.websocketModule.newContextTrackingExecutor("testExecutor", 2);
+		final var executor = executorManager.newContextTrackingExecutor("testExecutor", 2);
 		// usually Executors are bound with some name, but in this app there's only 1
 		binder.bind(ServletContextTrackingExecutor.class).toInstance(executor);
 

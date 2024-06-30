@@ -2,7 +2,7 @@
 package pl.morgwai.base.servlet.guice.scopes.tests.tyrus;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.websocket.DeploymentException;
 import javax.websocket.Endpoint;
 import javax.websocket.server.ServerApplicationConfig;
@@ -16,6 +16,8 @@ import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 import pl.morgwai.base.servlet.guice.utils.PingingServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 
 
@@ -109,9 +111,11 @@ public class TyrusServer implements Server {
 
 		// create and store injector
 		final var servletModule = new ServletModule(appDeployment, new WebsocketModule());
+		final var executorManager = new ExecutorManager(servletModule.ctxBinder);
+		appDeployment.setAttribute(ExecutorManager.class.getName(), executorManager);
 		final var modules = new LinkedList<Module>();
 		modules.add(servletModule);
-		modules.add(new ServiceModule(servletModule, false));
+		modules.add(new ServiceModule(servletModule, executorManager, false));
 		final Injector injector = Guice.createInjector(modules);
 		appDeployment.setAttribute(Injector.class.getName(), injector);
 
@@ -121,7 +125,7 @@ public class TyrusServer implements Server {
 			intervalFromProperty != null
 					? Long.parseLong(intervalFromProperty)
 					: DEFAULT_PING_INTERVAL_MILLIS,
-			TimeUnit.MILLISECONDS,
+			MILLISECONDS,
 			1
 		);
 		appDeployment.setAttribute(WebsocketPingerService.class.getName(), pingerService);
@@ -136,5 +140,17 @@ public class TyrusServer implements Server {
 		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
 		((WebsocketPingerService)appDeployment.getAttribute(WebsocketPingerService.class.getName()))
 				.stop();
+		final var executorManager =
+				(ExecutorManager) appDeployment.getAttribute(ExecutorManager.class.getName());
+		executorManager.shutdownAllExecutors();
+		List<ServletContextTrackingExecutor> unterminated;
+		try {
+			unterminated = executorManager.awaitTerminationOfAllExecutors(100L, MILLISECONDS);
+		} catch (InterruptedException e) {
+			unterminated = executorManager.getExecutors().stream()
+				.filter((executor) -> !executor.isTerminated())
+				.collect(Collectors.toList());
+		}
+		for (var executor: unterminated) executor.shutdownNow();
 	}
 }

@@ -34,7 +34,8 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 	final Capture<Integer> statusCapture = Capture.newInstance();
 
 	@Mock HttpServletRequest servletRequest;
-	final WebsocketModule servletModule = new WebsocketModule();
+	final ServletModule servletModule = new ServletModule(new WebsocketModule());
+	final ExecutorManager executorManager = new ExecutorManager(servletModule.ctxBinder);
 	final ServletRequestContext requestCtx =
 			new ServletRequestContext(servletRequest, servletModule.ctxTracker);
 
@@ -62,7 +63,7 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 		} catch (InterruptedException ignored) {}
 	};
 
-	final ServletContextTrackingExecutor testSubject = servletModule.newContextTrackingExecutor(
+	final ServletContextTrackingExecutor testSubject = executorManager.newContextTrackingExecutor(
 		"testExecutor",
 		1, 1,
 		0L, MILLISECONDS,
@@ -248,7 +249,7 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 	public void tryTerminate() {
 		taskBlockingLatch.countDown();
 		try {
-			servletModule.enforceTerminationOfAllExecutors(50L, MILLISECONDS);
+			executorManager.enforceTerminationOfAllExecutors(50L, MILLISECONDS);
 		} catch (InterruptedException ignored) {
 		} finally {
 			if ( !testSubject.isTerminated()) testSubject.shutdownNow();
