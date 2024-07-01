@@ -262,7 +262,8 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 			.subclass(endpointClass)
 			.name(
 				GuiceServerEndpointConfigurator.class.getPackageName() + ".ProxyFor_"
-						+ endpointClass.getName().replace('.', '_')
+						+ endpointClass.getName().replace('.', '_').replace('$', '_') + '_'
+						+ endpointClass.hashCode()
 			)
 			.defineField(
 				INVOCATION_HANDLER_FIELD_NAME,
