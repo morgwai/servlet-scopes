@@ -373,10 +373,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			modules.add(servletModule);
 
 			injector = createInjector(modules);
-			appDeployment.setAttribute(Injector.class.getName(), injector);
 
 			endpointConfigurator = createEndpointConfigurator(appDeployment);
-			GuiceServerEndpointConfigurator.registerDeployment(appDeployment);
 			addFilter(RequestContextFilter.class.getSimpleName(), RequestContextFilter.class)
 				.addMappingForUrlPatterns(
 					EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC),

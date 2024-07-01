@@ -33,18 +33,6 @@ public class ManualServletContextListener implements ServletContextListener {
 
 
 
-	final boolean registerDeployment;
-
-	public ManualServletContextListener(boolean registerDeployment) {
-		this.registerDeployment = registerDeployment;
-	}
-
-	public ManualServletContextListener() {
-		this(true);
-	}
-
-
-
 	ServletModule servletModule;
 	WebsocketPingerService pingerService;
 	ExecutorManager executorManager;
@@ -88,10 +76,6 @@ public class ManualServletContextListener implements ServletContextListener {
 				"/*"
 			);
 
-			appDeployment.setAttribute(Injector.class.getName(), injector);
-			if (registerDeployment) {
-				GuiceServerEndpointConfigurator.registerDeployment(appDeployment);
-			}
 			final var endpointConfigurator = new PingingServerEndpointConfigurator(appDeployment);
 
 			final var indexPageServlet = appDeployment.createServlet(ResourceServlet.class);
@@ -181,9 +165,7 @@ public class ManualServletContextListener implements ServletContextListener {
 	@Override
 	public void contextDestroyed(ServletContextEvent destruction) {
 		pingerService.stop();
-		if (registerDeployment)	{
-			GuiceServerEndpointConfigurator.deregisterDeployment(destruction.getServletContext());
-		}
+		GuiceServerEndpointConfigurator.deregisterDeployment(destruction.getServletContext());
 		executorManager.shutdownAllExecutors();
 		List<ServletContextTrackingExecutor> unterminated;
 		try {

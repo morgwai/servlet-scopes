@@ -55,8 +55,6 @@ public class TyrusServer implements Server {
 		modules.add(servletModule);
 		modules.add(new ServiceModule(servletModule, executorManager, false));
 		final Injector injector = Guice.createInjector(modules);
-		appDeployment.setAttribute(Injector.class.getName(), injector);
-		GuiceServerEndpointConfigurator.registerDeployment(appDeployment);
 
 		tyrus = new org.glassfish.tyrus.server.Server(
 			"localhost",

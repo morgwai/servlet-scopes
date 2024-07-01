@@ -32,7 +32,6 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 
 	static final String MOCK_DEPLOYMENT_PATH = "/mockDeploymentPath";
 	static final String NON_PRIMARY_MOCK_DEPLOYMENT_PATH = "/nonPrimaryMockDeploymentPath";
-	static final String SECOND_DEPLOYMENT_PATH = "/secondDeploymentPath";
 	static final String WEBSOCKET_PATH = "/websocket/mock";
 
 	/** Test subject. */
@@ -111,7 +110,7 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 
 
 	@Test
-	public void testModifyHandshakeFindBySession() {
+	public void testFindBySession() {
 		expect(mockRequest.getHttpSession())
 			.andReturn(mockSession)
 			.anyTimes();
@@ -129,13 +128,13 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 
 
 	@Test
-	public void testModifyHandshakeFindByPath() {
+	public void testFindByPath() {
 		expect(mockRequest.getHttpSession())
 			.andReturn(null)
 			.anyTimes();
 		replayAll();
 
-		GuiceServerEndpointConfigurator.registerDeployment(mockDeployment);
+		GuiceServerEndpointConfigurator.registerDeployment(mockDeployment, mockInjector);
 		try {
 			configurator.modifyHandshake(mockConfig, mockRequest, mockResponse);
 			verifyInitialization();
@@ -147,7 +146,7 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 
 
 	@Test
-	public void testModifyHandshakeFindByNonPrimaryPath() {
+	public void testFindByNonPrimaryPath() {
 		requestUri = URI.create(
 				"ws://localhost:666" + NON_PRIMARY_MOCK_DEPLOYMENT_PATH + WEBSOCKET_PATH);
 		expect(mockRequest.getHttpSession())
@@ -155,48 +154,15 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 			.anyTimes();
 		replayAll();
 
-		GuiceServerEndpointConfigurator.registerDeployment(mockDeployment);
+		final var leakedDeploymentPath = "/leaked1";
+		GuiceServerEndpointConfigurator.appDeployments.put(  // test skipping leaked deployments
+				leakedDeploymentPath, new WeakReference<>(null));
+		GuiceServerEndpointConfigurator.registerDeployment(mockDeployment, mockInjector);
 		try {
 			configurator.modifyHandshake(mockConfig, mockRequest, mockResponse);
 			verifyInitialization();
 		} finally {
 			GuiceServerEndpointConfigurator.deregisterDeployment(mockDeployment);
-		}
-	}
-
-
-
-	@Test
-	public void testModifyHandshakeFindUnregisteredDeploymentViaSecondDeployment() {
-		expect(mockRequest.getHttpSession())
-			.andReturn(null)
-			.anyTimes();
-		replayAll();
-
-		final var secondDeployment = new StandaloneWebsocketContainerServletContext(
-			SECOND_DEPLOYMENT_PATH,
-			"secondApp"
-		) {
-			@Override public ServletContext getContext(String path) {
-				if (
-					path.equals(MOCK_DEPLOYMENT_PATH)
-					|| path.equals(NON_PRIMARY_MOCK_DEPLOYMENT_PATH)
-				) {
-					return mockDeployment;
-				}
-				if (path.equals(getContextPath())) return this;
-				return null;
-			}
-		};
-		final var leakedDeploymentPath = "/leaked1";  // must be placed at the beginning of the Map
-		GuiceServerEndpointConfigurator.appDeployments.put(  // test skipping leaked deployments
-				leakedDeploymentPath, new WeakReference<>(null));
-		GuiceServerEndpointConfigurator.registerDeployment(secondDeployment);
-		try {
-			configurator.modifyHandshake(mockConfig, mockRequest, mockResponse);
-			verifyInitialization();
-		} finally {
-			GuiceServerEndpointConfigurator.deregisterDeployment(secondDeployment);
 			GuiceServerEndpointConfigurator.appDeployments.remove(leakedDeploymentPath);
 		}
 	}
@@ -204,21 +170,18 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 
 
 	@Test
-	public void testModifyHandshakeUnregisteredDeploymentSecondDeploymentHasRestrictedAccess() {
+	public void testFindByNonPrimaryPathSecondDeploymentHasRestrictedAccess() {
 		expect(mockRequest.getHttpSession())
 			.andReturn(null)
 			.anyTimes();
 		replayAll();
 
+		mockDeployment.setAttribute(Injector.class.getName(), mockInjector);
 		final var secondDeployment = new StandaloneWebsocketContainerServletContext(
-			SECOND_DEPLOYMENT_PATH,
+			"/secondDeploymentPath",
 			"secondApp"
-		) {
-			@Override public ServletContext getContext(String path) {
-				return null;
-			}
-		};
-		GuiceServerEndpointConfigurator.registerDeployment(secondDeployment);
+		);
+		GuiceServerEndpointConfigurator.registerDeployment(secondDeployment, null);
 		try {
 			configurator.modifyHandshake(mockConfig, mockRequest, mockResponse);
 			fail("RuntimeException expected");
@@ -236,33 +199,6 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 					configurator.backingConfigurator);
 		} finally {
 			GuiceServerEndpointConfigurator.deregisterDeployment(secondDeployment);
-		}
-	}
-
-
-
-	@Test
-	public void testModifyHandshakeNoRegisteredDeployments() {
-		expect(mockRequest.getHttpSession())
-			.andReturn(null)
-			.anyTimes();
-		replayAll();
-
-		try {
-			configurator.modifyHandshake(mockConfig, mockRequest, mockResponse);
-			fail("RuntimeException expected");
-		} catch (RuntimeException expectedException) {
-			assertEquals(
-				"expectedException message should be DEPLOYMENT_NOT_FOUND_MESSAGE",
-				String.format(
-					DEPLOYMENT_NOT_FOUND_MESSAGE,
-					MOCK_DEPLOYMENT_PATH + WEBSOCKET_PATH,
-					MOCK_DEPLOYMENT_PATH
-				),
-				expectedException.getMessage()
-			);
-			assertNull("backingConfigurator should NOT be initialized",
-					configurator.backingConfigurator);
 		}
 	}
 

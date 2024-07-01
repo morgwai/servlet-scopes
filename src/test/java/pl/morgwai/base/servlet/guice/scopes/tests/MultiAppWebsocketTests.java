@@ -4,7 +4,6 @@ package pl.morgwai.base.servlet.guice.scopes.tests;
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.websocket.DeploymentException;
@@ -14,6 +13,7 @@ import org.junit.Test;
 import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -24,7 +24,6 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 
 
 	String secondAppWebsocketUrl;
-	String unregisteredDeploymentAppWebsocketUrl;
 
 
 
@@ -32,8 +31,6 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 	public void setupSecondApp() {
 		final var multiAppServer = (MultiAppServer) server;
 		secondAppWebsocketUrl = multiAppServer.getSecondAppWebsocketUrl();
-		unregisteredDeploymentAppWebsocketUrl =
-				multiAppServer.getUnregisteredDeploymentAppWebsocketUrl();
 	}
 
 
@@ -52,25 +49,9 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 	}
 
 	@Test
-	public void testProgrammaticEndpointOnUnregisteredDeploymentApp() throws Exception {
-		test2SessionsWithServerEndpoint(
-			unregisteredDeploymentAppWebsocketUrl + ProgrammaticEndpoint.PATH,
-			true
-		);
-	}
-
-	@Test
 	public void testAnnotatedEndpointOnSecondApp() throws Exception {
 		test2SessionsWithServerEndpoint(
 			secondAppWebsocketUrl + AnnotatedEndpoint.PATH,
-			true
-		);
-	}
-
-	@Test
-	public void testAnnotatedEndpointOnUnregisteredDeploymentApp() throws Exception {
-		test2SessionsWithServerEndpoint(
-			unregisteredDeploymentAppWebsocketUrl + AnnotatedEndpoint.PATH,
 			true
 		);
 	}
@@ -84,25 +65,9 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 	}
 
 	@Test
-	public void testRttReportingEndpointOnUnregisteredDeploymentApp() throws Exception {
-		test2SessionsWithServerEndpoint(
-			unregisteredDeploymentAppWebsocketUrl + RttReportingEndpoint.PATH,
-			false
-		);
-	}
-
-	@Test
 	public void testAnnotatedExtendingEndpointOnSecondApp() throws Exception {
 		test2SessionsWithServerEndpoint(
 			secondAppWebsocketUrl + AnnotatedExtendingProgrammaticEndpoint.PATH,
-			true
-		);
-	}
-
-	@Test
-	public void testAnnotatedExtendingEndpointOnUnregisteredDeploymentApp() throws Exception {
-		test2SessionsWithServerEndpoint(
-			unregisteredDeploymentAppWebsocketUrl + AnnotatedExtendingProgrammaticEndpoint.PATH,
 			true
 		);
 	}
@@ -120,7 +85,7 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 						clientWebsocketContainer.connectToServer(clientEndpoint, null, uri);
 			) {
 				assertTrue("clientEndpoint should be closed",
-						clientEndpoint.awaitClosure(500L, TimeUnit.MILLISECONDS));
+						clientEndpoint.awaitClosure(500L, MILLISECONDS));
 			}
 		}
 		assertEquals("responses from all URLs should be received",
@@ -135,8 +100,7 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 	public void testAppSeparation() throws InterruptedException, DeploymentException, IOException {
 		testAppSeparation(
 			appWebsocketUrl + AppSeparationTestEndpoint.PATH,
-			secondAppWebsocketUrl + AppSeparationTestEndpoint.PATH,
-			unregisteredDeploymentAppWebsocketUrl + AppSeparationTestEndpoint.PATH
+			secondAppWebsocketUrl + AppSeparationTestEndpoint.PATH
 		);
 	}
 
@@ -149,8 +113,7 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 		try {
 			testAppSeparation(
 				appWebsocketUrl + NoSessionAppSeparationTestEndpoint.PATH,
-				secondAppWebsocketUrl + NoSessionAppSeparationTestEndpoint.PATH,
-				unregisteredDeploymentAppWebsocketUrl + NoSessionAppSeparationTestEndpoint.PATH
+				secondAppWebsocketUrl + NoSessionAppSeparationTestEndpoint.PATH
 			);
 		} finally {
 			log.setLevel(levelBackup);

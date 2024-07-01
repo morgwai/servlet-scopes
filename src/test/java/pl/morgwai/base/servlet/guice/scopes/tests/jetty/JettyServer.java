@@ -63,29 +63,9 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 			}
 		);
 
-		final var unregisteredDeploymentAppHandler =
-				new ServletContextHandler(ServletContextHandler.SESSIONS);
-		unregisteredDeploymentAppHandler.setDisplayName("unregisteredDeploymentApp");
-		unregisteredDeploymentAppHandler.setContextPath(
-				MultiAppServer.UNREGISTERED_DEPLOYMENT_APP_PATH);
-		unregisteredDeploymentAppHandler.addEventListener(new ManualServletContextListener(false));
-		JavaxWebSocketServletContainerInitializer.configure(
-			unregisteredDeploymentAppHandler,
-			(servletContainer, websocketContainer) -> {
-				websocketContainer.setDefaultMaxTextMessageBufferSize(1023);
-				websocketContainer.addEndpoint(AnnotatedEndpoint.class);
-				websocketContainer.addEndpoint(AnnotatedExtendingEndpoint.class);
-				websocketContainer.addEndpoint(AnnotatedMethodOverridingEndpoint.class);
-				websocketContainer.addEndpoint(AnnotatedExtendingProgrammaticEndpoint.class);
-				websocketContainer.addEndpoint(AppSeparationTestEndpoint.class);
-				websocketContainer.addEndpoint(NoSessionAppSeparationTestEndpoint.class);
-			}
-		);
-
 		final var deployments = new ContextHandlerCollection();
 		deployments.addHandler(testAppHandler);
 		deployments.addHandler(secondAppHandler);
-		deployments.addHandler(unregisteredDeploymentAppHandler);
 		setHandler(deployments);
 
 		addEventListener(new LifeCycle.Listener() {
@@ -118,11 +98,6 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 	@Override
 	public String getSecondAppWebsocketUrl() {
 		return URL_PREFIX + port + MultiAppServer.SECOND_APP_PATH;
-	}
-
-	@Override
-	public String getUnregisteredDeploymentAppWebsocketUrl() {
-		return URL_PREFIX + port + MultiAppServer.UNREGISTERED_DEPLOYMENT_APP_PATH;
 	}
 
 
