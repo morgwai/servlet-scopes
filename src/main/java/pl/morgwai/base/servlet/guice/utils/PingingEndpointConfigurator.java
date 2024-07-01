@@ -1,64 +1,38 @@
-// Copyright 2022 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
+// Copyright 2024 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.utils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.HashSet;
-import javax.servlet.ServletContext;
 import javax.websocket.*;
 
-import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import pl.morgwai.base.guice.scopes.ContextTracker;
+import pl.morgwai.base.servlet.guice.scopes.ContainerCallContext;
+import pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
 
-/**
- * Subclass of {@link GuiceServerEndpointConfigurator} that additionally automatically registers and
- * deregisters {@code Endpoints} to its associated {@link WebsocketPingerService}.
- * In addition to usage instructions from the super class, annotated {@code Endpoints} <b>must</b>
- * have a method annotated with @{@link OnClose} and the app-wide {@link WebsocketPingerService}
- * must be {@link ServletContext#setAttribute(String, Object) stored as a deployment attribute}
- * under {@link Class#getName() fully-qualified name} of {@link WebsocketPingerService} class.
- * @see PingingServletContextListener
- */
-public class PingingEndpointConfigurator extends GuiceServerEndpointConfigurator {
+// todo: javadoc
+public class PingingEndpointConfigurator extends GuiceEndpointConfigurator {
 
 
 
-	/** An interface for {@code Endpoints} to get round-trip time reports upon receiving pongs. */
-	public interface RttObserver {
-
-		/**
-		 * Called by {@link javax.websocket.PongMessage}
-		 * {@link javax.websocket.MessageHandler handler} to report round-trip time in nanoseconds.
-		 */
-		void onPong(long rttNanos);
-	}
+	final WebsocketPingerService pingerService;
 
 
 
-	WebsocketPingerService pingerService;
-
-
-
-	public PingingEndpointConfigurator() {}
-
-	public PingingEndpointConfigurator(ServletContext appDeployment) {
-		super(appDeployment);
-	}
-
-
-
-	@Override
-	protected void initialize(ServletContext appDeployment) {
-		super.initialize(appDeployment);
-		pingerService = (WebsocketPingerService)
-				appDeployment.getAttribute(WebsocketPingerService.class.getName());
-		if (pingerService == null) {
-			throw new RuntimeException(
-					"no \"" + WebsocketPingerService.class.getName() + "\" deployment attribute");
-		}
+	@Inject
+	public PingingEndpointConfigurator(
+		Injector injector,
+		ContextTracker<ContainerCallContext> ctxTracker,
+		WebsocketPingerService pingerService
+	) {
+		super(injector, ctxTracker);
+		this.pingerService = pingerService;
 	}
 
 

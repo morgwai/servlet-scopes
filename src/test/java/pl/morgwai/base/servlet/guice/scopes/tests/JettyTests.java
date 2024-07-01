@@ -262,14 +262,14 @@ public class JettyTests extends MultiAppWebsocketTests {
 		assertEquals(
 			"session scoped object hash should remain the same",
 			sessionScopedHash,
-			clientEndpoints.get(0).serverReplies.get(0).getProperty(HTTP_SESSION)
+			clientEndpoints.get(0).getServerReplies().get(0).getProperty(HTTP_SESSION)
 		);
 		for (var clientEndpoint: clientEndpoints) {
+			final var serverReplies = clientEndpoint.getServerReplies();
 			assertTrue("connection scoped object hash should change",
 					connectionScopedHashes.add(
-							clientEndpoint.serverReplies.get(0).getProperty(WEBSOCKET_CONNECTION)));
-			addAndVerifyContainerCallHashes(
-					clientEndpoint.serverReplies, containerCallScopedHashes);
+							serverReplies.get(0).getProperty(WEBSOCKET_CONNECTION)));
+			addAndVerifyContainerCallHashes(serverReplies, containerCallScopedHashes);
 		}
 	}
 

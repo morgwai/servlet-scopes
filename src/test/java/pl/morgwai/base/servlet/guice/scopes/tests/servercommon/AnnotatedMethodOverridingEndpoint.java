@@ -4,7 +4,7 @@ package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 
-import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
+import pl.morgwai.base.servlet.guice.utils.PingingServerEndpointConfigurator;
 
 
 
@@ -17,7 +17,7 @@ import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
  */
 @ServerEndpoint(
 	value = AnnotatedMethodOverridingEndpoint.PATH,
-	configurator = PingingEndpointConfigurator.class
+	configurator = PingingServerEndpointConfigurator.class
 )
 public class AnnotatedMethodOverridingEndpoint extends EchoEndpoint {
 

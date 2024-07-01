@@ -40,7 +40,7 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 	/**
 	 * At the end of positive tests of {@link GuiceServerEndpointConfigurator#modifyHandshake(
 	 * ServerEndpointConfig, HandshakeRequest, HandshakeResponse) modifyHandshake(...)},
-	 * {@link GuiceServerEndpointConfigurator#ctxTracker configurator.ctxTracker} should be set to
+	 * {@link GuiceEndpointConfigurator#ctxTracker configurator.ctxTracker} should be set to
 	 * this object.
 	 */
 	final ContextTracker<ContainerCallContext> ctxTracker = new ContextTracker<>();
@@ -105,7 +105,7 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 	 */
 	void verifyInitialization() {
 		assertSame("ctxTracker should be properly initialized",
-				ctxTracker, configurator.ctxTracker);
+				ctxTracker, configurator.backingConfigurator.ctxTracker);
 	}
 
 
@@ -232,8 +232,8 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 				),
 				expectedException.getMessage()
 			);
-			assertNull("ctxTracker should NOT be initialized",
-					configurator.ctxTracker);
+			assertNull("backingConfigurator should NOT be initialized",
+					configurator.backingConfigurator);
 		} finally {
 			GuiceServerEndpointConfigurator.deregisterDeployment(secondDeployment);
 		}
@@ -261,8 +261,8 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 				),
 				expectedException.getMessage()
 			);
-			assertNull("ctxTracker should NOT be initialized",
-					configurator.ctxTracker);
+			assertNull("backingConfigurator should NOT be initialized",
+					configurator.backingConfigurator);
 		}
 	}
 

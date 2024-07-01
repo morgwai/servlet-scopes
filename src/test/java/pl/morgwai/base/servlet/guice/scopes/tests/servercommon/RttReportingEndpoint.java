@@ -4,7 +4,7 @@ package pl.morgwai.base.servlet.guice.scopes.tests.servercommon;
 import javax.websocket.EndpointConfig;
 import javax.websocket.Session;
 
-import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator.RttObserver;
+import pl.morgwai.base.servlet.guice.utils.RttObserver;
 
 
 

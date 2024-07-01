@@ -3,8 +3,7 @@ package pl.morgwai.base.servlet.guice.utils;
 
 import java.util.concurrent.ScheduledExecutorService;
 
-import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
-import pl.morgwai.base.servlet.guice.scopes.GuiceServletContextListener;
+import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -15,7 +14,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Subclass of {@link GuiceServletContextListener} that automatically registers its programmatic
  * {@code Endpoints} to its associated {@link WebsocketPingerService}.
- * @see PingingEndpointConfigurator
+ * @see PingingServerEndpointConfigurator
  */
 public abstract class PingingServletContextListener extends GuiceServletContextListener {
 
@@ -150,7 +149,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 	/**
-	 * Overrides {@link #endpointConfigurator} to be a {@link PingingEndpointConfigurator}.
+	 * Overrides {@link #endpointConfigurator} to be a {@link PingingServerEndpointConfigurator}.
 	 * Also {@link #createPingerService() creates the app-wide pinger service} and stores it as a
 	 * {@link javax.servlet.ServletContext#setAttribute(String, Object) deployment attribute} under
 	 * {@link Class#getName() fully-qualified name} of {@link WebsocketPingerService} class.
@@ -160,6 +159,6 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 		pingerService = createPingerService();
 		addShutdownHook(pingerService::stop);
 		appDeployment.setAttribute(WebsocketPingerService.class.getName(), pingerService);
-		return new PingingEndpointConfigurator(appDeployment);
+		return new PingingServerEndpointConfigurator(appDeployment);
 	}
 }

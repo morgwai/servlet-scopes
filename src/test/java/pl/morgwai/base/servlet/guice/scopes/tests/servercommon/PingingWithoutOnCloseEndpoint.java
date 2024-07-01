@@ -5,13 +5,13 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
-import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
+import pl.morgwai.base.servlet.guice.utils.PingingServerEndpointConfigurator;
 
 
 
 @ServerEndpoint(
 	value = PingingWithoutOnCloseEndpoint.PATH,
-	configurator = PingingEndpointConfigurator.class
+	configurator = PingingServerEndpointConfigurator.class
 )
 public class PingingWithoutOnCloseEndpoint {
 

@@ -2,19 +2,18 @@
 package pl.morgwai.base.servlet.guice.utils;
 
 import javax.servlet.http.HttpSession;
-import javax.websocket.Endpoint;
+import javax.websocket.Session;
 import org.junit.After;
 import org.junit.Before;
 import org.easymock.Mock;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
-import pl.morgwai.base.servlet.guice.scopes.ClientEndpointProxyTests;
-import pl.morgwai.base.servlet.guice.scopes.ContainerCallContext;
+import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
 
-public class PingingClientEndpointProxyTests extends ClientEndpointProxyTests {
+public class PingingClientEndpointProxyTests extends EndpointProxyTests {
 
 
 
@@ -30,14 +29,66 @@ public class PingingClientEndpointProxyTests extends ClientEndpointProxyTests {
 
 
 
+	@After
+	public void verifyConnectionRegistration() {
+		mockPingerServiceUtil.verifyConnectionRegistration();
+	}
+
+
+
+	public static class PingingTestEndpointProxy extends PingingClientEndpointProxy
+			implements TestEndpoint {
+
+		final ProgrammaticTestEndpoint wrappedEndpoint;
+
+
+
+		public PingingTestEndpointProxy(
+			ProgrammaticTestEndpoint toWrap,
+			ContextTracker<ContainerCallContext> ctxTracker,
+			WebsocketPingerService pingerService,
+			HttpSession httpSession
+		) {
+			super(toWrap, ctxTracker, pingerService, httpSession);
+			this.wrappedEndpoint = toWrap;
+		}
+
+
+
+		@Override
+		public WebsocketEventContext getOpenEventCtx() {
+			return wrappedEndpoint.getOpenEventCtx();
+		}
+
+
+
+		@Override
+		public WebsocketConnectionContext getConnectionCtx() {
+			return wrappedEndpoint.getConnectionCtx();
+		}
+	}
+
+
+
 	@Override
-	protected Endpoint createEndpointProxy(
-		Endpoint toWrap,
+	protected TestEndpoint createEndpoint(
+		ContextTracker<ContainerCallContext> ctxTracker,
+		Session mockConnection,
+		HttpSession mockHttpSession
+	) {
+		return new ProgrammaticTestEndpoint(ctxTracker, mockConnection, mockHttpSession);
+	}
+
+
+
+	@Override
+	protected TestEndpoint createEndpointProxy(
+		TestEndpoint toWrap,
 		ContextTracker<ContainerCallContext> ctxTracker,
 		HttpSession httpSession
 	) {
-		return new PingingClientEndpointProxy(
-			toWrap,
+		return new PingingTestEndpointProxy(
+			(ProgrammaticTestEndpoint) toWrap,
 			ctxTracker,
 			mockPingerService,
 			httpSession
@@ -46,8 +97,17 @@ public class PingingClientEndpointProxyTests extends ClientEndpointProxyTests {
 
 
 
-	@After
-	public void verifyConnectionRegistration() {
-		mockPingerServiceUtil.verifyConnectionRegistration();
+	@Override
+	protected TestEndpoint createSecondProxy(
+		TestEndpoint secondEndpoint,
+		ContextTracker<ContainerCallContext> ctxTracker,
+		HttpSession httpSession
+	) {
+		// Not using PingingTestEndpointProxy to not confuse mockPingerService with a 2nd connection
+		return new ClientEndpointProxyTests.TestEndpointProxy(
+			(ProgrammaticTestEndpoint) secondEndpoint,
+			ctxTracker,
+			httpSession
+		);
 	}
 }

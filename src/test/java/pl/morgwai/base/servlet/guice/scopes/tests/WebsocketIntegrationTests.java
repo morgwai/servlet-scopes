@@ -87,12 +87,18 @@ public abstract class WebsocketIntegrationTests {
 	public static class GuiceClientEndpoint extends AbstractClientEndpoint {
 
 		@Inject Provider<ContainerCallContext> clientEventCtxProvider;
-		@Inject Provider<WebsocketConnectionContext> clientConnectionCtxProvider;
-		final List<ContainerCallContext> clientEventCtxs = new ArrayList<>(4);
-		final List<WebsocketConnectionContext> clientConnectionCtxs = new ArrayList<>(4);
+		public List<ContainerCallContext> getClientEventCtxs() { return clientEventCtxs; }
+		private final List<ContainerCallContext> clientEventCtxs = new ArrayList<>(4);
 
-		final List<Properties> serverReplies = new ArrayList<>(2);
-		final CountDownLatch allRepliesReceived = new CountDownLatch(2);
+		@Inject Provider<WebsocketConnectionContext> clientConnectionCtxProvider;
+		public List<WebsocketConnectionContext> getClientConnectionCtxs() {
+			return clientConnectionCtxs;
+		}
+		private final List<WebsocketConnectionContext> clientConnectionCtxs = new ArrayList<>(4);
+
+		public List<Properties> getServerReplies() { return serverReplies; }
+		private final List<Properties> serverReplies = new ArrayList<>(2);
+		private final CountDownLatch allRepliesReceived = new CountDownLatch(2);
 
 		final CountDownLatch testMessageSent = new CountDownLatch(1);
 		final Thread testThread = Thread.currentThread();
@@ -141,6 +147,18 @@ public abstract class WebsocketIntegrationTests {
 				testThread.interrupt();
 			}
 		}
+
+
+
+		public boolean awaitAllReplies(long timeout, TimeUnit unit) throws InterruptedException {
+			return allRepliesReceived.await(timeout, unit);
+		}
+
+
+
+		public void signalAllMessagesSent() {
+			testMessageSent.countDown();
+		}
 	}
 
 
@@ -152,8 +170,8 @@ public abstract class WebsocketIntegrationTests {
 	 *   <li>the server side {@link Service#CONTAINER_CALL event-scoped} object has changed</li>
 	 *   <li>the server side {@link Service#WEBSOCKET_CONNECTION connection-scoped} object has
 	 *       remained the same</li>
-	 *   <li>the server side {@link Service#HTTP_SESSION HTTPSession-scoped} object has
-	 *       remained the same</li>
+	 *   <li>the server side {@link Service#HTTP_SESSION HTTPSession-scoped} object has remained the
+	 *       same</li>
 	 *   <li>the client side {@link ContainerCallContext} object has changed</li>
 	 *   <li>the client side {@link WebsocketConnectionContext} object has remained the same</li>
 	 * </ul>
@@ -164,65 +182,68 @@ public abstract class WebsocketIntegrationTests {
 		boolean sendTestMessage
 	) throws Exception {
 		final var testMessage = "test message for " + url;
-		final var clientEndpoint = clientInjector.getInstance(GuiceClientEndpoint.class);
+		final var configurator = clientInjector.getInstance(GuiceEndpointConfigurator.class);
+		final var clientEndpoint =
+				configurator.getProxiedEndpointInstance(GuiceClientEndpoint.class);
 		final var connection = clientWebsocketContainer.connectToServer(
-			new ClientEndpointProxy(
-				clientEndpoint,
-				clientServletModule.containerCallContextTracker
-			),
+			clientEndpoint,
 			null,
 			url
 		);
 		if (sendTestMessage) connection.getAsyncRemote().sendText(testMessage);
-		clientEndpoint.testMessageSent.countDown();
+		clientEndpoint.signalAllMessagesSent();
 
 		// server replies verifications
 		try {
 			assertTrue("replies should be received",
-					clientEndpoint.allRepliesReceived.await(2L, SECONDS));
+					clientEndpoint.awaitAllReplies(2L, SECONDS));
 			connection.close();
 			assertTrue ("client endpoint should be closed",
 					clientEndpoint.awaitClosure(2L, SECONDS));
 		} catch (InterruptedException e) {  // interrupted by clientEndpoint.closeHandler above
 			fail("abnormal close code: " + clientEndpoint.getCloseReason().getCloseCode());
 		}
+		final var firstReply = clientEndpoint.getServerReplies().get(0);
+		final var secondReply = clientEndpoint.getServerReplies().get(1);
 		assertEquals("onOpen reply should be a welcome",
-				WELCOME_MESSAGE, clientEndpoint.serverReplies.get(0).getProperty(MESSAGE_PROPERTY));
+				WELCOME_MESSAGE, firstReply.getProperty(MESSAGE_PROPERTY));
 		if (sendTestMessage) {
 			assertEquals("2nd reply should be an echo",
-					testMessage, clientEndpoint.serverReplies.get(1).getProperty(MESSAGE_PROPERTY));
+					testMessage, secondReply.getProperty(MESSAGE_PROPERTY));
 		}
 		if (isHttpSessionAvailable()) {
 			assertEquals(
 				"server HttpSession scoped object hash should remain the same",
-				clientEndpoint.serverReplies.get(0).getProperty(HTTP_SESSION),
-				clientEndpoint.serverReplies.get(1).getProperty(HTTP_SESSION)
+				firstReply.getProperty(HTTP_SESSION),
+				secondReply.getProperty(HTTP_SESSION)
 			);
 		}
 		assertEquals(
 			"server connection scoped object hash should remain the same",
-			clientEndpoint.serverReplies.get(0).getProperty(WEBSOCKET_CONNECTION),
-			clientEndpoint.serverReplies.get(1).getProperty(WEBSOCKET_CONNECTION)
+			firstReply.getProperty(WEBSOCKET_CONNECTION),
+			secondReply.getProperty(WEBSOCKET_CONNECTION)
 		);
 		assertNotEquals(
 			"server event scoped object hash should change",
-			clientEndpoint.serverReplies.get(0).getProperty(CONTAINER_CALL),
-			clientEndpoint.serverReplies.get(1).getProperty(CONTAINER_CALL)
+			firstReply.getProperty(CONTAINER_CALL),
+			secondReply.getProperty(CONTAINER_CALL)
 		);
 
 		// client ctxs verifications
-		final var clientEventCtxSet = new HashSet<>(clientEndpoint.clientEventCtxs);
+		final var clientEventCtxs = clientEndpoint.getClientEventCtxs();
+		final var clientEventCtxSet = new HashSet<>(clientEventCtxs);
 		assertEquals("clientEventCtx should be different each time",
-				clientEndpoint.clientEventCtxs.size(), clientEventCtxSet.size());
+				clientEventCtxs.size(), clientEventCtxSet.size());
 		assertTrue("no clientEventCtx should be null",
 				clientEventCtxSet.stream()
 					.map(Objects::nonNull)
 					.reduce(Boolean::logicalAnd)
 					.orElseThrow()
 		);
-		assertNotNull(clientEndpoint.clientConnectionCtxs.get(0));
+		final var clientConnectionCtxs = clientEndpoint.getClientConnectionCtxs();
+		assertNotNull(clientConnectionCtxs.get(0));
 		assertEquals("clientConnectionCtx should remain the same",
-				1, new HashSet<>(clientEndpoint.clientConnectionCtxs).size());
+				1, new HashSet<>(clientConnectionCtxs).size());
 
 		return clientEndpoint;
 	}
@@ -235,8 +256,8 @@ public abstract class WebsocketIntegrationTests {
 	 * Afterwards verifies that:<ul>
 	 *   <li>the server side {@link Service#WEBSOCKET_CONNECTION connection-scoped} object has
 	 *       changed</li>
-	 *   <li>the server side {@link Service#HTTP_SESSION HTTPSession-scoped} object has
-	 *       remained the same</li>
+	 *   <li>the server side {@link Service#HTTP_SESSION HTTPSession-scoped} object has remained the
+	 *       same</li>
 	 *   <li>the client side {@link WebsocketConnectionContext} object has changed</li>
 	 * </ul>
 	 * @return a {@code List} containing results of both
@@ -249,22 +270,24 @@ public abstract class WebsocketIntegrationTests {
 		final var uri = URI.create(url);
 		final var firstEndpoint = testSingleSessionWithServerEndpoint(uri, sendTestMessage);
 		final var secondEndpoint = testSingleSessionWithServerEndpoint(uri, sendTestMessage);
+		final var firstEndpointReply = firstEndpoint.getServerReplies().get(0);
+		final var secondEndpointReply = secondEndpoint.getServerReplies().get(0);
 		assertNotEquals(
 			"server connection scoped object hash should change",
-			firstEndpoint.serverReplies.get(0).getProperty(WEBSOCKET_CONNECTION),
-			secondEndpoint.serverReplies.get(0).getProperty(WEBSOCKET_CONNECTION)
+			firstEndpointReply.getProperty(WEBSOCKET_CONNECTION),
+			secondEndpointReply.getProperty(WEBSOCKET_CONNECTION)
 		);
 		if (isHttpSessionAvailable()) {
 			assertEquals(
 				"server session scoped object hash should remain the same",
-				firstEndpoint.serverReplies.get(0).getProperty(HTTP_SESSION),
-				secondEndpoint.serverReplies.get(0).getProperty(HTTP_SESSION)
+				firstEndpointReply.getProperty(HTTP_SESSION),
+				secondEndpointReply.getProperty(HTTP_SESSION)
 			);
 		}
 		assertNotEquals(
 			"clientConnectionCtx should change",
-			firstEndpoint.clientConnectionCtxs.get(0),
-			secondEndpoint.clientConnectionCtxs.get(0)
+			firstEndpoint.getClientConnectionCtxs().get(0),
+			secondEndpoint.getClientConnectionCtxs().get(0)
 		);
 		return List.of(firstEndpoint, secondEndpoint);
 	}
