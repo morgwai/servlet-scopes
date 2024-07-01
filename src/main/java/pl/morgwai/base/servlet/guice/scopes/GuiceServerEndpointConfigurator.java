@@ -302,15 +302,12 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 	 */
 	protected void checkIfRequiredEndpointMethodsPresent(Class<?> endpointClass) {
 		final var wantedMethodAnnotationTypes = getRequiredEndpointMethodAnnotationTypes();
-		final var wantedAnnotationTypeIterator = wantedMethodAnnotationTypes.iterator();
-		while (wantedAnnotationTypeIterator.hasNext()) {
-			// remove annotation from wantedMethodAnnotationTypes each time a corresponding method
-			// is found within endpointClass
-			final var wantedAnnotationType = wantedAnnotationTypeIterator.next();
-			var methodFound = false;
-			var classUnderScan = endpointClass;
-			while ( !classUnderScan.equals(Object.class) && !methodFound) {
-				for (var method: classUnderScan.getMethods()) {
+		var classUnderScan = endpointClass;
+		while ( !classUnderScan.equals(Object.class) && !wantedMethodAnnotationTypes.isEmpty()) {
+			for (var method: classUnderScan.getMethods()) {
+				final var wantedAnnotationTypeIterator = wantedMethodAnnotationTypes.iterator();
+				while (wantedAnnotationTypeIterator.hasNext()) {
+					final var wantedAnnotationType = wantedAnnotationTypeIterator.next();
 					if (method.isAnnotationPresent(wantedAnnotationType)) {
 						wantedAnnotationTypeIterator.remove();
 						if (
@@ -320,12 +317,11 @@ public class GuiceServerEndpointConfigurator extends ServerEndpointConfig.Config
 							throw new RuntimeException("method annotated with @OnOpen must have a "
 									+ Session.class.getName() + " param");
 						}
-						methodFound = true;
-						break;
 					}
 				}
-				classUnderScan = classUnderScan.getSuperclass();
+				if (wantedMethodAnnotationTypes.isEmpty()) break;
 			}
+			classUnderScan = classUnderScan.getSuperclass();
 		}
 		if ( !wantedMethodAnnotationTypes.isEmpty()) {
 			throw new RuntimeException("endpoint class must have a method annotated with @"

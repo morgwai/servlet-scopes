@@ -27,6 +27,22 @@ public class GuiceServerEndpointConfiguratorGetProxyClassTests {
 
 
 
+	void testGetProxyClassForAnnotatedEndpoint(Class<?> endpointClass) {
+		final var proxyClass = configurator.getProxyClass(endpointClass);
+		assertTrue("proxyClass should be a subclass of AnnotatedEndpoint",
+				endpointClass.isAssignableFrom(proxyClass));
+		assertTrue("proxyClass should be annotated with ServerEndpoint",
+				proxyClass.isAnnotationPresent(ServerEndpoint.class));
+		assertEquals(
+			"ServerEndpoint annotation of proxyClass should be equal to this of "
+					+ endpointClass.getSimpleName(),
+			endpointClass.getAnnotation(ServerEndpoint.class),
+			proxyClass.getAnnotation(ServerEndpoint.class)
+		);
+	}
+
+
+
 	@ServerEndpoint("/annotated")
 	public static class AnnotatedEndpoint {
 		@OnOpen public void onOpen(Session connection) {}
@@ -35,16 +51,7 @@ public class GuiceServerEndpointConfiguratorGetProxyClassTests {
 
 	@Test
 	public void testGetProxyClassForAnnotatedEndpoint() {
-		final var proxyClass = configurator.getProxyClass(AnnotatedEndpoint.class);
-		assertTrue("proxyClass should be a subclass of AnnotatedEndpoint",
-				AnnotatedEndpoint.class.isAssignableFrom(proxyClass));
-		assertTrue("proxyClass should be annotated with ServerEndpoint",
-				proxyClass.isAnnotationPresent(ServerEndpoint.class));
-		assertEquals(
-			"ServerEndpoint annotation of proxyClass should be equal to this of AnnotatedEndpoint",
-			AnnotatedEndpoint.class.getAnnotation(ServerEndpoint.class),
-			proxyClass.getAnnotation(ServerEndpoint.class)
-		);
+		testGetProxyClassForAnnotatedEndpoint(AnnotatedEndpoint.class);
 	}
 
 
@@ -60,6 +67,30 @@ public class GuiceServerEndpointConfiguratorGetProxyClassTests {
 			configurator.getProxyClass(AnnotatedEndpointWithoutOnOpen.class);
 			fail("creating proxyClass for AnnotatedEndpointWithoutOnOpen should fail");
 		} catch (RuntimeException expected) {}
+	}
+
+
+
+	@ServerEndpoint("/extending")
+	public static class AnnotatedExtendingEndpoint extends AnnotatedEndpointWithoutOnOpen {
+		@OnOpen public void onOpen(Session connection) {}
+	}
+
+	@Test
+	public void testGetProxyClassForAnnotatedExtendingEndpoint() {
+		testGetProxyClassForAnnotatedEndpoint(AnnotatedExtendingEndpoint.class);
+	}
+
+
+
+	@ServerEndpoint("/overriding")
+	public static class AnnotatedOverridingEndpoint extends AnnotatedEndpoint {
+		@OnOpen public void onOpen(Session connection) { super.onOpen(connection); }
+	}
+
+	@Test
+	public void testGetProxyClassForAnnotatedOverridingEndpoint() {
+		testGetProxyClassForAnnotatedEndpoint(AnnotatedOverridingEndpoint.class);
 	}
 
 
