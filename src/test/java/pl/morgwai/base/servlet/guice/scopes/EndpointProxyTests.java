@@ -22,10 +22,20 @@ public abstract class EndpointProxyTests extends EasyMockSupport {
 
 
 
-	/** Test subject. */
-	protected Endpoint endpointProxy;
+	/** Implemented by {@link AnnotatedTestEndpoint} and {@link ProgrammaticTestEndpoint}. */
+	public interface TestEndpoint {
+		void onOpen(Session session, EndpointConfig config);
+		void onClose(Session session, CloseReason closeReason);
+		WebsocketEventContext getOpenEventCtx();
+		WebsocketConnectionContext getConnectionCtx();
+	}
 
-	/** {@link Endpoint} wrapped by {@link #endpointProxy the test subject}. */
+
+
+	/** Test subject. */
+	protected TestEndpoint endpointProxy;
+
+	/** {@code Endpoint} wrapped by {@link #endpointProxy the test subject}. */
 	protected TestEndpoint testEndpoint;
 	@Mock protected Session mockConnection;
 	final Map<String, Object> userProperties = new HashMap<>(2);
@@ -43,13 +53,22 @@ public abstract class EndpointProxyTests extends EasyMockSupport {
 		expect(mockConnection.getUserProperties())
 			.andReturn(userProperties)
 			.anyTimes();
+		additionalSetup();
 
-		testEndpoint = new TestEndpoint(ctxTracker, mockConnection, mockHttpSession);
+		testEndpoint = createEndpoint(ctxTracker, mockConnection, mockHttpSession);
 		endpointProxy = createEndpointProxy(testEndpoint, ctxTracker, mockHttpSession);
 	}
 
-	protected abstract Endpoint createEndpointProxy(
-		Endpoint toWrap,
+	protected void additionalSetup() {}
+
+	protected abstract TestEndpoint createEndpoint(
+		ContextTracker<ContainerCallContext> ctxTracker,
+		Session mockConnection,
+		HttpSession mockHttpSession
+	);
+
+	protected abstract TestEndpoint createEndpointProxy(
+		TestEndpoint toWrap,
 		ContextTracker<ContainerCallContext> ctxTracker,
 		HttpSession httpSession
 	) throws Exception;
@@ -63,7 +82,8 @@ public abstract class EndpointProxyTests extends EasyMockSupport {
 
 
 
-	public static class TestEndpoint extends Endpoint {
+	@ClientEndpoint
+	public static class AnnotatedTestEndpoint implements TestEndpoint {
 
 		final ContextTracker<ContainerCallContext> ctxTracker;
 		final Session mockConnection;
@@ -71,7 +91,7 @@ public abstract class EndpointProxyTests extends EasyMockSupport {
 
 
 
-		public TestEndpoint(
+		public AnnotatedTestEndpoint(
 			ContextTracker<ContainerCallContext> ctxTracker,
 			Session mockConnection,
 			HttpSession mockHttpSession
@@ -81,20 +101,23 @@ public abstract class EndpointProxyTests extends EasyMockSupport {
 			this.mockHttpSession = mockHttpSession;
 		}
 
-		/** Required by {@link ServerEndpointProxyTests} to create proxy instances. */
-		public TestEndpoint() {
+		/** Required by {@link EndpointDynamicProxyTests} to create proxy instances. */
+		public AnnotatedTestEndpoint() {
 			this(null, null, null);
 		}
 
 
 
+		@Override public WebsocketEventContext getOpenEventCtx() { return openEventCtx; }
 		WebsocketEventContext openEventCtx;
+
+		@Override public WebsocketConnectionContext getConnectionCtx() { return connectionCtx; }
 		WebsocketConnectionContext connectionCtx;
 
 
 
 		/** Verifies that all {@code Context}s have been properly setup by the test subject. */
-		@Override public void onOpen(Session connectionProxy, EndpointConfig config) {
+		@OnOpen @Override public void onOpen(Session connectionProxy, EndpointConfig config) {
 			assertTrue("connection should be wrapped with a proxy",
 					connectionProxy instanceof WebsocketConnectionProxy);
 			assertSame("connectionProxy should be wrapping the connection passed to the method",
@@ -114,7 +137,7 @@ public abstract class EndpointProxyTests extends EasyMockSupport {
 		 * its {@link WebsocketConnectionContext} and {@link HttpSession} have remained the same as
 		 * in {@link #onOpen(Session, EndpointConfig) onOpen(...)}.
 		 */
-		@Override public void onClose(Session connectionProxy, CloseReason closeReason) {
+		@OnClose @Override public void onClose(Session connectionProxy, CloseReason closeReason) {
 			assertTrue("connection should be wrapped with a proxy",
 					connectionProxy instanceof WebsocketConnectionProxy);
 			assertSame("connectionProxy should be wrapping the connection passed to the method",
@@ -174,7 +197,7 @@ public abstract class EndpointProxyTests extends EasyMockSupport {
 		expect(secondConnection.getUserProperties())
 			.andReturn(secondUserProperties)
 			.anyTimes();
-		final var secondEndpoint = new TestEndpoint(ctxTracker, secondConnection, mockHttpSession);
+		final var secondEndpoint = createEndpoint(ctxTracker, secondConnection, mockHttpSession);
 		final var secondProxy = createSecondProxy(secondEndpoint, ctxTracker, mockHttpSession);
 		replay(secondConnection);
 
@@ -182,9 +205,9 @@ public abstract class EndpointProxyTests extends EasyMockSupport {
 		endpointProxy.onOpen(mockConnection, null);
 		secondProxy.onOpen(secondConnection, null);
 		assertNotSame("each connection should have a separate WebsocketConnectionContext",
-				testEndpoint.connectionCtx, secondEndpoint.connectionCtx);
+				testEndpoint.getConnectionCtx(), secondEndpoint.getConnectionCtx());
 		assertNotSame("each method invocation should have a separate WebsocketEventContext",
-				testEndpoint.openEventCtx, secondEndpoint.openEventCtx);
+				testEndpoint.getOpenEventCtx(), secondEndpoint.getOpenEventCtx());
 
 		// close both Endpoint connections and verify mocks
 		endpointProxy.onClose(mockConnection, null);
@@ -192,9 +215,48 @@ public abstract class EndpointProxyTests extends EasyMockSupport {
 		verify(secondConnection);
 	}
 
-	protected abstract Endpoint createSecondProxy(
-		Endpoint secondEndpoint,
+	protected abstract TestEndpoint createSecondProxy(
+		TestEndpoint secondEndpoint,
 		ContextTracker<ContainerCallContext> ctxTracker,
 		HttpSession httpSession
 	) throws Exception;
+
+
+
+	public static class ProgrammaticTestEndpoint extends Endpoint implements TestEndpoint {
+
+		final TestEndpoint wrappedImpl;
+
+
+
+		public ProgrammaticTestEndpoint(
+			ContextTracker<ContainerCallContext> ctxTracker,
+			Session mockConnection,
+			HttpSession mockHttpSession
+		) {
+			wrappedImpl = new AnnotatedTestEndpoint(ctxTracker, mockConnection, mockHttpSession);
+		}
+
+		public ProgrammaticTestEndpoint() {
+			this(null, null, null);
+		}
+
+
+
+		@Override public void onOpen(Session connection, EndpointConfig config) {
+			wrappedImpl.onOpen(connection, config);
+		}
+
+		@Override public void onClose(Session connection, CloseReason closeReason) {
+			wrappedImpl.onClose(connection, closeReason);
+		}
+
+		@Override public WebsocketEventContext getOpenEventCtx() {
+			return wrappedImpl.getOpenEventCtx();
+		}
+
+		@Override public WebsocketConnectionContext getConnectionCtx() {
+			return wrappedImpl.getConnectionCtx();
+		}
+	}
 }

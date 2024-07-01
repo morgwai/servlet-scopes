@@ -11,12 +11,12 @@ import static org.junit.Assert.*;
 
 
 
-public class GuiceServerEndpointConfiguratorGetProxyClassTests {
+public class GuiceEndpointConfiguratorGetProxyClassTests {
 
 
 
 	/** Test subject. */
-	final GuiceServerEndpointConfigurator configurator = new GuiceServerEndpointConfigurator() {
+	final GuiceEndpointConfigurator configurator = new GuiceEndpointConfigurator(null, null) {
 		@Override
 		protected HashSet<Class<? extends Annotation>> getRequiredEndpointMethodAnnotationTypes() {
 			final var requiredAnnotationTypes = super.getRequiredEndpointMethodAnnotationTypes();
@@ -31,19 +31,23 @@ public class GuiceServerEndpointConfiguratorGetProxyClassTests {
 		final var proxyClass = configurator.getProxyClass(endpointClass);
 		assertTrue("proxyClass should be a subclass of AnnotatedEndpoint",
 				endpointClass.isAssignableFrom(proxyClass));
-		assertTrue("proxyClass should be annotated with ServerEndpoint",
-				proxyClass.isAnnotationPresent(ServerEndpoint.class));
 		assertEquals(
 			"ServerEndpoint annotation of proxyClass should be equal to this of "
 					+ endpointClass.getSimpleName(),
 			endpointClass.getAnnotation(ServerEndpoint.class),
 			proxyClass.getAnnotation(ServerEndpoint.class)
 		);
+		assertEquals(
+			"ClientEndpoint annotation of proxyClass should be equal to this of "
+					+ endpointClass.getSimpleName(),
+			endpointClass.getAnnotation(ClientEndpoint.class),
+			proxyClass.getAnnotation(ClientEndpoint.class)
+		);
 	}
 
 
 
-	@ServerEndpoint("/annotated")
+	@ClientEndpoint
 	public static class AnnotatedEndpoint {
 		@OnOpen public void onOpen(Session connection) {}
 		@OnClose public void onClose() {}

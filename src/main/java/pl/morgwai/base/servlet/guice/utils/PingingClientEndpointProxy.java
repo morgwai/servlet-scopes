@@ -7,7 +7,6 @@ import javax.websocket.*;
 import pl.morgwai.base.guice.scopes.ContextTracker;
 import pl.morgwai.base.servlet.guice.scopes.ClientEndpointProxy;
 import pl.morgwai.base.servlet.guice.scopes.ContainerCallContext;
-import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator.RttObserver;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 

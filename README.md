@@ -39,14 +39,14 @@ This `Scope` may be active only on a server side.
 ### [ServletModule](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/ServletModule.html)
 Contains the above `Scope`s, related `ContextTracker`s and some helper methods.
 
-### [GuiceServerEndpointConfigurator](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/GuiceServerEndpointConfigurator.html)
+### [GuiceEndpointConfigurator](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/GuiceEndpointConfigurator.html)
 Websocket `ServerEndpoint` `Configurator` that ensures that `Endpoint` instances have their dependencies injected and that their methods run within websocket contexts, so that the above `Scope`s work properly.
 
 ### [GuiceServletContextListener](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/GuiceServletContextListener.html)
-Base class for app `ServletContextListener`s. Creates and configures an app-wide Guice `Injector` instance, the above mentioned `ServletModule` and performs bookkeeping related to `GuiceServerEndpointConfigurator` and `ServletContextTrackingExecutor`s. Also provides helper methods for creating and configuring programmatic `Servlet`s, `Filter`s and `Endpoint`s.
+Base class for app `ServletContextListener`s. Creates and configures an app-wide Guice `Injector` instance, the above mentioned `ServletModule` and performs bookkeeping related to `GuiceEndpointConfigurator` and `ServletContextTrackingExecutor`s. Also provides helper methods for creating and configuring programmatic `Servlet`s, `Filter`s and `Endpoint`s.
 
 ### [PingingEndpointConfigurator](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/utils/PingingEndpointConfigurator.html)
-Subclass of `GuiceServerEndpointConfigurator` that additionally automatically registers and deregisters created `Endpoint` instances to its associated [WebsocketPingerService](https://javadoc.io/doc/pl.morgwai.base/servlet-utils/latest/pl/morgwai/base/servlet/utils/WebsocketPingerService.html).
+Subclass of `GuiceEndpointConfigurator` that additionally automatically registers and deregisters created `Endpoint` instances to its associated [WebsocketPingerService](https://javadoc.io/doc/pl.morgwai.base/servlet-utils/latest/pl/morgwai/base/servlet/utils/WebsocketPingerService.html).
 
 ### [PingingServletContextListener](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/utils/PingingServletContextListener.html)
 Subclass of `GuiceServletContextListener` that uses `PingingEndpointConfigurator` for programmatic `Endpoint`s and configures app's `WebsocketPingerService`.
@@ -98,13 +98,13 @@ public class ServletContextListener extends GuiceServletContextListener {
 ```
 **NOTE:** If the servlet container being used uses mechanism other than the standard Java Serialization to persist/replicate `HttpSession`s, then a deployment [init-param](https://javadoc.io/static/jakarta.servlet/jakarta.servlet-api/5.0.0/jakarta/servlet/ServletContext.html#setInitParameter-java.lang.String-java.lang.String-) named `pl.morgwai.base.servlet.guice.scopes.HttpSessionContext.customSerialization` must be set to `true` either in `web.xml` or programmatically before any request is served (for example in `ServletContextListener.contextInitialized(event)`).
 
-Note: in cases where it is not possible to extend `GuiceServletContextListener`, all the setup required to use `ServletModule` (with all its `Scopes` etc) and `GuiceServerEndpointConfigurator` / `PingingEndpointConfigurator`, can be done manually: see an example in [ManualServletContextListener](src/test/java/pl/morgwai/base/servlet/guice/scopes/tests/jetty/ManualServletContextListener.java).
+Note: in cases where it is not possible to extend `GuiceServletContextListener`, all the setup required to use `ServletModule` (with all its `Scopes` etc) and `GuiceEndpointConfigurator` / `PingingEndpointConfigurator`, can be done manually: see an example in [ManualServletContextListener](src/test/java/pl/morgwai/base/servlet/guice/scopes/tests/jetty/ManualServletContextListener.java).
 
 ### Using annotated server `Endpoints`
 ```java
 @ServerEndpoint(
     value = "/websocket/myAnnotatedSocket",
-    configurator = GuiceServerEndpointConfigurator.class  // ...or PingingEndpointConfigurator
+    configurator = GuiceEndpointConfigurator.class  // ...or PingingEndpointConfigurator
 )
 public class MyAnnotatedEndpoint {
 

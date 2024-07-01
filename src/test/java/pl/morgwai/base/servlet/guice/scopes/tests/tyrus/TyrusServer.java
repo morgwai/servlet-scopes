@@ -11,10 +11,9 @@ import javax.websocket.server.ServerEndpointConfig;
 import com.google.inject.Module;
 import com.google.inject.*;
 import org.glassfish.tyrus.core.cluster.ClusterContext;
-import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
-import pl.morgwai.base.servlet.guice.scopes.ServletModule;
+import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
-import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
+import pl.morgwai.base.servlet.guice.utils.PingingServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
@@ -66,7 +65,8 @@ public class TyrusServer implements Server {
 
 	public static class TyrusConfig implements ServerApplicationConfig {
 
-		final PingingEndpointConfigurator configurator = new PingingEndpointConfigurator();
+		final PingingServerEndpointConfigurator configurator =
+				new PingingServerEndpointConfigurator();
 
 
 

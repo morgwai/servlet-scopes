@@ -14,7 +14,7 @@ import javax.servlet.descriptor.JspConfigDescriptor;
  * A fake {@link ServletContext} useful for configuring
  * {@link pl.morgwai.base.servlet.guice.scopes.ServletModule} and
  * {@link pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator} in standalone
- * websocket container apps.
+ * websocket server apps.
  * Most methods throw an {@link UnsupportedOperationException} except the below ones:
  * <ul>
  *     <li>{@link #getContextPath()}</li>

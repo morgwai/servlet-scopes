@@ -2,16 +2,15 @@
 package pl.morgwai.base.servlet.guice.utils;
 
 import org.junit.After;
-import org.junit.Before;
 import org.easymock.Mock;
 
-import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
-import pl.morgwai.base.servlet.guice.scopes.ServerEndpointProxyTests;
+import pl.morgwai.base.servlet.guice.scopes.ProgrammaticEndpointDynamicProxyTests;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
 
-public class PingingServerEndpointProxyTests extends ServerEndpointProxyTests {
+public class ProgrammaticPingingEndpointDynamicProxyTests
+		extends ProgrammaticEndpointDynamicProxyTests {
 
 
 
@@ -21,16 +20,9 @@ public class PingingServerEndpointProxyTests extends ServerEndpointProxyTests {
 
 
 	@Override
-	protected GuiceServerEndpointConfigurator createConfigurator() {
-		return new PingingEndpointConfigurator();
-	}
-
-
-
-	@Before
-	public void setupPingingMocks() {
+	public void additionalSetup() {
 		mockPingerServiceUtil = new MockPingerServiceUtil(mockPingerService, mockConnection);
-		((PingingEndpointConfigurator) configurator).pingerService = mockPingerService;
+		configurator = new PingingEndpointConfigurator(null, ctxTracker, mockPingerService);
 	}
 
 

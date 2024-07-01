@@ -5,13 +5,13 @@ import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.AnnotatedMethodOverridingEndpoint;
-import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
+import pl.morgwai.base.servlet.guice.utils.PingingServerEndpointConfigurator;
 
 
 
 @ServerEndpoint(
 	value = AnnotatedMethodOverridingEndpoint.PATH,
-	configurator = PingingEndpointConfigurator.class
+	configurator = PingingServerEndpointConfigurator.class
 )
 public class TyrusAnnotatedMethodOverridingEndpoint extends AnnotatedMethodOverridingEndpoint {
 

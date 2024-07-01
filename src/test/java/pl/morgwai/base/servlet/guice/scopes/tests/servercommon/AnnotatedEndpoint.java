@@ -5,15 +5,15 @@ import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 
 import com.google.inject.Inject;
-import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator;
-import pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator.RttObserver;
+import pl.morgwai.base.servlet.guice.utils.PingingServerEndpointConfigurator;
+import pl.morgwai.base.servlet.guice.utils.RttObserver;
 
 
 
 /** Delegates to its wrapped {@link EchoEndpoint} instance. */
 @ServerEndpoint(
 	value = AnnotatedEndpoint.PATH,
-	configurator = PingingEndpointConfigurator.class
+	configurator = PingingServerEndpointConfigurator.class
 )
 public class AnnotatedEndpoint implements RttObserver {
 

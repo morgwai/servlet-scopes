@@ -4,32 +4,32 @@ package pl.morgwai.base.servlet.guice.scopes;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import javax.servlet.http.HttpSession;
-import javax.websocket.Endpoint;
 import javax.websocket.Session;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator.*;
+import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator.*;
 
 
 
-public class ServerEndpointProxyTests extends EndpointProxyTests {
+public abstract class EndpointDynamicProxyTests extends EndpointProxyTests {
 
 
 
-	protected final GuiceServerEndpointConfigurator configurator = createConfigurator();
+	protected GuiceEndpointConfigurator configurator;
 
-	protected GuiceServerEndpointConfigurator createConfigurator() {
-		return new GuiceServerEndpointConfigurator();
+	@Override
+	protected void additionalSetup() {
+		configurator = new GuiceEndpointConfigurator(null, ctxTracker);
 	}
 
 
 
 	@Override
-	protected final Endpoint createEndpointProxy(
-		Endpoint toWrap,
+	protected final TestEndpoint createEndpointProxy(
+		TestEndpoint toWrap,
 		ContextTracker<ContainerCallContext> ctxTracker,
 		HttpSession httpSession
 	) throws Exception {
@@ -38,8 +38,10 @@ public class ServerEndpointProxyTests extends EndpointProxyTests {
 
 
 
-	protected final void setEndpointProxyHandler(Endpoint endpointProxy, InvocationHandler handler)
-			throws NoSuchFieldException, IllegalAccessException {
+	void setEndpointProxyHandler(
+		TestEndpoint endpointProxy,
+		InvocationHandler handler
+	) throws NoSuchFieldException, IllegalAccessException {
 		endpointProxy.getClass().getDeclaredField(INVOCATION_HANDLER_FIELD_NAME).set(
 			endpointProxy,
 			new EndpointProxyHandler(handler, ctxTracker)
@@ -109,12 +111,14 @@ public class ServerEndpointProxyTests extends EndpointProxyTests {
 
 	/**
 	 * This method is final to ensure that
-	 * {@link pl.morgwai.base.servlet.guice.utils.PingingServerEndpointProxyTests} also uses just
-	 * a dummy {@link InvocationHandler} not to confuse mockPingerService with a 2nd connection.
+	 * {@link pl.morgwai.base.servlet.guice.utils.AnnotatedPingingEndpointDynamicProxyTests} and
+	 * {@link pl.morgwai.base.servlet.guice.utils.ProgrammaticPingingEndpointDynamicProxyTests} also
+	 * use just a dummy {@link InvocationHandler} not to confuse mockPingerService with a 2nd
+	 * connection.
 	 */
 	@Override
-	protected final Endpoint createSecondProxy(
-		Endpoint secondEndpoint,
+	protected final TestEndpoint createSecondProxy(
+		TestEndpoint secondEndpoint,
 		ContextTracker<ContainerCallContext> ctxTracker,
 		HttpSession httpSession
 	) throws Exception {
