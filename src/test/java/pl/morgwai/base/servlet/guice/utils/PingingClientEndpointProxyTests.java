@@ -1,8 +1,8 @@
 // Copyright 2024 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.utils;
 
-import javax.servlet.http.HttpSession;
-import javax.websocket.Endpoint;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.Endpoint;
 import org.junit.After;
 import org.junit.Before;
 import org.easymock.Mock;

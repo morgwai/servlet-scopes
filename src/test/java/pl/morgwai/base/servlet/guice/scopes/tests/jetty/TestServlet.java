@@ -3,8 +3,8 @@ package pl.morgwai.base.servlet.guice.scopes.tests.jetty;
 
 import java.io.IOException;
 import java.util.Properties;
-import javax.servlet.ServletException;
-import javax.servlet.http.*;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.*;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;

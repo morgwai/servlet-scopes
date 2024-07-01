@@ -2,8 +2,8 @@
 package pl.morgwai.base.servlet.guice.scopes.tests;
 
 import java.util.function.BiConsumer;
-import javax.websocket.*;
-import javax.websocket.MessageHandler.Whole;
+import jakarta.websocket.*;
+import jakarta.websocket.MessageHandler.Whole;
 
 import static java.util.logging.Level.FINE;
 

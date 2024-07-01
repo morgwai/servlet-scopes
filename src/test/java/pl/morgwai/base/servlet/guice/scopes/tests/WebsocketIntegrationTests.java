@@ -9,13 +9,13 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.*;
-import javax.websocket.*;
-import javax.websocket.CloseReason.CloseCodes;
+import jakarta.websocket.*;
+import jakarta.websocket.CloseReason.CloseCodes;
 import org.junit.*;
 
 import com.google.inject.*;
-import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
-import org.eclipse.jetty.websocket.javax.common.JavaxWebSocketContainer;
+import org.eclipse.jetty.websocket.jakarta.client.JakartaWebSocketClientContainerProvider;
+import org.eclipse.jetty.websocket.jakarta.common.JakartaWebSocketContainer;
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 import pl.morgwai.base.utils.concurrent.Awaitable;
@@ -59,14 +59,14 @@ public abstract class WebsocketIntegrationTests {
 		appWebsocketUrl = server.getTestAppWebsocketUrl();
 
 		wsHttpClient.setCookieStore(cookieManager.getCookieStore());
-		clientWebsocketContainer = JavaxWebSocketClientContainerProvider.getContainer(wsHttpClient);
+		clientWebsocketContainer = JakartaWebSocketClientContainerProvider.getContainer(wsHttpClient);
 	}
 
 
 
 	@After
 	public void stopServer() throws Exception {
-		final var jettyWsContainer = ((JavaxWebSocketContainer) clientWebsocketContainer);
+		final var jettyWsContainer = ((JakartaWebSocketContainer) clientWebsocketContainer);
 		jettyWsContainer.stop();
 		jettyWsContainer.destroy();
 		wsHttpClient.stop();

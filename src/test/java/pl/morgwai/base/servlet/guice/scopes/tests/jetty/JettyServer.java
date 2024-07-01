@@ -7,7 +7,7 @@ import org.eclipse.jetty.server.NetworkConnector;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.component.LifeCycle;
-import org.eclipse.jetty.websocket.javax.server.config.JavaxWebSocketServletContainerInitializer;
+import org.eclipse.jetty.websocket.jakarta.server.config.JakartaWebSocketServletContainerInitializer;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.*;
 
 
@@ -30,7 +30,7 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 		testAppHandler.setDisplayName("testApp");
 		testAppHandler.setContextPath(Server.TEST_APP_PATH);
 		testAppHandler.addEventListener(new ServletContextListener());
-		JavaxWebSocketServletContainerInitializer.configure(
+		JakartaWebSocketServletContainerInitializer.configure(
 			testAppHandler,
 			(servletContainer, websocketContainer) -> {
 				websocketContainer.setDefaultMaxTextMessageBufferSize(1023);
@@ -50,7 +50,7 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 		secondAppHandler.setDisplayName("secondApp");
 		secondAppHandler.setContextPath(MultiAppServer.SECOND_APP_PATH);
 		secondAppHandler.addEventListener(new ManualServletContextListener());
-		JavaxWebSocketServletContainerInitializer.configure(
+		JakartaWebSocketServletContainerInitializer.configure(
 			secondAppHandler,
 			(servletContainer, websocketContainer) -> {
 				websocketContainer.setDefaultMaxTextMessageBufferSize(1023);
@@ -69,7 +69,7 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 		unregisteredDeploymentAppHandler.setContextPath(
 				MultiAppServer.UNREGISTERED_DEPLOYMENT_APP_PATH);
 		unregisteredDeploymentAppHandler.addEventListener(new ManualServletContextListener(false));
-		JavaxWebSocketServletContainerInitializer.configure(
+		JakartaWebSocketServletContainerInitializer.configure(
 			unregisteredDeploymentAppHandler,
 			(servletContainer, websocketContainer) -> {
 				websocketContainer.setDefaultMaxTextMessageBufferSize(1023);

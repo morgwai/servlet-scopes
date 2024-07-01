@@ -4,7 +4,7 @@ package pl.morgwai.base.servlet.guice.scopes.tests;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import javax.websocket.*;
+import jakarta.websocket.*;
 
 import pl.morgwai.base.utils.concurrent.Awaitable;
 

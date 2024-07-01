@@ -5,7 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
-import javax.servlet.http.*;
+import jakarta.servlet.http.*;
 
 import com.google.inject.Module;
 import com.google.inject.*;
@@ -144,17 +144,17 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 	 *     If the {@link HttpSession#isNew() HttpSession is new}, then {@code "null"} is output and
 	 *     the {@link HttpSession#setAttribute(String, Object) attribute is set} for subsequent
 	 *     requests to the value of {@link #NODE_ID_ATTRIBUTE}
-	 *     {@link javax.servlet.ServletContext#getInitParameter(String) deployment init-param}
+	 *     {@link jakarta.servlet.ServletContext#getInitParameter(String) deployment init-param}
 	 * 	   containing the id of the {@link JettyNode} serving the current request.
 	 *   </li>
 	 *   <li>
 	 *     {@link HttpSessionContext HttpSession-scoped} value of {@link #NODE_ID_ATTRIBUTE}
-	 *     {@link javax.servlet.ServletContext#getInitParameter(String) deployment init-param}
+	 *     {@link jakarta.servlet.ServletContext#getInitParameter(String) deployment init-param}
 	 *     at {@link #CONTEXT_STORED_NODE_ID_PROPERTY}.
 	 *   </li>
 	 *   <li>
 	 *     {@link HttpSessionContext HttpSession-scoped} value of {@link #NODE_ID_ATTRIBUTE}
-	 *     {@link javax.servlet.ServletContext#getInitParameter(String) deployment init-param}
+	 *     {@link jakarta.servlet.ServletContext#getInitParameter(String) deployment init-param}
 	 *     wrapped with a {@link NonSerializableObject} at
 	 *     {@link #CONTEXT_STORED_NON_SERIALIZABLE_NODE_ID_PROPERTY}.
 	 *   </li>
