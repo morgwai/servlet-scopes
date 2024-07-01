@@ -14,8 +14,7 @@ import javax.websocket.*;
 import javax.websocket.server.*;
 import javax.websocket.server.ServerEndpointConfig.Configurator;
 
-import com.google.inject.Injector;
-import com.google.inject.Scope;
+import com.google.inject.*;
 
 
 
@@ -43,33 +42,9 @@ import com.google.inject.Scope;
  * called to pre-build a dynamic class of a context-aware proxy for {@code MyProgrammaticEndpoint})
  * </p>
  * <p>
- * To use this {@code Configurator} for @{@link ServerEndpoint} annotated {@code Endpoints}, the
- * following setup must be performed:</p>
- * <ol>
- *   <li>
- *     the app-wide {@link Injector} must be
- *     {@link ServletContext#setAttribute(String, Object) stored as a deployment attribute} under
- *     the {@link Class#getName() fully-qualified name} of {@link Injector} class in {@link
- *     javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
- *     contextInitialized(event)} method of app's {@link javax.servlet.ServletContextListener}.
- *   </li>
- *   <li>
- *     {@link #registerDeployment(ServletContext)} and {@link #deregisterDeployment(ServletContext)}
- *     static methods must be called respectively in {@link
- *     javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
- *     contextInitialized(event)} and {@link
- *     javax.servlet.ServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)
- *     contextDestroyed(event)} methods of app's {@link javax.servlet.ServletContextListener}.
- *   </li>
- * </ol>
- * <p>
- * This allows container-created instances of this {@code Configurator} to obtain a reference to the
- * {@link Injector}. Note that if app's {@code Listener} extends
- * {@link GuiceServletContextListener}, the above setup is performed automatically.<br/>
- * Finally, {@code Endpoint} methods annotated with @{@link OnOpen} <b>must</b> have a
- * {@link Session} param.<br/>
- * After the above conditions are met, simply pass this class as
- * {@link ServerEndpoint#configurator() configurator} param of the annotation:</p>
+ * To use this {@code Configurator} for @{@link ServerEndpoint} annotated {@code Endpoints}, simply
+ * pass this class as {@link ServerEndpoint#configurator() configurator} param of the annotation:
+ * </p>
  * <pre>
  * &#64;ServerEndpoint(
  *     value = "/websocket/annotated",
@@ -86,10 +61,11 @@ import com.google.inject.Scope;
  *     // other methods here...
  * }</pre>
  * <p>
+ * <b>NOTE:</b> methods annotated with @{@link OnOpen} <b>must</b> have a {@link Session} param.</p>
+ * <p>
  * <b>NOTE:</b> due to the way many debuggers work, it is <b>strongly</b> recommended for
  * {@link Object#toString() toString()} methods of {@code Endpoints} to work properly even when
  * called outside of any {@code Context}.</p>
- * @see GuiceServletContextListener
  */
 public class GuiceServerEndpointConfigurator extends Configurator {
 
@@ -107,15 +83,14 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 
 
 	/**
-	 * Registers {@code appDeployment} for container-created
+	 * Registers {@code appDeployment} and {@code injector} for container-created
 	 * {@code Configurator} instances to call {@link #initialize(ServletContext)}.
-	 * <p>
-	 * This method is called automatically by
-	 * {@link GuiceServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)},
-	 * it must be called manually in apps that don't use it.</p>
-	 * @see #modifyHandshake(ServerEndpointConfig, HandshakeRequest, HandshakeResponse)
+	 * This method is called automatically during static injection requested by
+	 * {@link ServletModule}.
 	 */
-	public static void registerDeployment(ServletContext appDeployment) {
+	@Inject
+	static void registerDeployment(ServletContext appDeployment, Injector injector) {
+		appDeployment.setAttribute(Injector.class.getName(), injector);
 		appDeployments.put(appDeployment.getContextPath(), new WeakReference<>(appDeployment));
 	}
 
@@ -282,9 +257,8 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 		if (appDeploymentRef != null) return appDeploymentRef.get();
 
 		// pick first non-null from appDeployments and ask it for a reference to the desired one
-		// (this should also cover cases when the desired deployment is matched by more than 1 path
-		// (as described in ServletContext.getContextPath() javadoc) and request comes to a
-		// non-primary path)
+		// (for cases when the desired deployment is matched by more than 1 path (as described in
+		// ServletContext.getContextPath() javadoc) and request comes to a non-primary path)
 		ServletContext appDeployment = null;
 		for (var deploymentRef: appDeployments.values()) {
 			final var randomDeployment = deploymentRef.get();
@@ -307,8 +281,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	}
 
 	static final String DEPLOYMENT_NOT_FOUND_MESSAGE = "could not find a deployment for the "
-			+ "request path %s (calculated app deployment path: %s ), "
-			+ "GuiceServerEndpointConfigurator.registerDeployment(...) probably wasn't called";
+			+ "request path \"%s\" (calculated app deployment path: \"%s\")";
 
 
 

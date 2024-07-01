@@ -52,20 +52,18 @@ public class ServletModule implements Module {
 
 
 
-	/** {@code appDeployment} to be bound in {@link #configure(Binder)}. */
-	public void setAppDeployment(ServletContext appDeployment) {
-		if (this.appDeployment != null) {
-			throw new IllegalStateException("appDeployment already set");
-		}
-		this.appDeployment = appDeployment;
+	// todo: javadoc
+	public ServletContext getAppDeployment() { return appDeployment; }
+	ServletContext appDeployment;
+
+	void setAppDeployment(ServletContext deployment) {
+		if (appDeployment != null) throw new IllegalStateException("appDeployment already set");
+		appDeployment = deployment;
 	}
 
-	protected ServletContext appDeployment;
 
 
-
-	// todo: javadoc update
-	public ServletModule(WebsocketModule websocketModule) {
+	ServletModule(WebsocketModule websocketModule) {
 		this.websocketModule = websocketModule;
 		httpSessionScope = new InducedContextScope<>(
 			"ServletModule.httpSessionScope",
@@ -80,6 +78,7 @@ public class ServletModule implements Module {
 		ctxBinder = websocketModule.ctxBinder;
 	}
 
+	// todo: javadoc
 	public ServletModule(ServletContext appDeployment, WebsocketModule websocketModule) {
 		this(websocketModule);
 		this.appDeployment = appDeployment;
@@ -90,10 +89,12 @@ public class ServletModule implements Module {
 	// todo: javadoc
 	@Override
 	public void configure(Binder binder) {
-		if (appDeployment != null) binder.bind(ServletContext.class).toInstance(appDeployment);
+		if (appDeployment == null) throw new IllegalStateException("appDeployment not set");
 		binder.install(websocketModule);
+		binder.bind(ServletContext.class).toInstance(appDeployment);
 		binder.bind(HttpSessionContext.class).toProvider(
 				() -> ctxTracker.getCurrentContext().getHttpSessionContext());
+		binder.requestStaticInjection(GuiceServerEndpointConfigurator.class);
 	}
 
 
