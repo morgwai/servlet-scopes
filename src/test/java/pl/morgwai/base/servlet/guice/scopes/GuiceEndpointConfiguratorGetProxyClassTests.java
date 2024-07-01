@@ -70,7 +70,7 @@ public class GuiceEndpointConfiguratorGetProxyClassTests {
 		try {
 			configurator.getProxyClass(AnnotatedEndpointWithoutOnOpen.class);
 			fail("creating proxyClass for AnnotatedEndpointWithoutOnOpen should fail");
-		} catch (RuntimeException expected) {}
+		} catch (IllegalArgumentException expected) {}
 	}
 
 
@@ -109,7 +109,7 @@ public class GuiceEndpointConfiguratorGetProxyClassTests {
 		try {
 			configurator.getProxyClass(AnnotatedEndpointWithoutOnClose.class);
 			fail("creating proxyClass for AnnotatedEndpointWithoutOnClose should fail");
-		} catch (RuntimeException expected) {}
+		} catch (IllegalArgumentException expected) {}
 	}
 
 
@@ -127,7 +127,7 @@ public class GuiceEndpointConfiguratorGetProxyClassTests {
 			fail(
 				"creating proxyClass for AnnotatedEndpointWithoutSessionParamInOnOpen should fail"
 			);
-		} catch (RuntimeException expected) {}
+		} catch (IllegalArgumentException expected) {}
 	}
 
 

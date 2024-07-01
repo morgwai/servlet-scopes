@@ -177,7 +177,7 @@ public class GuiceEndpointConfigurator {
 	 * By default this configurator does Jetty-style checking, so some {@code Endpoints} that don't
 	 * meet Tyrus requirements will be allowed to deploy and their overridden life-cycle methods
 	 * will not be called by the container.</p>
-	 * @throws RuntimeException if the check fails.
+	 * @throws IllegalArgumentException if the check fails.
 	 */
 	protected void checkIfRequiredEndpointMethodsPresent(Class<?> endpointClass) {
 		final var wantedMethodAnnotationTypes = getRequiredEndpointMethodAnnotationTypes();
@@ -193,8 +193,8 @@ public class GuiceEndpointConfigurator {
 							wantedAnnotationType.equals(OnOpen.class)
 							&& !Arrays.asList(method.getParameterTypes()).contains(Session.class)
 						) {
-							throw new RuntimeException("method annotated with @OnOpen must have a "
-									+ Session.class.getName() + " param");
+							throw new IllegalArgumentException("method annotated with @OnOpen must "
+									+ "have a " + Session.class.getName() + " param");
 						}
 					}
 				}
@@ -203,7 +203,7 @@ public class GuiceEndpointConfigurator {
 			classUnderScan = classUnderScan.getSuperclass();
 		}
 		if ( !wantedMethodAnnotationTypes.isEmpty()) {
-			throw new RuntimeException("endpoint class must have a method annotated with @"
+			throw new IllegalArgumentException("endpoint class must have a method annotated with @"
 					+ wantedMethodAnnotationTypes.iterator().next().getSimpleName());
 		}
 	}
