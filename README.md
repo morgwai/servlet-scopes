@@ -1,13 +1,13 @@
 # Servlet and Websocket Guice Scopes
 
-`containerCallScope` (either a `HttpServletRequest` or a websocket endpoint event), `websocketConnectionScope` (`javax.websocket.Session`) and `httpSessionScope` for use in websocket/`Servlet` server containers and websocket client containers.<br/>
+`containerCallScope` (either a `HttpServletRequest` or a websocket `Endpoint` event), `websocketConnectionScope` (`javax.websocket.Session`) and `httpSessionScope` for use in `Servlet`/websocket server containers and websocket client containers.<br/>
 Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0<br/>
 <br/>
 **latest release: 16.3**<br/>
 [javax flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/16.3-javax/jar)
 ([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/16.3-javax)) - supports Servlet `4.0.1` and Websocket `1.1` APIs<br/>
 [jakarta flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/16.3-jakarta/jar)
-([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/16.3-jakarta)) - supports Servlet `5.0.0` to at least `6.0.0` and Websocket `2.0.0` to at least `2.1.1` APIs 
+([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/16.3-jakarta)) - supports Servlet `5.0.0` to at least `6.0.0` and Websocket `2.0.0` to at least `2.1.1` APIs
 
 
 ## OVERVIEW
@@ -18,19 +18,17 @@ Provides the below Guice scopes:
 Scopes bindings to either an `HttpServletRequest` or a websocket event (connection opened/closed, message received, error occurred).<br/>
 Spans over a single container-initiated call to either one of servlet's `doXXX(...)` methods or to a websocket endpoint life-cycle method (annotated with one of the websocket annotations or overriding those of `javax.websocket.Endpoint` or of registered `javax.websocket.MessageHandler`s).<br/>
 Having a common `Scope` for servlet requests and websocket events allows to inject scoped objects both in servlets and endpoints without a need for 2 separate bindings in user `Module`s.
-This `Scope` may be used both for on a client and on a server side.
+This `Scope` may be used both on a client and on a server side.
 
 ### [websocketConnectionScope](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/ServletModule.html#websocketConnectionScope)
 Scopes bindings to a websocket connection (`javax.websocket.Session`).<br/>
 Spans over a lifetime of a given endpoint instance: all calls to life-cycle methods of a given endpoint instance (annotated with `@OnOpen`, `@OnMessage`, `@OnError`, `@OnClose`, or overriding those of `javax.websocket.Endpoint` together with methods of registered `MessageHandler`s) are executed within the same associated `websocketConnectionScope`.
-This `Scope` may be used both for on a client and on a server side.
-
+This `Scope` may be used both on a client and on a server side.
 
 ### [httpSessionScope](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/ServletModule.html#httpSessionScope)
-Scopes bindings to a given `HttpSession`. Available both to servlets and websocket endpoints.
+Scopes bindings to a given `HttpSession`. Available only on a server side both to servlets and websocket endpoints.
 
 All the above scopes are built using [guice-context-scopes lib](https://github.com/morgwai/guice-context-scopes), so they are automatically transferred to a new thread when dispatching using `AsyncContext.dispatch()` or `ServletContextTrackingExecutor` (see below).
-This `Scope` may be active only on a server side.
 
 
 
