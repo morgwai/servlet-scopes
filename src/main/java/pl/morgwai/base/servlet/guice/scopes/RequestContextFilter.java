@@ -17,7 +17,7 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * <p>
  * If an instance of this {@code Filter} is not created by Guice, then a reference to the
  * {@link ContextTracker} must be set either
- * {@link #setContainerCallContextTracker(ContextTracker) manually} or by requesting
+ * {@link #setCtxTracker(ContextTracker) manually} or by requesting
  * {@link com.google.inject.Injector#injectMembers(Object) Guice member injection}.</p>
  * <p>
  * This {@code Filter} should usually be installed at the beginning of the
@@ -30,15 +30,13 @@ public class RequestContextFilter implements Filter {
 
 
 
-	ContextTracker<ContainerCallContext> containerCallContextTracker;
+	ContextTracker<ContainerCallContext> ctxTracker;
 
 
 
 	@Inject
-	public void setContainerCallContextTracker(
-		ContextTracker<ContainerCallContext> containerCallContextTracker
-	) {
-		this.containerCallContextTracker = containerCallContextTracker;
+	public void setCtxTracker(ContextTracker<ContainerCallContext> ctxTracker) {
+		this.ctxTracker = ctxTracker;
 	}
 
 
@@ -48,8 +46,7 @@ public class RequestContextFilter implements Filter {
 			throws IOException, ServletException {
 		final ServletRequestContext ctx;
 		if (request.getDispatcherType() == DispatcherType.REQUEST) {  // new request
-			ctx = new ServletRequestContext(
-					(HttpServletRequest) request, containerCallContextTracker);
+			ctx = new ServletRequestContext((HttpServletRequest) request, ctxTracker);
 			request.setAttribute(ServletRequestContext.class.getName(), ctx);
 		} else {  // async request dispatched from another thread
 			ctx = (ServletRequestContext)

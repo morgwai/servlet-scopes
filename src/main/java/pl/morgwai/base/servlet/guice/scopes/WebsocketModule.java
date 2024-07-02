@@ -12,28 +12,26 @@ import pl.morgwai.base.utils.concurrent.Awaitable;
 
 
 /**
- * Contains {@code Servlet} and websocket Guice {@link Scope}s, {@link ContextTracker}s and some
- * helper methods.
+ * Contains websocket Guice {@link Scope}s, {@link ContextTracker}s and some helper methods.
  * Usually a single app-wide instance is created at the app startup.
- * @see GuiceServletContextListener#servletModule
+ * @see ServletModule
  */
 public class WebsocketModule implements Module {
 
 
 
 	/** Allows tracking of {@link ServletRequestContext}s and {@link WebsocketEventContext}s. */
-	public final ContextTracker<ContainerCallContext> containerCallContextTracker =
-			new ContextTracker<>();
+	public final ContextTracker<ContainerCallContext> ctxTracker = new ContextTracker<>();
 
 	/**
 	 * Scopes objects to the {@code Context} of either an
 	 * {@link ServletRequestContext HttpServletRequests} or a
 	 * {@link WebsocketEventContext websocket event}.
 	 * The choice is determined by which type is active at the moment of a given
-	 * {@link Provider#get() provisioning} (as returned by {@link #containerCallContextTracker}).
+	 * {@link Provider#get() provisioning} (as returned by {@link #ctxTracker}).
 	 */
 	public final Scope containerCallScope =
-			new ContextScope<>("WebsocketModule.containerCallScope", containerCallContextTracker);
+			new ContextScope<>("WebsocketModule.containerCallScope", ctxTracker);
 
 
 
@@ -45,7 +43,7 @@ public class WebsocketModule implements Module {
 	 */
 	public final Scope websocketConnectionScope = new InducedContextScope<>(
 		"WebsocketModule.websocketConnectionScope",
-		containerCallContextTracker,
+		ctxTracker,
 		WebsocketModule::getWebsocketConnectionContext
 	);
 
@@ -62,13 +60,13 @@ public class WebsocketModule implements Module {
 
 
 	/**
-	 * Singleton of {@link #containerCallContextTracker}.
+	 * Singleton of {@link #ctxTracker}.
 	 * Type {@code List<ContextTracker<?>>} is bound to it in {@link #configure(Binder)} method.
 	 */
-	public final List<ContextTracker<?>> allTrackers = List.of(containerCallContextTracker);
+	public final List<ContextTracker<?>> allTrackers = List.of(ctxTracker);
 
 	/** {@code ContextBinder} created using {@link #allTrackers}. */
-	public final ContextBinder contextBinder = new ContextBinder(allTrackers);
+	public final ContextBinder ctxBinder = new ContextBinder(allTrackers);
 
 	/** Calls {@link ContextTracker#getActiveContexts(List) getActiveContexts(allTrackers)}. */
 	public List<TrackableContext<?>> getActiveContexts() {
@@ -77,12 +75,12 @@ public class WebsocketModule implements Module {
 
 
 
-	static final TypeLiteral<ContextTracker<ContainerCallContext>> containerCallContextTrackerType =
+	static final TypeLiteral<ContextTracker<ContainerCallContext>> ctxTrackerType =
 			new TypeLiteral<>() {};
 	static final TypeLiteral<List<ContextTracker<?>>> allTrackersType = new TypeLiteral<>() {};
-	/** {@code Key} of {@link #containerCallContextTracker}. */
-	public static final Key<ContextTracker<ContainerCallContext>> containerCallContextTrackerKey =
-			Key.get(containerCallContextTrackerType);
+	/** {@code Key} of {@link #ctxTracker}. */
+	public static final Key<ContextTracker<ContainerCallContext>> ctxTrackerKey =
+			Key.get(ctxTrackerType);
 	/** {@code Key} of {@link #allTrackers}. */
 	public static final Key<List<ContextTracker<?>>> allTrackersKey = Key.get(allTrackersType);
 
@@ -108,8 +106,8 @@ public class WebsocketModule implements Module {
 	 * Specifically binds the following:
 	 * <ul>
 	 *   <li>{@link #allTrackersKey} to {@link #allTrackers}</li>
-	 *   <li>{@link ContextBinder} to {@link #contextBinder}</li>
-	 *   <li>{@link #containerCallContextTrackerKey} to {@link #containerCallContextTracker}</li>
+	 *   <li>{@link ContextBinder} to {@link #ctxBinder}</li>
+	 *   <li>{@link #ctxTrackerKey} to {@link #ctxTracker}</li>
 	 *   <li>
 	 *       {@link ContainerCallContext}, {@link WebsocketConnectionContext} and
 	 *       {@link HttpSessionContext} to {@link Provider}s returning instances current for the
@@ -120,15 +118,11 @@ public class WebsocketModule implements Module {
 	@Override
 	public void configure(Binder binder) {
 		binder.bind(allTrackersKey).toInstance(allTrackers);
-		binder.bind(ContextBinder.class).toInstance(contextBinder);
-		binder.bind(containerCallContextTrackerKey).toInstance(containerCallContextTracker);
-		binder.bind(ContainerCallContext.class).toProvider(
-				containerCallContextTracker::getCurrentContext);
-		binder.bind(HttpSessionContext.class).toProvider(
-				() -> containerCallContextTracker.getCurrentContext().getHttpSessionContext());
+		binder.bind(ContextBinder.class).toInstance(ctxBinder);
+		binder.bind(ctxTrackerKey).toInstance(ctxTracker);
+		binder.bind(ContainerCallContext.class).toProvider(ctxTracker::getCurrentContext);
 		binder.bind(WebsocketConnectionContext.class).toProvider(
-			() -> getWebsocketConnectionContext(containerCallContextTracker.getCurrentContext())
-		);
+				() -> getWebsocketConnectionContext(ctxTracker.getCurrentContext()));
 		for (var clientEndpointClass: clientEndpointClasses) {
 			bindClientEndpoint(binder, clientEndpointClass);
 		}
@@ -172,7 +166,7 @@ public class WebsocketModule implements Module {
 	 * (such as a load balancer or a frontend proxy) should be used.</p>
 	 */
 	public ServletContextTrackingExecutor newContextTrackingExecutor(String name, int poolSize) {
-		final var executor = new ServletContextTrackingExecutor(name, contextBinder, poolSize);
+		final var executor = new ServletContextTrackingExecutor(name, ctxBinder, poolSize);
 		executors.add(executor);
 		return executor;
 	}
@@ -195,7 +189,7 @@ public class WebsocketModule implements Module {
 		int queueSize
 	) {
 		final var executor =
-				new ServletContextTrackingExecutor(name, contextBinder, poolSize, queueSize);
+				new ServletContextTrackingExecutor(name, ctxBinder, poolSize, queueSize);
 		executors.add(executor);
 		return executor;
 	}
@@ -218,7 +212,7 @@ public class WebsocketModule implements Module {
 	) {
 		final var executor = new ServletContextTrackingExecutor(
 			name,
-			contextBinder,
+			ctxBinder,
 			corePoolSize,
 			maxPoolSize,
 			keepAliveTime,
@@ -257,7 +251,7 @@ public class WebsocketModule implements Module {
 	) {
 		final var executor = new ServletContextTrackingExecutor(
 			name,
-			contextBinder,
+			ctxBinder,
 			corePoolSize,
 			maxPoolSize,
 			keepAliveTime,

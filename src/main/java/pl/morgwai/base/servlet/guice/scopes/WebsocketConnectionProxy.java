@@ -81,10 +81,10 @@ public class WebsocketConnectionProxy implements Session {
 	/** Constructs a new proxy for {@code connection}. */
 	protected WebsocketConnectionProxy(
 		Session connection,
-		ContextTracker<ContainerCallContext> containerCallContextTracker
+		ContextTracker<ContainerCallContext> ctxTracker
 	) {
 		this.wrappedConnection = connection;
-		this.ctxTracker = containerCallContextTracker;
+		this.ctxTracker = ctxTracker;
 		this.httpSession = (HttpSession)
 				wrappedConnection.getUserProperties().get(HttpSession.class.getName());
 	}
@@ -97,11 +97,11 @@ public class WebsocketConnectionProxy implements Session {
 	 */
 	private WebsocketConnectionProxy(
 		Session connection,
-		ContextTracker<ContainerCallContext> containerCallContextTracker,
+		ContextTracker<ContainerCallContext> ctxTracker,
 		Void remote
 	) {
 		this.wrappedConnection = connection;
-		this.ctxTracker = containerCallContextTracker;
+		this.ctxTracker = ctxTracker;
 		this.httpSession = null;
 	}
 

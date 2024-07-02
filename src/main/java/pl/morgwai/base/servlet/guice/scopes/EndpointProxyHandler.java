@@ -27,10 +27,10 @@ class EndpointProxyHandler implements InvocationHandler {
 
 	EndpointProxyHandler(
 		InvocationHandler endpointToWrap,
-		ContextTracker<ContainerCallContext> containerCallContextTracker
+		ContextTracker<ContainerCallContext> ctxTracker
 	) {
 		this.wrappedEndpoint = endpointToWrap;
-		this.ctxTracker = containerCallContextTracker;
+		this.ctxTracker = ctxTracker;
 	}
 
 
