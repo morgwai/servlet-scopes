@@ -3,7 +3,6 @@ package pl.morgwai.base.servlet.guice.scopes;
 
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,7 +20,6 @@ import com.google.inject.*;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toList;
-import static pl.morgwai.base.servlet.guice.scopes.HttpSessionContext.CUSTOM_SERIALIZATION_PARAM;
 
 
 
@@ -316,22 +314,6 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Adds {@code configurationHook} to be called by
-	 * {@link #contextInitialized(ServletContextEvent)} right before
-	 * {@link #configureServletsFiltersEndpoints()}.
-	 * This is intended for abstract subclasses to hook in their stuff. Concrete {@code Listeners}
-	 * should rather perform all their setup in {@link #configureInjections()} and
-	 * {@link #configureServletsFiltersEndpoints()}.
-	 */
-	protected void addConfigurationHook(Callable<Void> configurationHook) {
-		configurationHooks.add(configurationHook);
-	}
-
-	private final List<Callable<Void>> configurationHooks = new LinkedList<>();
-
-
-
-	/**
 	 * Programmatically adds {@link Servlet}s, {@link Filter}s, websocket {@code Endpoints} and
 	 * performs any other setup required by the given app.
 	 * Called at the end of {@link #contextInitialized(ServletContextEvent)}, may use
@@ -382,15 +364,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 					"/*"
 				);
 
-			for (var configurationHook: configurationHooks) configurationHook.call();
-
 			configureServletsFiltersEndpoints();
-			if (appDeployment.getAttribute(CUSTOM_SERIALIZATION_PARAM) == null) {
-				appDeployment.setAttribute(
-					CUSTOM_SERIALIZATION_PARAM,
-					Boolean.parseBoolean(appDeployment.getInitParameter(CUSTOM_SERIALIZATION_PARAM))
-				);
-			}
 			log.info(deploymentName + " deployed successfully");
 		} catch (Throwable e) {
 			final var message = deploymentName + " failed to deploy";
