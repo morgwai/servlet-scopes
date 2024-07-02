@@ -10,7 +10,11 @@ import pl.morgwai.base.utils.concurrent.Awaitable;
 
 
 
-// todo: javadoc
+/**
+ * Utility that helps to automatically shutdown its created {@link ServletContextTrackingExecutor}s
+ * at an app shutdown.
+ * @see GuiceServletContextListener#executorManager
+ */
 public class ExecutorManager {
 
 

@@ -26,7 +26,7 @@ import pl.morgwai.base.guice.scopes.TrackableContext;
  * allows to provide {@link WebsocketModule#containerCallScope container-call scoped} objects both
  * in {@link javax.servlet.Servlet}s and {@code Endpoints} without a need for 2 separate bindings.
  * </p>
- * @see ServletWebsocketModule#containerCallScope corresponding Scope
+ * @see WebsocketModule#containerCallScope corresponding Scope
  */
 public abstract class ContainerCallContext extends TrackableContext<ContainerCallContext> {
 

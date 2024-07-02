@@ -9,7 +9,10 @@ import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
 
-// todo: javadoc
+/**
+ * {@link WebsocketModule} that additionally binds {@link #clientEndpointClasses} to
+ * {@link Provider}s based on {@link PingingEndpointConfigurator}.
+ */
 public class PingingWebsocketModule extends WebsocketModule {
 
 
@@ -18,7 +21,6 @@ public class PingingWebsocketModule extends WebsocketModule {
 
 
 
-	// todo: javadoc
 	public PingingWebsocketModule(
 		WebsocketPingerService pingerService, Set<Class<?>> clientEndpointClasses
 	) {
@@ -37,6 +39,13 @@ public class PingingWebsocketModule extends WebsocketModule {
 
 
 
+	/**
+	 * In addition to bindings from {@link WebsocketModule#configure(Binder) super}, binds
+	 * {@link #clientEndpointClasses} annotated with {@link PingingClientEndpoint} to
+	 * {@link Provider}s based on {@link PingingEndpointConfigurator}.
+	 * Also binds {@link WebsocketPingerService} class to the instance from
+	 * {@link #PingingWebsocketModule(WebsocketPingerService, Set) the constructor}'s param.
+	 */
 	@Override
 	public void configure(Binder binder) {
 		super.configure(binder);

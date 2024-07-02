@@ -14,23 +14,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 
 
-/**
- * Subclass of {@link GuiceServletContextListener} that automatically registers its programmatic
- * {@code Endpoints} to its associated {@link WebsocketPingerService}.
- * @see PingingServerEndpointConfigurator
- */
+/** {@link GuiceServletContextListener} that uses {@link PingingServerEndpointConfigurator}. */
 public abstract class PingingServletContextListener extends GuiceServletContextListener {
 
 
 
 	/**
-	 * The app-wide pinger service to which {@link #addEndpoint(Class, String)} method registers
+	 * The app-wide pinger service to which {@link PingingServerEndpointConfigurator} registers
 	 * {@code Endpoints}.
 	 * Initialized with the result of {@link #createPingerService()}.
-	 * <p>
-	 * The app-wide pinger service is also stored as a
-	 * {@link javax.servlet.ServletContext#getAttribute(String) deployment attribute} under
-	 * {@link Class#getName() fully-qualified name} of {@link WebsocketPingerService} class.</p>
 	 */
 	protected WebsocketPingerService pingerService;
 
@@ -151,11 +143,11 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 	/**
-	 * todo: javadoc
-	 * Also {@link #createPingerService() creates the app-wide pinger service}.
+	 * {@link #createPingerService() Creates the app-wide pinger service} and returns a new
+	 * {@link PingingWebsocketModule}.
 	 */
 	@Override
-	protected WebsocketModule createWebsocketModule(Set<Class<?>> clientEndpointClasses) {
+	protected PingingWebsocketModule createWebsocketModule(Set<Class<?>> clientEndpointClasses) {
 		pingerService = createPingerService();
 		return new PingingWebsocketModule(pingerService, clientEndpointClasses);
 	}
@@ -171,7 +163,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 * at the app shutdown.
 	 */
 	@Override
-	protected GuiceServerEndpointConfigurator createEndpointConfigurator(
+	protected PingingServerEndpointConfigurator createEndpointConfigurator(
 			ServletContext appDeployment) {
 		addShutdownHook(pingerService::stop);
 		return new PingingServerEndpointConfigurator(appDeployment);
