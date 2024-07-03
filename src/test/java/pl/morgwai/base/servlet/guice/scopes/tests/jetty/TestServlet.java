@@ -9,6 +9,7 @@ import javax.servlet.http.*;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
+import pl.morgwai.base.servlet.guice.scopes.ServletWebsocketModule;
 import pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Service;
 
 import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Service.CONTAINER_CALL;
@@ -65,10 +66,10 @@ public abstract class TestServlet extends HttpServlet {
 	 *   <li>{@link #RESPONDING_SERVLET} - {@link Class#getSimpleName() simple name of the Class}
 	 *       of the {@code Servlet} that actually produced the response</li>
 	 *   <li>{@link Service#CONTAINER_CALL} - hash of the
-	 *       {@link pl.morgwai.base.servlet.guice.scopes.ServletModule#containerCallScope
+	 *       {@link ServletWebsocketModule#containerCallScope
 	 *       containerCallScope}d instance of {@link Service}</li>
 	 *   <li>{@link Service#HTTP_SESSION} - hash of the
-	 *       {@link pl.morgwai.base.servlet.guice.scopes.ServletModule#httpSessionScope
+	 *       {@link ServletWebsocketModule#httpSessionScope
 	 *       httpSessionScope}d instance of {@link Service}</li>
 	 * </ul>
 	 */

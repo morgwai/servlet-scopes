@@ -22,9 +22,9 @@ import com.google.inject.*;
  * Obtains {@code Endpoint} instances from {@link Injector#getInstance(Class) Guice} and ensures
  * their methods
  * {@link WebsocketEventContext#executeWithinSelf(Runnable) run within websocket Contexts}.
- * This way, all dependencies are injected and {@link Scope}s from {@link ServletModule}
- * ({@link ServletModule#containerCallScope}, {@link ServletModule#websocketConnectionScope} and
- * {@link ServletModule#httpSessionScope}) work properly.
+ * This way, all dependencies are injected and {@link Scope}s from {@link ServletWebsocketModule}
+ * ({@link WebsocketModule#containerCallScope}, {@link WebsocketModule#websocketConnectionScope} and
+ * {@link ServletWebsocketModule#httpSessionScope}) work properly.
  * <p>
  * To use this {@code Configurator} for programmatically added {@code Endpoints}, create an instance
  * using {@link #GuiceServerEndpointConfigurator(ServletContext)} and pass it to the
@@ -86,7 +86,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	 * Registers {@code appDeployment} and {@code injector} for container-created
 	 * {@code Configurator} instances to call {@link #initialize(ServletContext)}.
 	 * This method is called automatically during static injection requested by
-	 * {@link ServletModule}.
+	 * {@link ServletWebsocketModule}.
 	 */
 	@Inject
 	static void registerDeployment(ServletContext appDeployment, Injector injector) {
@@ -158,7 +158,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	protected GuiceEndpointConfigurator newGuiceEndpointConfigurator(Injector injector) {
 		return new GuiceEndpointConfigurator(
 			injector,
-			injector.getInstance(ServletModule.ctxTrackerKey)
+			injector.getInstance(WebsocketModule.ctxTrackerKey)
 		) {
 			@Override
 			protected <ProxyT> ProxyT createEndpointProxyInstance(Class<ProxyT> proxyClass)

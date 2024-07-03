@@ -12,7 +12,7 @@ import pl.morgwai.base.guice.scopes.*;
 /**
  * Contains websocket Guice {@link Scope}s, {@link ContextTracker}s and some helper methods.
  * Usually a single app-wide instance is created at the app startup.
- * @see ServletModule
+ * @see ServletWebsocketModule
  */
 public class WebsocketModule implements Module {
 

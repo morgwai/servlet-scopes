@@ -34,7 +34,7 @@ public class PingingServerEndpointConfigurator extends GuiceServerEndpointConfig
 	protected GuiceEndpointConfigurator newGuiceEndpointConfigurator(Injector injector) {
 		return new PingingEndpointConfigurator(
 			injector,
-			injector.getInstance(ServletModule.ctxTrackerKey),
+			injector.getInstance(ServletWebsocketModule.ctxTrackerKey),
 			injector.getInstance(Key.get(WebsocketPingerService.class, PingingClientEndpoint.class))
 		) {
 			@Override

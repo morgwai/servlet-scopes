@@ -44,7 +44,7 @@ public class TyrusServer implements Server {
 			MILLISECONDS,
 			1
 		);
-		final var servletModule = new ServletModule(
+		final var servletModule = new ServletWebsocketModule(
 			appDeployment,
 			new PingingWebsocketModule(pingerService)
 		);

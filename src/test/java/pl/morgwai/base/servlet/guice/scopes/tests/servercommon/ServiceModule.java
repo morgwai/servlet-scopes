@@ -12,14 +12,14 @@ public class ServiceModule implements Module {
 
 
 
-	final ServletModule servletModule;
+	final ServletWebsocketModule servletModule;
 	final ExecutorManager executorManager;
 	final boolean httpSessionAvailable;
 
 
 
 	public ServiceModule(
-		ServletModule servletModule,
+		ServletWebsocketModule servletModule,
 		ExecutorManager executorManager,
 		boolean httpSessionAvailable
 	) {

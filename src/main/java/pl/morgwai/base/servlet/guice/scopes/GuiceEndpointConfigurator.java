@@ -25,9 +25,10 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * Obtains {@code Endpoint} instances from {@link Injector#getInstance(Class) Guice} and ensures
  * their methods
  * {@link WebsocketEventContext#executeWithinSelf(Runnable) run within websocket Contexts}.
- * This ensures that all dependencies are injected and {@link Scope}s from {@link ServletModule}
- * ({@link ServletModule#containerCallScope}, {@link ServletModule#websocketConnectionScope} and
- * {@link ServletModule#httpSessionScope}) work properly.
+ * This ensures that all dependencies are injected and {@link Scope}s from {@link WebsocketModule}
+ * and {@link ServletWebsocketModule} ({@link WebsocketModule#containerCallScope},
+ * {@link WebsocketModule#websocketConnectionScope} and
+ * {@link ServletWebsocketModule#httpSessionScope}) work properly.
  * <p>
  * To use this class for client {@code Endpoints}, todo: javadoc </p>
  * <p>
