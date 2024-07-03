@@ -18,7 +18,7 @@ import pl.morgwai.base.guice.scopes.InjectionContext;
  * value of {@link #CUSTOM_SERIALIZATION_PARAM}, must be set to {@code "true"} either in
  * {@code web.xml} or programmatically before any request is served (for example in
  * {@link javax.servlet.ServletContextListener#contextInitialized(ServletContextEvent)}).</p>
- * @see ServletModule#httpSessionScope corresponding Scope
+ * @see ServletWebsocketModule#httpSessionScope corresponding Scope
  */
 public class HttpSessionContext extends InjectionContext implements HttpSessionActivationListener {
 

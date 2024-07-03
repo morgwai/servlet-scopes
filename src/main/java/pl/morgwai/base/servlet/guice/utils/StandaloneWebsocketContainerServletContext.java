@@ -8,11 +8,13 @@ import javax.servlet.*;
 import javax.servlet.ServletRegistration.Dynamic;
 import javax.servlet.descriptor.JspConfigDescriptor;
 
+import pl.morgwai.base.servlet.guice.scopes.ServletWebsocketModule;
+
 
 
 /**
  * A fake {@link ServletContext} useful for configuring
- * {@link pl.morgwai.base.servlet.guice.scopes.ServletModule} and
+ * {@link ServletWebsocketModule} and
  * {@link pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator} in standalone
  * websocket server apps.
  * Most methods throw an {@link UnsupportedOperationException} except the below ones:

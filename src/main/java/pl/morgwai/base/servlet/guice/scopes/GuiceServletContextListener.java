@@ -25,8 +25,8 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * Base class for app {@link ServletContextListener}s, creates and configures the app-wide
- * {@link Injector} and {@link ServletModule}, performs {@link GuiceServerEndpointConfigurator}
- * initialization.
+ * {@link Injector} and {@link ServletWebsocketModule}, performs
+ * {@link GuiceServerEndpointConfigurator} initialization.
  * Also performs a cleanup of {@link ServletContextTrackingExecutor}s and provides helper methods
  * for programmatically adding {@link Servlet}s, {@link Filter}s and websocket {@code Endpoints}.
  * <p>
@@ -67,26 +67,26 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * The app-wide {@link ServletModule}, for use in {@link #configureInjections()}.
+	 * The app-wide {@link ServletWebsocketModule}, for use in {@link #configureInjections()}.
 	 * Initialized with the result of {@link #createWebsocketModule(Set)}.
 	 */
-	protected final ServletModule servletModule =
-			new ServletModule(createWebsocketModule(getClientEndpointClasses()));
+	protected final ServletWebsocketModule servletModule =
+			new ServletWebsocketModule(createWebsocketModule(getClientEndpointClasses()));
 	/**
 	 * Reference to {@link #servletModule}'s
-	 * {@link ServletModule#containerCallScope containerCallScope}, for use in
+	 * {@link ServletWebsocketModule#containerCallScope containerCallScope}, for use in
 	 * {@link #configureInjections()}.
 	 */
 	protected final Scope containerCallScope = servletModule.containerCallScope;
 	/**
 	 * Reference to {@link #servletModule}'s
-	 * {@link ServletModule#httpSessionScope httpSessionScope}, for use in
+	 * {@link ServletWebsocketModule#httpSessionScope httpSessionScope}, for use in
 	 * {@link #configureInjections()}.
 	 */
 	protected final Scope httpSessionScope = servletModule.httpSessionScope;
 	/**
 	 * Reference to {@link #servletModule}'s
-	 * {@link ServletModule#websocketConnectionScope websocketConnectionScope}, for use in
+	 * {@link ServletWebsocketModule#websocketConnectionScope websocketConnectionScope}, for use in
 	 * {@link #configureInjections()}.
 	 */
 	protected final Scope websocketConnectionScope = servletModule.websocketConnectionScope;
@@ -264,7 +264,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * Adds at {@code urlPatterns} a {@link Filter} that ensures each incoming request has an
 	 * {@link javax.servlet.http.HttpSession} created.
 	 * This is necessary for websocket {@code Endpoints} that use
-	 * {@link ServletModule#httpSessionScope httpSessionScope}.
+	 * {@link ServletWebsocketModule#httpSessionScope httpSessionScope}.
 	 * <p>
 	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
 	 */

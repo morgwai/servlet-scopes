@@ -23,9 +23,10 @@ import pl.morgwai.base.guice.scopes.TrackableContext;
  * <b>separate</b> instance of the appropriate {@code ContainerCallContext} subclass.
  * <p>
  * Having a common base class for {@link ServletRequestContext} and {@link WebsocketEventContext}
- * allows to provide {@link ServletModule#containerCallScope container-call scoped} objects both in
- * {@link javax.servlet.Servlet}s and {@code Endpoints} without a need for 2 separate bindings.</p>
- * @see ServletModule#containerCallScope corresponding Scope
+ * allows to provide {@link WebsocketModule#containerCallScope container-call scoped} objects both
+ * in {@link javax.servlet.Servlet}s and {@code Endpoints} without a need for 2 separate bindings.
+ * </p>
+ * @see ServletWebsocketModule#containerCallScope corresponding Scope
  */
 public abstract class ContainerCallContext extends TrackableContext<ContainerCallContext> {
 
@@ -42,9 +43,9 @@ public abstract class ContainerCallContext extends TrackableContext<ContainerCal
 			return HttpSessionContext.of(getHttpSession());
 		} catch (NullPointerException e) {
 			throw new OutOfScopeException("no HttpSession present. See the javadoc for "
-					+ "ServletModule.httpSessionScope -> https://javadoc.io/doc/pl.morgwai."
-					+ "base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/"
-					+ "ServletModule.html#httpSessionScope");
+					+ "ServletWebsocketModule.httpSessionScope -> https://javadoc.io/doc/pl.morgwai"
+					+ ".base/servlet-scopes/latest/pl/morgwai/base/servlet/guice/scopes/"
+					+ "ServletWebsocketModule.html#httpSessionScope");
 		}
 	}
 

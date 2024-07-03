@@ -16,7 +16,7 @@ import pl.morgwai.base.guice.scopes.*;
  * Usually a single app-wide instance is created at the app startup.
  * @see GuiceServletContextListener#servletModule
  */
-public class ServletModule implements Module {
+public class ServletWebsocketModule implements Module {
 
 
 
@@ -63,10 +63,10 @@ public class ServletModule implements Module {
 
 
 
-	ServletModule(WebsocketModule websocketModule) {
+	ServletWebsocketModule(WebsocketModule websocketModule) {
 		this.websocketModule = websocketModule;
 		httpSessionScope = new InducedContextScope<>(
-			"ServletModule.httpSessionScope",
+			"ServletWebsocketModule.httpSessionScope",
 			websocketModule.ctxTracker,
 			ContainerCallContext::getHttpSessionContext
 		);
@@ -79,7 +79,7 @@ public class ServletModule implements Module {
 	}
 
 	// todo: javadoc
-	public ServletModule(ServletContext appDeployment, WebsocketModule websocketModule) {
+	public ServletWebsocketModule(ServletContext appDeployment, WebsocketModule websocketModule) {
 		this(websocketModule);
 		this.appDeployment = appDeployment;
 	}

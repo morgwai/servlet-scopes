@@ -34,7 +34,7 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 	final Capture<Integer> statusCapture = Capture.newInstance();
 
 	@Mock HttpServletRequest servletRequest;
-	final ServletModule servletModule = new ServletModule(new WebsocketModule());
+	final ServletWebsocketModule servletModule = new ServletWebsocketModule(new WebsocketModule());
 	final ExecutorManager executorManager = new ExecutorManager(servletModule.ctxBinder);
 	final ServletRequestContext requestCtx =
 			new ServletRequestContext(servletRequest, servletModule.ctxTracker);

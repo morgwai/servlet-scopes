@@ -33,7 +33,7 @@ public class ManualServletContextListener implements ServletContextListener {
 
 
 
-	ServletModule servletModule;
+	ServletWebsocketModule servletModule;
 	WebsocketPingerService pingerService;
 	ExecutorManager executorManager;
 
@@ -51,7 +51,7 @@ public class ManualServletContextListener implements ServletContextListener {
 				1
 			);
 			final ServletContext appDeployment = initialization.getServletContext();
-			servletModule = new ServletModule(
+			servletModule = new ServletWebsocketModule(
 				appDeployment,
 				new PingingWebsocketModule(pingerService)
 			);

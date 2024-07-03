@@ -13,6 +13,7 @@ import javax.websocket.RemoteEndpoint.Async;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
+import pl.morgwai.base.servlet.guice.scopes.ServletWebsocketModule;
 
 import static pl.morgwai.base.servlet.guice.scopes.tests.servercommon.Service.*;
 
@@ -113,13 +114,13 @@ public class EchoEndpoint {
 	 * <ul>
 	 *   <li>{@code name} - {@code value}</li>
 	 *   <li>{@link Service#CONTAINER_CALL} - hash of the
-	 *       {@link pl.morgwai.base.servlet.guice.scopes.ServletModule#containerCallScope
+	 *       {@link ServletWebsocketModule#containerCallScope
 	 *       containerCallScope}d instance of {@link Service}</li>
 	 *   <li>{@link Service#WEBSOCKET_CONNECTION} - hash of the
-	 *       {@link pl.morgwai.base.servlet.guice.scopes.ServletModule#websocketConnectionScope
+	 *       {@link ServletWebsocketModule#websocketConnectionScope
 	 *       websocketConnectionScope}d instance of {@link Service}</li>
 	 *   <li>{@link Service#HTTP_SESSION} - hash of the
-	 *       {@link pl.morgwai.base.servlet.guice.scopes.ServletModule#httpSessionScope
+	 *       {@link ServletWebsocketModule#httpSessionScope
 	 *       httpSessionScope}d instance of {@link Service}</li>
 	 * </ul>
 	 */
