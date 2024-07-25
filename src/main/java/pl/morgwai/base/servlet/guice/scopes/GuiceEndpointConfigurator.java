@@ -134,7 +134,8 @@ public class GuiceEndpointConfigurator {
 			.subclass(endpointClass)
 			.name(
 				GuiceEndpointConfigurator.class.getPackageName() + ".ProxyFor_"
-						+ endpointClass.getName().replace('.', '_')
+						+ endpointClass.getName().replace('.', '_').replace('$', '_') + '_'
+						+ (endpointClass.hashCode() & Integer.MAX_VALUE)  // strictlyPositive(hash)
 			)
 			.defineField(
 				INVOCATION_HANDLER_FIELD_NAME,
