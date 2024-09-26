@@ -44,12 +44,21 @@ public class RequestContextFilter implements Filter {
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 		final ServletRequestContext ctx;
-		if (request.getDispatcherType() == DispatcherType.REQUEST) {  // new request
-			ctx = new ServletRequestContext((HttpServletRequest) request, ctxTracker);
-			request.setAttribute(ServletRequestContext.class.getName(), ctx);
-		} else {  // async request dispatched from another thread
-			ctx = (ServletRequestContext)
-					request.getAttribute(ServletRequestContext.class.getName());
+		switch (request.getDispatcherType()) {
+			case REQUEST:
+				ctx = new ServletRequestContext((HttpServletRequest) request, ctxTracker);
+				request.setAttribute(ServletRequestContext.class.getName(), ctx);
+				break;
+			case ASYNC:
+				ctx = (ServletRequestContext)
+						request.getAttribute(ServletRequestContext.class.getName());
+				if (ctx == null) {
+					throw new ServletException(NO_CTX_FOR_ASYNC_REQUEST_MESSAGE
+							+ request.getAttribute(AsyncContext.ASYNC_REQUEST_URI));
+				}
+				break;
+			default:
+				throw new ServletException(ILLEGAL_DISPATCHER_TYPE_MESSAGE);
 		}
 		try {
 			ctx.executeWithinSelf(
@@ -64,4 +73,11 @@ public class RequestContextFilter implements Filter {
 			// result of wrapping with a Callable
 		}
 	}
+
+	static final String NO_CTX_FOR_ASYNC_REQUEST_MESSAGE = "Could not find a ServletRequestContext "
+			+ "for an asynchronously dispatched ServletRequest, probably it has not passed via "
+			+ "RequestContextFilter before being dispatched: make sure RequestContextFilter's "
+			+ "mappings cover its path: ";
+	static final String ILLEGAL_DISPATCHER_TYPE_MESSAGE =
+			"RequestContextFilter mapped for illegal DispatcherType";
 }
