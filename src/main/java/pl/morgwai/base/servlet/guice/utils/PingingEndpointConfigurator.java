@@ -124,19 +124,17 @@ public class PingingEndpointConfigurator extends GuiceEndpointConfigurator {
 	}
 
 	/**
-	 * Checks if {@code method} either is annotated with {@code annotationClass} or overrides the
-	 * {@link Endpoint} method given by {@code endpointMethodName}.
+	 * Checks if {@code method} or any of its prototypes is either annotated with
+	 * {@code annotationClass} or overrides the {@link Endpoint} method given by
+	 * {@code endpointMethodName}.
 	 */
 	private static boolean isEndpointLifecycleMethod(
 		Method method,
 		Class<? extends Annotation> annotationClass,
 		String endpointMethodName
 	) {
-		if (
-			method.isAnnotationPresent(annotationClass)
-			&& !Endpoint.class.isAssignableFrom(method.getDeclaringClass())
-		) {
-			return true;
+		if ( !Endpoint.class.isAssignableFrom(method.getDeclaringClass())) {
+			return isAnnotatedLifecycleMethod(method, annotationClass);
 		}
 
 		if ( !method.getName().equals(endpointMethodName)) return false;
@@ -146,5 +144,32 @@ public class PingingEndpointConfigurator extends GuiceEndpointConfigurator {
 		} catch (NoSuchMethodException e) {
 			return false;
 		}
+	}
+
+	/**
+	 * Checks if {@code method} or any of its prototypes are annotated with {@code annotationClass}.
+	 * This is a Jetty-style verification, however if {@code method} was called at all by a Tyrus
+	 * container, means it is directly annotated and this method will work properly anyway.
+	 * Theoretically some corner cases are possible when {@code method}'s prototype was annotated
+	 * with different lifecycle annotation than {@code method} itself, but these don't happen in
+	 * practice due to parameter incompatibilities.
+	 */
+	private static boolean isAnnotatedLifecycleMethod(
+		Method method,
+		Class<? extends Annotation> annotationClass
+	) {
+		if (method.isAnnotationPresent(annotationClass)) return true;
+		var classUnderScan = method.getDeclaringClass();
+		while ( !classUnderScan.equals(Object.class)) {
+			classUnderScan = classUnderScan.getSuperclass();
+			try {
+				var methodPrototypeUnderScan = classUnderScan.getDeclaredMethod(
+						method.getName(), method.getParameterTypes());
+				if (methodPrototypeUnderScan.isAnnotationPresent(annotationClass)) return true;
+			} catch (NoSuchMethodException e) {
+				return false;
+			}
+		}
+		return false;
 	}
 }
