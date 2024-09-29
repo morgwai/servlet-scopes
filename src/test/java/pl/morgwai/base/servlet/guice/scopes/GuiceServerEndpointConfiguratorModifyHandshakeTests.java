@@ -22,6 +22,8 @@ import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletCo
 
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.*;
+import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
+		.REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY;
 import static pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator.*;
 
 
@@ -89,6 +91,9 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 		mockDeployment.setAttribute(Injector.class.getName(), mockInjector);
 		expect(mockInjector.getInstance(ServletWebsocketModule.ctxTrackerKey))
 			.andReturn(ctxTracker)
+			.anyTimes();
+		expect(mockInjector.getInstance(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY))
+			.andReturn(false)
 			.anyTimes();
 	}
 

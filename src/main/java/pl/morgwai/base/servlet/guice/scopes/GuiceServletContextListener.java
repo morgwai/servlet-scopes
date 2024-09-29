@@ -20,6 +20,8 @@ import com.google.inject.*;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toList;
+import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
+		.REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM;
 
 
 
@@ -365,6 +367,9 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 							? "root-app" : "app at \"" + appDeployment.getContextPath() + '"';
 			log.info(deploymentName + " is being deployed");
 			servletModule.setAppDeployment(appDeployment);
+			servletModule.websocketModule.setRequireTopLevelMethodAnnotations(Boolean.parseBoolean(
+				appDeployment.getInitParameter(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM)
+			));
 			endpointContainer = (ServerContainer)
 					appDeployment.getAttribute(ServerContainer.class.getName());
 			appDeployment.addListener(new HttpSessionContext.SessionContextCreator());

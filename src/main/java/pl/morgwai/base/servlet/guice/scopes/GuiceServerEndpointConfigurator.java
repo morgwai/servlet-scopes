@@ -16,6 +16,9 @@ import javax.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.*;
 
+import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
+		.REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY;
+
 
 
 /**
@@ -192,7 +195,8 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	protected GuiceEndpointConfigurator newGuiceEndpointConfigurator(Injector injector) {
 		return new GuiceEndpointConfigurator(
 			injector,
-			injector.getInstance(WebsocketModule.ctxTrackerKey)
+			injector.getInstance(WebsocketModule.ctxTrackerKey),
+			injector.getInstance(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY)
 		) {
 			@Override
 			protected <ProxyT> ProxyT createEndpointProxyInstance(Class<ProxyT> proxyClass)

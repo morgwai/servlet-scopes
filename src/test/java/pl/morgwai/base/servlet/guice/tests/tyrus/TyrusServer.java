@@ -46,7 +46,7 @@ public class TyrusServer implements Server {
 		);
 		final var servletModule = new ServletWebsocketModule(
 			appDeployment,
-			new PingingWebsocketModule(pingerService)
+			new PingingWebsocketModule(pingerService, true)
 		);
 		executorManager = new ExecutorManager(servletModule.ctxBinder);
 

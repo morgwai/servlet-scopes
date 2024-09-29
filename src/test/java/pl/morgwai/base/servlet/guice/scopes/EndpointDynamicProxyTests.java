@@ -22,7 +22,7 @@ public abstract class EndpointDynamicProxyTests extends EndpointProxyTests {
 
 	@Override
 	protected void additionalSetup() {
-		configurator = new GuiceEndpointConfigurator(null, ctxTracker);
+		configurator = new GuiceEndpointConfigurator(null, ctxTracker, false);
 	}
 
 
