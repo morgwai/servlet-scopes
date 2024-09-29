@@ -9,6 +9,7 @@ import javax.websocket.*;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.name.Named;
 import pl.morgwai.base.guice.scopes.ContextTracker;
 import pl.morgwai.base.servlet.guice.scopes.ContainerCallContext;
 import pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator;
@@ -39,9 +40,10 @@ public class PingingEndpointConfigurator extends GuiceEndpointConfigurator {
 	public PingingEndpointConfigurator(
 		Injector injector,
 		ContextTracker<ContainerCallContext> ctxTracker,
+		@Named(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_NAME) boolean requireTopLevelMethodAnnotations,
 		@PingingClientEndpoint WebsocketPingerService pingerService
 	) {
-		super(injector, ctxTracker);
+		super(injector, ctxTracker, requireTopLevelMethodAnnotations);
 		this.pingerService = pingerService;
 	}
 

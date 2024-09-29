@@ -22,7 +22,7 @@ public class AnnotatedExtendingPingingEndpointDynamicProxyTests
 	@Override
 	public void additionalSetup() {
 		mockPingerServiceUtil = new MockPingerServiceUtil(mockPingerService, mockConnection);
-		configurator = new PingingEndpointConfigurator(null, ctxTracker, mockPingerService);
+		configurator = new PingingEndpointConfigurator(null, ctxTracker, false, mockPingerService);
 	}
 
 
