@@ -39,8 +39,8 @@ public class TyrusServer implements Server {
 		final var intervalFromProperty = System.getProperty(PING_INTERVAL_MILLIS_PROPERTY);
 		pingerService = new WebsocketPingerService(
 			intervalFromProperty != null
-				? Long.parseLong(intervalFromProperty)
-				: DEFAULT_PING_INTERVAL_MILLIS,
+					? Long.parseLong(intervalFromProperty)
+					: DEFAULT_PING_INTERVAL_MILLIS,
 			MILLISECONDS,
 			1
 		);
@@ -54,7 +54,7 @@ public class TyrusServer implements Server {
 		final var modules = new LinkedList<Module>();
 		modules.add(servletModule);
 		modules.add(new ServiceModule(servletModule, executorManager, false));
-		final Injector injector = Guice.createInjector(modules);
+		Guice.createInjector(modules);  // servletModule does static injection that stores injector
 
 		tyrus = new org.glassfish.tyrus.server.Server(
 			"localhost",

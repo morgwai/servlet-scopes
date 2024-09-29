@@ -1,8 +1,11 @@
 // Copyright 2024 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.utils;
 
+
+
 /**
- * An interface for {@code Endpoints} to get round-trip time reports upon receiving pongs.
+ * An interface for {@link PingingEndpointConfigurator pinging} {@code Endpoints} to receive
+ * round-trip time reports on each pong.
  */
 public interface RttObserver {
 

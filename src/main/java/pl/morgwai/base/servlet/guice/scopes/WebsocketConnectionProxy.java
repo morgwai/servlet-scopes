@@ -63,7 +63,8 @@ public class WebsocketConnectionProxy implements Session {
 
 
 	/**
-	 * Asks {@link ServiceLoader SPI}-provided factory to create a new proxy for {@code connection}.
+	 * Creates a new {@code Proxy} for {@code connection} using {@link ServiceLoader SPI}-provided
+	 * factory if available.
 	 * If there's no factory specific for the given {@link Session} implementation, then
 	 * {@link #WebsocketConnectionProxy(Session, ContextTracker)} is used.
 	 */
@@ -78,7 +79,7 @@ public class WebsocketConnectionProxy implements Session {
 
 
 
-	/** Constructs a new proxy for {@code connection}. */
+	/** Constructs a new generic {@code Proxy} for {@code connection}. */
 	protected WebsocketConnectionProxy(
 		Session connection,
 		ContextTracker<ContainerCallContext> ctxTracker
@@ -92,8 +93,8 @@ public class WebsocketConnectionProxy implements Session {
 
 
 	/**
-	 * Constructs a new proxy for a <b>remote</b> {@code connection}.
-	 * In case of remote connections, no attempt to retrieve an {@link HttpSession} is made.
+	 * Constructs a new {@code Proxy} for a <i>remote</i> {@code connection}.
+	 * In case of remote {@link Session}s no attempt to retrieve their {@link HttpSession}s is made.
 	 */
 	private WebsocketConnectionProxy(
 		Session connection,
@@ -104,6 +105,11 @@ public class WebsocketConnectionProxy implements Session {
 		this.ctxTracker = ctxTracker;
 		this.httpSession = null;
 	}
+
+	/**
+	 * For readability when using {@link #WebsocketConnectionProxy(Session, ContextTracker, Void)}.
+	 */
+	private static final Void REMOTE = null;
 
 
 
@@ -128,13 +134,13 @@ public class WebsocketConnectionProxy implements Session {
 		final var rawPeerConnections = wrappedConnection.getOpenSessions();
 		final var proxies = new HashSet<Session>(rawPeerConnections.size(), 1.0f);
 		for (final var peerConnection: rawPeerConnections) {
-			final var peerConnectionCtx = ((WebsocketConnectionContext)
+			final var peerConnectionCtx = (WebsocketConnectionContext)
 					peerConnection.getUserProperties()
-							.get(WebsocketConnectionContext.class.getName()));
+							.get(WebsocketConnectionContext.class.getName());
 			if (peerConnectionCtx.getConnection() == null) {
-				// peerConnection from another cluster node, that supports userProperties clustering
+				// peerConnection from another cluster node that supports userProperties clustering
 				peerConnectionCtx.connectionProxy =
-						new WebsocketConnectionProxy(peerConnection, ctxTracker, null);
+						new WebsocketConnectionProxy(peerConnection, ctxTracker, REMOTE);
 			}
 			proxies.add(peerConnectionCtx.getConnection());
 		}

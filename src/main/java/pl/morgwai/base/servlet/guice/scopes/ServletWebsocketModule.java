@@ -11,10 +11,13 @@ import pl.morgwai.base.guice.scopes.*;
 
 
 /**
- * Contains {@code Servlet} and websocket Guice {@link Scope}s, {@link ContextTracker}s and some
- * helper methods.
- * Usually a single app-wide instance is created at the app startup.
+ * Embeds a {@link WebsocketModule} and adds functionality for {@code Servlet} and websocket server
+ * containers.
+ * Most notably defines {@link #httpSessionScope} and setups
+ * {@link GuiceServerEndpointConfigurator}.
  * @see GuiceServletContextListener#servletModule
+ * @see pl.morgwai.base.servlet.guice.utils.PingingWebsocketModule
+ * @see pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext
  */
 public class ServletWebsocketModule implements Module {
 
@@ -41,28 +44,47 @@ public class ServletWebsocketModule implements Module {
 
 
 
+	/**
+	 * {@link WebsocketModule} from
+	 * {@link #ServletWebsocketModule(ServletContext, WebsocketModule) the constructor} param.
+	 */
 	public final WebsocketModule websocketModule;
 
-	// todo: javadoc
+	/** Reference to {@link WebsocketModule#ctxTracker websocketModule.ctxTracker}. */
 	public final ContextTracker<ContainerCallContext> ctxTracker;
+	/**
+	 * Reference to {@link WebsocketModule#containerCallScope websocketModule.containerCallScope}.
+	 */
 	public final Scope containerCallScope;
+	/**
+	 * Reference to
+	 * {@link WebsocketModule#websocketConnectionScope websocketModule.websocketConnectionScope}.
+	 */
 	public final Scope websocketConnectionScope;
-	public final List<ContextTracker<?>> allTrackers;
-	public final ContextBinder ctxBinder;
 
 
 
-	// todo: javadoc
+	/**
+	 * {@link ServletContext} from
+	 * {@link #ServletWebsocketModule(ServletContext, WebsocketModule) the constructor} param.
+	 */
 	public ServletContext getAppDeployment() { return appDeployment; }
 	ServletContext appDeployment;
 
-	void setAppDeployment(ServletContext deployment) {
-		if (appDeployment != null) throw new IllegalStateException("appDeployment already set");
-		appDeployment = deployment;
+	/** For {@link GuiceServletContextListener}. */
+	void setAppDeployment(ServletContext appDeployment) {
+		assert this.appDeployment == null : "appDeployment already set";
+		this.appDeployment = appDeployment;
 	}
 
 
 
+	public ServletWebsocketModule(ServletContext appDeployment, WebsocketModule websocketModule) {
+		this(websocketModule);
+		this.appDeployment = appDeployment;
+	}
+
+	/** For {@link GuiceServletContextListener}. */
 	ServletWebsocketModule(WebsocketModule websocketModule) {
 		this.websocketModule = websocketModule;
 		httpSessionScope = new InducedContextScope<>(
@@ -78,15 +100,19 @@ public class ServletWebsocketModule implements Module {
 		ctxBinder = websocketModule.ctxBinder;
 	}
 
-	// todo: javadoc
-	public ServletWebsocketModule(ServletContext appDeployment, WebsocketModule websocketModule) {
-		this(websocketModule);
-		this.appDeployment = appDeployment;
-	}
 
 
-
-	// todo: javadoc
+	/**
+	 * {@link Binder#install(Module) Installs} {@link #websocketModule} and
+	 * {@link Binder#requestStaticInjection(Class[]) injects static fields} of
+	 * {@link GuiceServerEndpointConfigurator}.
+	 * Additionally binds some infrastructure stuff:
+	 * <ul>
+	 *   <li>{@link ServletContext} to {@link #getAppDeployment() appDeployment}</li>
+	 *   <li>{@link HttpSessionContext} to a {@link Provider} returning instance current for the
+	 *       calling {@code Thread}</li>
+	 * </ul>
+	 */
 	@Override
 	public void configure(Binder binder) {
 		if (appDeployment == null) throw new IllegalStateException("appDeployment not set");
@@ -99,6 +125,11 @@ public class ServletWebsocketModule implements Module {
 
 
 
+	/** Reference to {@link WebsocketModule#allTrackers websocketModule.allTrackers}. */
+	public final List<ContextTracker<?>> allTrackers;
+	/** Reference to {@link WebsocketModule#ctxBinder websocketModule.ctxBinder}. */
+	public final ContextBinder ctxBinder;
+
 	/** Calls {@link WebsocketModule#getActiveContexts()}. */
 	public List<TrackableContext<?>> getActiveContexts() {
 		return websocketModule.getActiveContexts();
@@ -106,8 +137,10 @@ public class ServletWebsocketModule implements Module {
 
 
 
+	/** Reference to {@link WebsocketModule#ctxTrackerKey websocketModule.ctxTrackerKey}. */
 	public static final Key<ContextTracker<ContainerCallContext>> ctxTrackerKey =
 			WebsocketModule.ctxTrackerKey;
+	/** Reference to {@link WebsocketModule#allTrackersKey websocketModule.allTrackersKey}. */
 	public static final Key<List<ContextTracker<?>>> allTrackersKey =
 			WebsocketModule.allTrackersKey;
 }

@@ -19,12 +19,10 @@ import com.google.inject.*;
 
 
 /**
- * Obtains {@code Endpoint} instances from {@link Injector#getInstance(Class) Guice} and ensures
- * their methods
- * {@link WebsocketEventContext#executeWithinSelf(Runnable) run within websocket Contexts}.
- * This way, all dependencies are injected and {@link Scope}s from {@link ServletWebsocketModule}
- * ({@link WebsocketModule#containerCallScope}, {@link WebsocketModule#websocketConnectionScope} and
- * {@link ServletWebsocketModule#httpSessionScope}) work properly.
+ * {@link GuiceEndpointConfigurator#getProxiedEndpointInstance(Class) Obtains} {@code Endpoint}
+ * instances from a {@link GuiceEndpointConfigurator}.
+ * To enable this {@code Configurator}, a {@link ServletWebsocketModule} must be passed to
+ * {@link Guice#createInjector(com.google.inject.Module...)} first.
  * <p>
  * To use this {@code Configurator} for programmatically added {@code Endpoints}, create an instance
  * using {@link #GuiceServerEndpointConfigurator(ServletContext)} and pass it to the
@@ -61,11 +59,8 @@ import com.google.inject.*;
  *     // other methods here...
  * }</pre>
  * <p>
- * <b>NOTE:</b> methods annotated with @{@link OnOpen} <b>must</b> have a {@link Session} param.</p>
- * <p>
- * <b>NOTE:</b> due to the way many debuggers work, it is <b>strongly</b> recommended for
- * {@link Object#toString() toString()} methods of {@code Endpoints} to work properly even when
- * called outside of any {@code Context}.</p>
+ * At an app shutdown {@link #deregisterDeployment(ServletContext)} must be called to avoid resource
+ * leaks (if an app uses {@link GuiceServletContextListener} then this is done automatically).</p>
  */
 public class GuiceServerEndpointConfigurator extends Configurator {
 
@@ -147,14 +142,32 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	 * Called either by {@link #GuiceServerEndpointConfigurator(ServletContext)} or by
 	 * {@link #modifyHandshake(ServerEndpointConfig, HandshakeRequest, HandshakeResponse)} in case
 	 * of container-created instances for {@code Endpoints} annotated with {@link ServerEndpoint}.
+	 * @throws NullPointerException if {@code appDeployment} does not contain an {@link Injector}
+	 *     {@link ServletContext#getAttribute(String) attribute}.
+	 * @throws ClassCastException if {@link Injector}
+	 *     {@link ServletContext#getAttribute(String) attribute} of {@code appDeployment} is not an
+	 *     {@link Injector}.
 	 */
 	void initialize(ServletContext appDeployment) {
 		backingConfigurator = newGuiceEndpointConfigurator(
 				(Injector) appDeployment.getAttribute(Injector.class.getName()));
+		// this.appDeployment is used fot double-checked locking in modifyHandshake(...), so
+		// the below assignment must be the last statement of this method
 		this.appDeployment = appDeployment;
 	}
 
-	// todo: javadoc
+
+
+	/**
+	 * Creates a new {@link GuiceEndpointConfigurator} with
+	 * {@link GuiceEndpointConfigurator#createEndpointProxyInstance(Class)
+	 * createEndpointProxyInstance(...)} method overridden to call
+	 * {@link #createEndpointProxyInstance(Class)}.
+	 * Obtains all arguments required by constructor from {@code injector}.
+	 * @return by default an instance of anonymous subclass of {@link GuiceEndpointConfigurator},
+	 *     may be overridden if more specialized implementation is needed.
+	 * @throws NullPointerException if {@code injector} is {@code null}.
+	 */
 	protected GuiceEndpointConfigurator newGuiceEndpointConfigurator(Injector injector) {
 		return new GuiceEndpointConfigurator(
 			injector,
@@ -168,7 +181,9 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 		};
 	}
 
-	// todo: javadoc
+	/**
+	 * Delegates a {@code proxyClass} instance creation to container's default {@link Configurator}.
+	 */
 	protected final <ProxyT> ProxyT createEndpointProxyInstance(Class<ProxyT> proxyClass)
 			throws InstantiationException, InvocationTargetException {
 		try {
@@ -183,12 +198,9 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 
 
 	/**
-	 * Obtains a server instance of {@code endpointClass} from
-	 * {@link Injector#getInstance(Class) Guice} and creates a context-aware proxy for it.
-	 * The proxy ensures that {@code Endpoint} lifecycle methods are executed within
-	 * {@link WebsocketEventContext}, {@link WebsocketConnectionContext} and if an
-	 * {@link HttpSession} is present, then also {@link HttpSessionContext}.
-	 * @return a proxy for the newly created {@code endpointClass} instance.
+	 * {@link GuiceEndpointConfigurator#getProxiedEndpointInstance(Class) Obtains} an instance of
+	 * {@code endpointClass} wrapped with a {@link #createEndpointProxyInstance(Class) server}
+	 * {@link GuiceEndpointConfigurator#getProxyClass(Class) dynamic context-aware proxy}.
 	 */
 	@Override
 	public <EndpointT> EndpointT getEndpointInstance(Class<EndpointT> endpointClass)
@@ -197,17 +209,14 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 			return backingConfigurator.getProxiedEndpointInstance(endpointClass);
 		} catch (Exception e) {
 			log.log(Level.SEVERE, "Endpoint instantiation failed", e);
-			if (e instanceof IllegalArgumentException) e.printStackTrace(); // signal obvious bug
+			if (e instanceof IllegalArgumentException) e.printStackTrace(); // signal an obvious bug
 			throw new InstantiationException(e.toString());
 		}
 	}
 
 
 
-	/**
-	 * Returns a dynamic class of a context-aware proxy for {@code endpointClass}.
-	 * Exposed for proxy class pre-building in {@link javax.servlet.ServletContextListener}s.
-	 */
+	/** See {@link GuiceEndpointConfigurator#getProxyClass(Class)}. */
 	public <EndpointT> Class<? extends EndpointT> getProxyClass(Class<EndpointT> endpointClass) {
 		return backingConfigurator.getProxyClass(endpointClass);
 	}
