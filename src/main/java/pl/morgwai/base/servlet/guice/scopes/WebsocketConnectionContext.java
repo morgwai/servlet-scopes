@@ -15,7 +15,7 @@ import pl.morgwai.base.guice.scopes.InjectionContext;
  * <p>
  * Instances are stored in {@link Session#getUserProperties() user properites} under
  * {@link Class#getName() fully-qualified name} of this class.</p>
- * @see ServletWebsocketModule#websocketConnectionScope corresponding Scope
+ * @see WebsocketModule#websocketConnectionScope corresponding Scope
  */
 public class WebsocketConnectionContext extends InjectionContext {
 

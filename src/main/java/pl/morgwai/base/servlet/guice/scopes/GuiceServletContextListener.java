@@ -44,21 +44,22 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Returns a {@code Set} of client {@code Endpoint} classes that should be
-	 * by {@link WebsocketModule#WebsocketModule(Set) bound for injection} in
+	 * Returns client {@code Endpoint} classes that will be
+	 * {@link WebsocketModule#WebsocketModule(Set) bound for injection} in
 	 * {@link #createWebsocketModule(Set) the app-wide WebsocketModule}.
+	 * Called by constructor.
 	 * @return by default an empty {@code Set}, may be overridden in subclasses.
 	 */
 	protected Set<Class<?>> getClientEndpointClasses() { return Set.of(); }
 
-
-
 	/**
 	 * Creates the app-wide {@link WebsocketModule} passed to {@link #servletModule}.
+	 * Called by the implicit constructor.
 	 * @param clientEndpointClasses the result of {@link #getClientEndpointClasses()} that should be
 	 *     passed to {@link WebsocketModule#WebsocketModule(Set) WebsocketModule's constructor}.
-	 * @return by default a new {@link WebsocketModule}, may be overridden to return some more
-	 *     specific implementations if needed.
+	 * @return by default a new {@link WebsocketModule}, may be overridden if more specialized
+	 *     implementation is needed.
+	 * @see pl.morgwai.base.servlet.guice.utils.PingingWebsocketModule
 	 */
 	protected WebsocketModule createWebsocketModule(Set<Class<?>> clientEndpointClasses) {
 		return new WebsocketModule(clientEndpointClasses);
@@ -68,7 +69,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/**
 	 * The app-wide {@link ServletWebsocketModule}, for use in {@link #configureInjections()}.
-	 * Initialized with the result of {@link #createWebsocketModule(Set)}.
+	 * Initialized with the result of {@link #createWebsocketModule(Set)} by constructor.
 	 */
 	protected final ServletWebsocketModule servletModule =
 			new ServletWebsocketModule(createWebsocketModule(getClientEndpointClasses()));
@@ -91,7 +92,16 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 */
 	protected final Scope websocketConnectionScope = servletModule.websocketConnectionScope;
 
-	// todo: javadoc
+
+
+	/**
+	 * An {@link ExecutorManager} that will be
+	 * {@link ExecutorManager#awaitTerminationOfAllExecutors(long, TimeUnit) terminated}
+	 * automatically in {@link #contextDestroyed(ServletContextEvent)}.
+	 * For use in {@link #configureInjections()}.
+	 * @see #getExecutorsTerminationTimeout()
+	 * @see #handleUnterminatedExecutors(List)
+	 */
 	protected final ExecutorManager executorManager = new ExecutorManager(servletModule.ctxBinder);
 
 
@@ -111,23 +121,23 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Creates {@link Module}s that configure bindings for user-defined components.
-	 * The result will be passed to {@link #createInjector(LinkedList)}. {@link #servletModule} and
-	 * other internal {@code Modules} will be added automatically to the list.
+	 * Creates {@link Module}s with bindings for user-defined components.
+	 * Called by {@link #contextInitialized(ServletContextEvent)} right after {@link #appDeployment}
+	 * and {@link #deploymentName} are initialized. The result will be passed to
+	 * {@link #createInjector(LinkedList)}.
+	 * {@link #servletModule} and other internal {@code Modules} will be added automatically to the
+	 * result.
 	 * <p>
 	 * Implementations may use {@link com.google.inject.Scope}s,
-	 * {@link pl.morgwai.base.guice.scopes.ContextTracker}s and helper methods from
-	 * {@link #servletModule} and config data from {@link #appDeployment} when defining
-	 * {@link Module}s.</p>
+	 * {@link pl.morgwai.base.guice.scopes.ContextTracker}s and helpers from {@link #servletModule}
+	 * and {@link #appDeployment} data when defining {@link Module}s.</p>
 	 */
 	protected abstract LinkedList<Module> configureInjections() throws Exception;
-
-
 
 	/**
 	 * The app-wide {@link Injector}.
 	 * For use in {@link #configureServletsFiltersEndpoints()}. Initialized with the result of
-	 * {@link #createInjector(LinkedList)}.
+	 * {@link #createInjector(LinkedList)} by {@link #contextInitialized(ServletContextEvent)}.
 	 * <p>
 	 * The app-wide {@code Injector} is also stored as a
 	 * {@link ServletContext#getAttribute(String) deployment attribute} under
@@ -137,9 +147,12 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/**
 	 * Creates {@link #injector the app-wide Injector}.
-	 * This method is called once by {@link #contextInitialized(ServletContextEvent)}. By default it
-	 * calls {@link Guice#createInjector(Iterable) Guice.createInjector(modules)}. May be overridden
-	 * if any additional customizations are required.
+	 * Called by {@link #contextInitialized(ServletContextEvent)}.
+	 * @param modules the result of {@link #configureInjections()} plus {@link #servletModule} and
+	 *      some other infrastructure {@link Module}s.
+	 * @return by default the result of
+	 *     {@link Guice#createInjector(Iterable) Guice.createInjector(modules)}. May be overridden
+	 *     if any additional customizations are needed.
 	 */
 	protected Injector createInjector(LinkedList<Module> modules) {
 		return Guice.createInjector(modules);
@@ -148,9 +161,15 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
+	 * {@code Endpoint} container reference for use in {@link #configureServletsFiltersEndpoints()}.
+	 */
+	protected ServerContainer endpointContainer;
+
+	/**
 	 * The {@link Configurator} instance used by {@link #addEndpoint(Class, String)} to create
-	 * {@code Endpoint} instances. Initialized with the result of
-	 * {@link #createEndpointConfigurator(ServletContext)}.
+	 * {@code Endpoint} instances.
+	 * Initialized with the result of {@link #createEndpointConfigurator(ServletContext)} by
+	 * {@link #contextInitialized(ServletContextEvent)}.
 	 * <p>
 	 * Note that this instance will be shared among all {@code Endpoints} created by
 	 * {@link #addEndpoint(Class, String)}, but {@code Endpoints} annotated with
@@ -160,25 +179,54 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	protected GuiceServerEndpointConfigurator endpointConfigurator;
 
 	/**
-	 * Creates the {@link Configurator} that will be used by {@link #addEndpoint(Class, String)}.
-	 * This method is called once in {@link #contextInitialized(ServletContextEvent)} to initialize
-	 * {@link #endpointConfigurator}.
-	 * <p>
-	 * By default a new {@link GuiceServerEndpointConfigurator} is returned. This method may be
-	 * overridden if a more specialized configurator needs to be used.</p>
+	 * Creates the {@link Configurator} that will be used by {@link #addEndpoint(Class, String)}
+	 * ({@link #endpointConfigurator}).
+	 * Called by {@link #contextInitialized(ServletContextEvent)}.
+	 * @return by default a new {@link GuiceServerEndpointConfigurator}. May be
+	 *     overridden if a more specialized implementation is needed.
+	 * @see pl.morgwai.base.servlet.guice.utils.PingingServerEndpointConfigurator
 	 */
 	protected GuiceServerEndpointConfigurator createEndpointConfigurator(
 			ServletContext appDeployment) {
 		return new GuiceServerEndpointConfigurator(appDeployment);
 	}
 
+	/**
+	 * Adds an {@code Endpoint} using {@link #endpointConfigurator}.
+	 * Pre-builds a dynamic proxy class for {@code endpointClass} in advance.
+	 * </p>
+	 * For use in {@link #configureServletsFiltersEndpoints()}. Useful mostly for unannotated
+	 * {@code Endpoint}s extending {@link javax.websocket.Endpoint}.</p>
+	 */
+	protected void addEndpoint(Class<?> endpointClass, String path) throws DeploymentException {
+		addEndpoint(endpointClass, path, endpointConfigurator);
+		endpointConfigurator.getProxyClass(endpointClass);  // pre-build dynamic proxy class
+	}
+
+	/**
+	 * Adds an {@code Endpoint} using {@code configurator}.
+	 * </p>
+	 * For use in {@link #configureServletsFiltersEndpoints()}. Useful mostly for unannotated
+	 * {@code Endpoint}s extending {@link javax.websocket.Endpoint}.</p>
+	 */
+	protected void addEndpoint(Class<?> endpointClass, String path, Configurator configurator)
+		throws DeploymentException {
+		endpointContainer.addEndpoint(
+			ServerEndpointConfig.Builder
+				.create(endpointClass, path)
+				.configurator(configurator)
+				.build()
+		);
+		log.info(deploymentName + ": added Endpoint " + endpointClass.getSimpleName());
+	}
+
 
 
 	/**
 	 * {@link ServletContext#createServlet(Class) Creates a Servet} of {@code servletClass} class,
-	 * {@link ServletContext#addServlet(String, Servlet) adds it} with {@code name},
-	 * {@link Registration.Dynamic#setAsyncSupported(boolean) async support} and
-	 * {@link Injector#injectMembers(Object) injected dependencies} at
+	 * {@link Injector#injectMembers(Object) injects its dependencies} and
+	 * {@link ServletContext#addServlet(String, Servlet) adds it} with
+	 * {@link Registration.Dynamic#setAsyncSupported(boolean) async support} under {@code name} at
 	 * {@link ServletRegistration#addMapping(String...) urlPatterns}.
 	 * <p>
 	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
@@ -200,7 +248,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * {@link ServletContext#addFilter(String, Filter) Adds} {@code filter} with {@code name},
+	 * {@link ServletContext#addFilter(String, Filter) Adds} {@code filter} under {@code name} with
 	 * {@link Registration.Dynamic#setAsyncSupported(boolean) async support} and
 	 * {@link Injector#injectMembers(Object) injected dependencies}.
 	 * Mappings should be added afterwards with
@@ -219,9 +267,9 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/**
 	 * {@link ServletContext#createFilter(Class) Creates a Filter} of {@code filterClass} class,
-	 * {@link ServletContext#addFilter(String, Filter) Adds it} with {@code name},
-	 * {@link Registration.Dynamic#setAsyncSupported(boolean) async support} and
-	 * {@link Injector#injectMembers(Object) injected dependencies} at
+	 * {@link Injector#injectMembers(Object) injects its dependencies} and
+	 * {@link ServletContext#addFilter(String, Filter) adds it} with,
+	 * {@link Registration.Dynamic#setAsyncSupported(boolean) async support} under {@code name} at
 	 * {@link FilterRegistration.Dynamic#addMappingForUrlPatterns(EnumSet, boolean, String...)
 	 * urlPatterns} with {@code dispatcherTypes}.
 	 * <p>
@@ -242,9 +290,9 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/**
 	 * {@link ServletContext#createFilter(Class) Creates a Filter} of {@code filterClass} class,
-	 * {@link ServletContext#addFilter(String, Filter) Adds it} with {@code name},
-	 * {@link Registration.Dynamic#setAsyncSupported(boolean) async support} and
-	 * {@link Injector#injectMembers(Object) injected dependencies} at
+	 * {@link Injector#injectMembers(Object) injects its dependencies} and
+	 * {@link ServletContext#addFilter(String, Filter) adds it} with,
+	 * {@link Registration.Dynamic#setAsyncSupported(boolean) async support} under {@code name} at
 	 * {@link FilterRegistration.Dynamic#addMappingForUrlPatterns(EnumSet, boolean, String...)
 	 * urlPatterns} with {@link DispatcherType#REQUEST}.
 	 * <p>
@@ -278,42 +326,6 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * {@code Endpoint} container reference for use in {@link #configureServletsFiltersEndpoints()}.
-	 */
-	protected ServerContainer endpointContainer;
-
-	/**
-	 * Adds an {@code Endpoint} using {@link #endpointConfigurator}.
-	 * Pre-builds a dynamic proxy class for {@code endpointClass} in advance. For use in
-	 * {@link #configureServletsFiltersEndpoints()}.
-	 * </p>
-	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.</p>
-	 */
-	protected void addEndpoint(Class<?> endpointClass, String path) throws DeploymentException {
-		addEndpoint(endpointClass, path, endpointConfigurator);
-		endpointConfigurator.getProxyClass(endpointClass);  // pre-build dynamic proxy class
-	}
-
-	/**
-	 * Adds an {@code Endpoint} using {@code configurator}.
-	 * For use in {@link #configureServletsFiltersEndpoints()}.
-	 * <p>
-	 * Useful mostly for unannotated endpoints extending {@link javax.websocket.Endpoint}.</p>
-	 */
-	protected void addEndpoint(Class<?> endpointClass, String path, Configurator configurator)
-			throws DeploymentException {
-		endpointContainer.addEndpoint(
-			ServerEndpointConfig.Builder
-				.create(endpointClass, path)
-				.configurator(configurator)
-				.build()
-		);
-		log.info(deploymentName + ": added Endpoint " + endpointClass.getSimpleName());
-	}
-
-
-
-	/**
 	 * Programmatically adds {@link Servlet}s, {@link Filter}s, websocket {@code Endpoints} and
 	 * performs any other setup required by the given app.
 	 * Called at the end of {@link #contextInitialized(ServletContextEvent)}, may use
@@ -328,13 +340,19 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Calls {@link #configureInjections()}, {@link #createInjector(LinkedList) creates the
-	 * app-wide Injector} and calls {@link #configureServletsFiltersEndpoints()}.
-	 * Also creates and installs all other infrastructure elements such as
-	 * {@link #appDeployment}, {@link #endpointContainer}, {@link RequestContextFilter} etc and
-	 * stores {@link #injector} as a
-	 * {@link ServletContext#setAttribute(String, Object) deployment attribute} under
-	 * {@link Class#getName() fully-qualified name} of {@link Injector} class.
+	 * Initializes the app.
+	 * The exact sequence of events is as follows:
+	 * <ol>
+	 *   <li>Initializes {@link #appDeployment} with a reference from {@code initialization} event,
+	 *       then initializes {@link #deploymentName} and {@link #endpointContainer}.</li>
+	 *   <li>Calls {@link #configureInjections()}.</li>
+	 *   <li>Initializes {@link #injector} by passing {@link Module}s from the previous point and
+	 *       {@link #servletModule} to {@link #createInjector(LinkedList)}.</li>
+	 *   <li>Initializes {@link #endpointConfigurator} with
+	 *       {@link #createEndpointConfigurator(ServletContext)}.</li>
+	 *   <li>Installs {@link RequestContextFilter}.</li>
+	 *   <li>Calls {@link #configureServletsFiltersEndpoints()}.</li>
+	 * </ol>
 	 */
 	@Override
 	public final void contextInitialized(ServletContextEvent initialization) {
@@ -344,7 +362,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			deploymentName = (nameFromDescriptor != null && !nameFromDescriptor.isBlank())
 					? nameFromDescriptor
 					: appDeployment.getContextPath().isEmpty()
-							? "rootApp" : "app at " + appDeployment.getContextPath();
+							? "root-app" : "app at \"" + appDeployment.getContextPath() + '"';
 			log.info(deploymentName + " is being deployed");
 			servletModule.setAppDeployment(appDeployment);
 			endpointContainer = (ServerContainer)
@@ -391,8 +409,6 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	static final long DEFAULT_EXECUTORS_TERMINATION_TIMEOUT_SECONDS = 5L;
 
-
-
 	/**
 	 * Handles executors that failed to terminate in {@link #contextDestroyed(ServletContextEvent)}.
 	 * By default calls {@link java.util.concurrent.ExecutorService#shutdownNow() shutdownNow()} for
@@ -420,11 +436,18 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * {@link ExecutorManager#shutdownAllExecutors() Shutdowns} and
-	 * {@link ExecutorManager#awaitTerminationOfAllExecutors(long, TimeUnit) awaits termination all
-	 * Executors} created by {@link #servletModule}.
-	 * If after the timeout returned by {@link #getExecutorsTerminationTimeout()} not all
-	 * {@code Executors} are terminated, calls {@link #handleUnterminatedExecutors(List)}.
+	 * Shutdowns the app.
+	 * The exact sequence of events is as follows:
+	 * <ol>
+	 *   <li>calls {@link GuiceServerEndpointConfigurator#deregisterDeployment(ServletContext)}</li>
+	 *   <li>{@link ExecutorManager#shutdownAllExecutors() shutdowns} {@link #executorManager} and
+	 *       {@link ExecutorManager#awaitTerminationOfAllExecutors(long, TimeUnit) awaits its
+	 *       termination} passing the result of {@link #getExecutorsTerminationTimeout()} as timeout
+	 *       param</li>
+	 *   <li>passes {@code Executor}s that failed to terminate (if any) to
+	 *       {@link #handleUnterminatedExecutors(List)}</li>
+	 *   <li>calls all {@link #addShutdownHook(Runnable) registered shutdown hooks}</li>
+	 * </ol>
 	 */
 	@Override
 	public final void contextDestroyed(ServletContextEvent destruction) {

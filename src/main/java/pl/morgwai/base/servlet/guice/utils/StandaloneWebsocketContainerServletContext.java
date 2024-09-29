@@ -8,27 +8,24 @@ import javax.servlet.*;
 import javax.servlet.ServletRegistration.Dynamic;
 import javax.servlet.descriptor.JspConfigDescriptor;
 
-import pl.morgwai.base.servlet.guice.scopes.ServletWebsocketModule;
-
 
 
 /**
  * A fake {@link ServletContext} useful for configuring
- * {@link ServletWebsocketModule} and
- * {@link pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator} in standalone
- * websocket server apps.
+ * {@link pl.morgwai.base.servlet.guice.scopes.ServletWebsocketModule} in standalone websocket
+ * server apps.
  * Most methods throw an {@link UnsupportedOperationException} except the below ones:
  * <ul>
- *     <li>{@link #getContextPath()}</li>
- *     <li>{@link #getContext(String)}</li>
- *     <li>{@link #getServletContextName()}</li>
- *     <li>{@link #getVirtualServerName()}</li>
  *     <li>{@link #getAttribute(String)}</li>
  *     <li>{@link #getAttributeNames()}</li>
- *     <li>{@link #setAttribute(String, Object)}</li>
- *     <li>{@link #removeAttribute(String)}</li>
+ *     <li>{@link #getContext(String)}</li>
+ *     <li>{@link #getContextPath()}</li>
  *     <li>{@link #getInitParameter(String)}</li>
  *     <li>{@link #getInitParameterNames()}</li>
+ *     <li>{@link #getServletContextName()}</li>
+ *     <li>{@link #getVirtualServerName()}</li>
+ *     <li>{@link #removeAttribute(String)}</li>
+ *     <li>{@link #setAttribute(String, Object)}</li>
  *     <li>{@link #setInitParameter(String, String)}</li>
  * </ul>
  */
@@ -36,32 +33,14 @@ public class StandaloneWebsocketContainerServletContext implements ServletContex
 
 
 
+	@Override public String getContextPath() { return contextPath; }
 	final String contextPath;
+
+	@Override public String getServletContextName() { return servletContextName; }
 	final String servletContextName;
+
+	@Override public String getVirtualServerName() { return virtualServerName; }
 	final String virtualServerName;
-	final Map<String, Object> attributes = new HashMap<>(5);
-	final Map<String, String> initParams = new HashMap<>(5);
-
-
-
-	/**
-	 * Calls {@link #StandaloneWebsocketContainerServletContext(String, String, String)
-	 * this(contextPath, "app at " + contextPath, null)}.
-	 */
-	public StandaloneWebsocketContainerServletContext(String contextPath) {
-		this(contextPath, "app at " + contextPath, null);
-	}
-
-
-
-	/**
-	 * Calls {@link #StandaloneWebsocketContainerServletContext(String, String, String)
-	 * this(contextPath, servletContextName, null)}.
-	 */
-	public StandaloneWebsocketContainerServletContext(String contextPath, String servletContextName)
-	{
-		this(contextPath, servletContextName, null);
-	}
 
 
 
@@ -81,11 +60,21 @@ public class StandaloneWebsocketContainerServletContext implements ServletContex
 		this.virtualServerName = virtualServerName;
 	}
 
+	/**
+	 * Calls {@link #StandaloneWebsocketContainerServletContext(String, String, String)
+	 * this(contextPath, "app at " + contextPath, null)}.
+	 */
+	public StandaloneWebsocketContainerServletContext(String contextPath) {
+		this(contextPath, "app at " + contextPath, null);
+	}
 
-
-	@Override
-	public String getContextPath() {
-		return contextPath;
+	/**
+	 * Calls {@link #StandaloneWebsocketContainerServletContext(String, String, String)
+	 * this(contextPath, servletContextName, null)}.
+	 */
+	public StandaloneWebsocketContainerServletContext(String contextPath, String servletContextName)
+	{
+		this(contextPath, servletContextName, null);
 	}
 
 
@@ -98,40 +87,22 @@ public class StandaloneWebsocketContainerServletContext implements ServletContex
 
 
 
-	@Override
-	public String getServletContextName() {
-		return servletContextName;
-	}
-
-
-
-	@Override
-	public String getVirtualServerName() {
-		return virtualServerName;
-	}
-
-
+	final Map<String, Object> attributes = new HashMap<>(5);
 
 	@Override
 	public Object getAttribute(String name) {
 		return attributes.get(name);
 	}
 
-
-
 	@Override
 	public Enumeration<String> getAttributeNames() {
 		return Collections.enumeration(attributes.keySet());
 	}
 
-
-
 	@Override
 	public void setAttribute(String name, Object object) {
 		attributes.put(name, object);
 	}
-
-
 
 	@Override
 	public void removeAttribute(String name) {
@@ -140,19 +111,17 @@ public class StandaloneWebsocketContainerServletContext implements ServletContex
 
 
 
+	final Map<String, String> initParams = new HashMap<>(5);
+
 	@Override
 	public String getInitParameter(String name) {
 		return initParams.get(name);
 	}
 
-
-
 	@Override
 	public Enumeration<String> getInitParameterNames() {
 		return Collections.enumeration(initParams.keySet());
 	}
-
-
 
 	@Override public boolean setInitParameter(String name, String value) {
 		if (initParams.containsKey(name)) return false;
@@ -162,7 +131,7 @@ public class StandaloneWebsocketContainerServletContext implements ServletContex
 
 
 
-	// all the other below methods throw UnsupportedOperationException
+	// all the other below methods throw an UnsupportedOperationException
 
 	@Override public int getMajorVersion() { throw new UnsupportedOperationException(); }
 	@Override public int getMinorVersion() { throw new UnsupportedOperationException(); }

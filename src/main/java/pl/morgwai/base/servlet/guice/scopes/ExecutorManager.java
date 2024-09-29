@@ -10,7 +10,11 @@ import pl.morgwai.base.utils.concurrent.Awaitable;
 
 
 
-// todo: javadoc
+/**
+ * Utility that helps to automatically shutdown its created {@link ServletContextTrackingExecutor}s
+ * at an app shutdown.
+ * @see GuiceServletContextListener#executorManager
+ */
 public class ExecutorManager {
 
 
@@ -153,8 +157,8 @@ public class ExecutorManager {
 	/**
 	 * {@link ServletContextTrackingExecutor#toAwaitableOfEnforcedTermination() Enforces
 	 * termination} of all {@code Executors} obtained from this {@code ExecutorManager}.
-	 * @return an empty list if all {@code Executors} were terminated, a list of unterminated ones
-	 *     otherwise.
+	 * @return an empty list if all {@code Executors} were terminated, otherwise a list those that
+	 *     failed to terminate within {@code timeout}.
 	 */
 	public List<ServletContextTrackingExecutor> enforceTerminationOfAllExecutors(
 		long timeout,
@@ -173,8 +177,8 @@ public class ExecutorManager {
 	/**
 	 * {@link ServletContextTrackingExecutor#toAwaitableOfTermination() Awaits for termination} of
 	 * all {@code Executors} obtained from this {@code ExecutorManager}.
-	 * @return an empty list if all {@code Executors} were terminated, a list of unterminated ones
-	 *     otherwise.
+	 * @return an empty list if all {@code Executors} were terminated, otherwise a list those that
+	 *     failed to terminate within {@code timeout}.
 	 */
 	public List<ServletContextTrackingExecutor> awaitTerminationOfAllExecutors(
 		long timeout,

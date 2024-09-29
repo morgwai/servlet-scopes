@@ -20,7 +20,7 @@ public class BroadcastEndpoint {
 
 
 
-	public static final String PATH = "/echo";
+	public static final String PATH = "/broadcast";
 	public static final String WELCOME_MESSAGE = "yo!";
 
 	Session connection;

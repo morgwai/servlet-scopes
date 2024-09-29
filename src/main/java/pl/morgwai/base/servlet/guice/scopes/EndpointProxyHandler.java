@@ -14,7 +14,7 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 /**
  * Executes each call to its wrapped {@code Endpoint} within websocket {@code Contexts}.
  * Creates a new separate {@link WebsocketEventContext} for each method invocation with references
- * to the current {@link WebsocketConnectionContext} and {@link HttpSessionContext} (if present).
+ * to the enclosing {@link WebsocketConnectionContext} and {@link HttpSessionContext} (if present).
  */
 class EndpointProxyHandler implements InvocationHandler {
 
@@ -56,29 +56,27 @@ class EndpointProxyHandler implements InvocationHandler {
 
 
 
+	/** Execute intercepted {@code method} within {@code Context}s. */
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-
-		// replace the original wsConnection (Session) arg with connectionProxy
 		if (args != null) {
+			// replace Session arg with connectionProxy, call initialize() on onOpen() interception
 			for (int i = 0; i < args.length; i++) {
 				if (args[i] instanceof Session) {
-					if (connectionProxy == null) initialize((Session) args[i]);  // onOpen(...)
+					if (connectionProxy == null) initialize((Session) args[i]);  // onOpen()
 					args[i] = connectionProxy;
 					break;
 				}
 			}
 		}
-
 		if (connectionCtx == null) {
-			// the first call to this Endpoint and it's NOT onOpen(...) : probably a debugger call,
-			// most usually toString(). initializeOnOpen(...) hasn't been called yet: call the
-			// method outside of contexts and hope for the best...
+			// some call BEFORE onOpen(), probably from a debugger:
+			// initialize(...) not yet called, so can't create a ctx: execute without a ctx
 			logManualCallWarning(proxy.getClass().getSimpleName() + '.' + method.getName());
 			return wrappedEndpoint.invoke(proxy, method, args);
 		}
 
-		// execute the method within contexts
+		// execute method within Contexts
 		return new WebsocketEventContext(connectionCtx, httpSession, ctxTracker).executeWithinSelf(
 			() -> {
 				try {
@@ -100,5 +98,5 @@ class EndpointProxyHandler implements InvocationHandler {
 
 	static final Logger log = Logger.getLogger(EndpointProxyHandler.class.getName());
 	static final String MANUAL_CALL_WARNING = ": calling manually methods of Endpoints, that were "
-			+ "designed to run within contexts, may lead to an OutOfScopeException";
+			+ "designed to run within Contexts, may lead to an OutOfScopeException";
 }

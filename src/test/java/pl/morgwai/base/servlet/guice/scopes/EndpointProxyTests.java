@@ -9,8 +9,8 @@ import javax.servlet.http.HttpSession;
 import javax.websocket.*;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
-
 import org.junit.*;
+
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
 import static org.easymock.EasyMock.*;

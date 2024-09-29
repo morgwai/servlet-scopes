@@ -12,7 +12,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 
 
-// todo: javadoc
+/**
+ * Annotation for client {@code Endpoints} that should be injected using a
+ * {@link com.google.inject.Provider} based on {@link GuiceEndpointConfigurator}.
+ * @see WebsocketModule
+ */
 @Retention(RUNTIME)
 @Target({ FIELD, PARAMETER })
 @BindingAnnotation

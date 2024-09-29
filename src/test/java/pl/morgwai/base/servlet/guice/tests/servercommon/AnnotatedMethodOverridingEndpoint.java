@@ -11,7 +11,7 @@ import pl.morgwai.base.servlet.guice.utils.PingingServerEndpointConfigurator;
 /**
  * Extends {@link EchoEndpoint} and overrides its {@link #onOpen(Session, EndpointConfig) @OnOpen}
  * method.
- * , hence
+ * Tyrus requires overriding methods to be re-annotated, hence
  * {@link pl.morgwai.base.servlet.guice.tests.tyrus.TyrusAnnotatedMethodOverridingEndpoint}
  * exists.
  */

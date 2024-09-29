@@ -45,8 +45,8 @@ public class ManualServletContextListener implements ServletContextListener {
 			final var intervalFromProperty = System.getProperty(PING_INTERVAL_MILLIS_PROPERTY);
 			pingerService = new WebsocketPingerService(
 				intervalFromProperty != null
-						? Long.parseLong(intervalFromProperty)
-						: DEFAULT_PING_INTERVAL_MILLIS,
+					? Long.parseLong(intervalFromProperty)
+					: DEFAULT_PING_INTERVAL_MILLIS,
 				TimeUnit.MILLISECONDS,
 				1
 			);

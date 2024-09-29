@@ -191,7 +191,7 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 				String.format(
 					DEPLOYMENT_NOT_FOUND_MESSAGE,
 					MOCK_DEPLOYMENT_PATH + WEBSOCKET_PATH,
-					MOCK_DEPLOYMENT_PATH
+					'"' + MOCK_DEPLOYMENT_PATH + '"'
 				),
 				expectedException.getMessage()
 			);

@@ -16,7 +16,17 @@ import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
 
-// todo: javadoc
+/**
+ * {@link GuiceEndpointConfigurator} that automatically registers and deregisters {@code Endpoints}
+ * to its associated {@link WebsocketPingerService}.
+ * Additionally if an {@code Endpoint} created using this {@code Configurator} implements
+ * {@link RttObserver}, then it will be receiving RTT reports on each pong.
+ * <p>
+ * In addition to usage instructions from the super class, annotated {@code Endpoints} that need to
+ * be created using this {@code Configurator} <b>must</b> have a method annotated
+ * with @{@link OnClose}.</p>
+ * @see PingingServletContextListener
+ */
 public class PingingEndpointConfigurator extends GuiceEndpointConfigurator {
 
 

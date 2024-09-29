@@ -7,7 +7,7 @@ import pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator;
 
 
 
-/** Extending {@link ProgrammaticEndpoint} and annotated with {@link ServerEndpoint}. */
+/** Not supported by Tyrus. */
 @ServerEndpoint(
 	value = AnnotatedExtendingProgrammaticEndpoint.PATH,
 	configurator = GuiceServerEndpointConfigurator.class
