@@ -99,6 +99,18 @@ public class GuiceEndpointConfiguratorGetProxyClassTests {
 
 
 
+	@ServerEndpoint("/overridingNotReAnnotating")
+	public static class AnnotatedOverridingNotReAnnotatingEndpoint extends AnnotatedEndpoint {
+		public void onOpen(Session connection) { super.onOpen(connection); }
+	}
+
+	@Test
+	public void testGetProxyClassForAnnotatedOverridingNotReAnnotatingEndpoint() {
+		testGetProxyClassForAnnotatedEndpoint(AnnotatedOverridingNotReAnnotatingEndpoint.class);
+	}
+
+
+
 	@ServerEndpoint("/noOnClose")
 	public static class AnnotatedEndpointWithoutOnClose {
 		@OnOpen public void onOpen(Session connection) {}

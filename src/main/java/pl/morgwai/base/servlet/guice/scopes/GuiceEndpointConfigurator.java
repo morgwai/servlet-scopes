@@ -218,8 +218,10 @@ public class GuiceEndpointConfigurator {
 	protected void checkIfRequiredEndpointMethodsPresent(Class<?> endpointClass) {
 		final var wantedMethodAnnotationTypes = getRequiredEndpointMethodAnnotationTypes();
 		var classUnderScan = endpointClass;
-		while ( !classUnderScan.equals(Object.class) && !wantedMethodAnnotationTypes.isEmpty()) {
-			for (var method: classUnderScan.getMethods()) {
+		var methodsToScan = endpointClass.getMethods();
+		do {
+			for (var method: methodsToScan) {
+				if ( !Modifier.isPublic(method.getModifiers())) continue;
 				final var wantedAnnotationTypeIterator = wantedMethodAnnotationTypes.iterator();
 				while (wantedAnnotationTypeIterator.hasNext()) {
 					final var wantedAnnotationType = wantedAnnotationTypeIterator.next();
@@ -236,7 +238,8 @@ public class GuiceEndpointConfigurator {
 				if (wantedMethodAnnotationTypes.isEmpty()) break;
 			}
 			classUnderScan = classUnderScan.getSuperclass();
-		}
+			methodsToScan = classUnderScan.getDeclaredMethods();
+		} while ( !classUnderScan.equals(Object.class));
 		if ( !wantedMethodAnnotationTypes.isEmpty()) {
 			throw new IllegalArgumentException(MISSING_LIFECYCLE_METHOD_MESSAGE
 					+ wantedMethodAnnotationTypes.iterator().next().getSimpleName());
