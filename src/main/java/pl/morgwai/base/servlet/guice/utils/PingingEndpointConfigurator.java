@@ -81,28 +81,32 @@ public class PingingEndpointConfigurator extends GuiceEndpointConfigurator {
 
 		@Override
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-			if (isOnOpen(method)) {
-				for (var arg: args) {
-					if (arg instanceof Session) {
-						connection = (Session) arg;
-						break;
+			if ( !open) {
+				if (isOnOpen(method)) {
+					open = true;
+					for (var arg : args) {
+						if (arg instanceof Session) {
+							connection = (Session) arg;
+							break;
+						}
+					}
+					if (endpoint instanceof RttObserver) {
+						pingerService.addConnection(
+							connection,
+							(connection, rttNanos) -> ((RttObserver) endpoint).onPong(rttNanos)
+						);
+					} else {
+						pingerService.addConnection(connection);
 					}
 				}
-				if (endpoint instanceof RttObserver) {
-					pingerService.addConnection(
-						connection,
-						(connection, rttNanos) -> ((RttObserver) endpoint).onPong(rttNanos)
-					);
-				} else {
-					pingerService.addConnection(connection);
-				}
-			} else if (isOnClose(method)) {
-				pingerService.removeConnection(connection);
+			} else {
+				if (isOnClose(method)) pingerService.removeConnection(connection);
 			}
 			return method.invoke(endpoint, args);
 		}
 
-		Session connection;
+		boolean open = false;  // performance optimization: avoids some reflection
+		Session connection;  // performance optimization: avoids iterating through onClose() args
 	}
 
 
