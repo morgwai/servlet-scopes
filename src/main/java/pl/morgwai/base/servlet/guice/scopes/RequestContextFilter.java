@@ -16,9 +16,8 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * transfers existing {@code Contexts} to their new handling {@code Thread}s.
  * <p>
  * If an instance of this {@code Filter} is not created by Guice, then a reference to the
- * {@link ContextTracker} must be set either
- * {@link #setCtxTracker(ContextTracker) manually} or by requesting
- * {@link com.google.inject.Injector#injectMembers(Object) Guice member injection}.</p>
+ * {@link ContextTracker} must be set either {@link #setCtxTracker(ContextTracker) manually} or by
+ * requesting {@link com.google.inject.Injector#injectMembers(Object) Guice member injection}.</p>
  * <p>
  * This {@code Filter} should usually be installed at the beginning of the
  * chain for all URL patterns for new and async {@code Requests}:

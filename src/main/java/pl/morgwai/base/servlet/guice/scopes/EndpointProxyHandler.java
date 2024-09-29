@@ -14,7 +14,7 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 /**
  * Executes each call to its wrapped {@code Endpoint} within websocket {@code Contexts}.
  * Creates a new separate {@link WebsocketEventContext} for each method invocation with references
- * to the current {@link WebsocketConnectionContext} and {@link HttpSessionContext} (if present).
+ * to the enclosing {@link WebsocketConnectionContext} and {@link HttpSessionContext} (if present).
  */
 class EndpointProxyHandler implements InvocationHandler {
 

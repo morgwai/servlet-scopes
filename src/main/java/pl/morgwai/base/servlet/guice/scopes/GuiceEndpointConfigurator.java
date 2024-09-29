@@ -30,9 +30,28 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * {@link WebsocketModule#websocketConnectionScope} and
  * {@link ServletWebsocketModule#httpSessionScope}) work properly.
  * <p>
- * To use this class for client {@code Endpoints}, todo: javadoc </p>
+ * To use this class for client {@code Endpoints}, first a {@link WebsocketModule} must be passed to
+ * {@link Guice#createInjector(com.google.inject.Module...)}. After that context-aware client
+ * {@code Endpoints} may be obtained in 1 of the below ways:</p>
+ * <ul>
+ *   <li>by obtaining {@link GuiceEndpointConfigurator} from the created {@link Injector} and
+ *       calling either {@link #getProxiedEndpointInstance(Class)} or
+ *       {@link #getProxyForEndpoint(Object)}</li>
+ *   <li>if some {@code endpointClass} was passed as a param to one of {@link WebsocketModule}'s
+ *       {@link WebsocketModule#WebsocketModule(Class[]) constructors}, then it will be injected to
+ *       fields and params annotated with @{@link GuiceClientEndpoint}</li>
+ * </ul>
  * <p>
  * To use this class for server {@code Endpoints}, see {@link GuiceServerEndpointConfigurator}.</p>
+ * <p>
+ * <b>NOTE:</b> annotated {@code Endpoints} that need to be created using this {@code Configurator}
+ * <b>must</b> have a method annotated with @{@link OnOpen} that <b>must</b> have a {@link Session}
+ * param.</p>
+ * <p>
+ * <b>NOTE:</b> due to the way many debuggers work, it is <b>strongly</b> recommended for
+ * {@link Object#toString() toString()} methods of {@code Endpoints} to work properly even when
+ * called outside of any {@code Context}.</p>
+ * @see pl.morgwai.base.servlet.guice.utils.PingingEndpointConfigurator
  */
 public class GuiceEndpointConfigurator {
 
@@ -43,7 +62,6 @@ public class GuiceEndpointConfigurator {
 
 
 
-	// todo: javadoc
 	@Inject
 	public GuiceEndpointConfigurator(
 		Injector injector,
@@ -56,19 +74,21 @@ public class GuiceEndpointConfigurator {
 
 
 	/**
-	 * Obtains an instance of {@code endpointClass} from {@link Injector#getInstance(Class) Guice}
-	 * and creates a dynamic context-aware proxy for it.
-	 * The proxy ensures that {@code Endpoint} lifecycle methods are executed within
-	 * {@link WebsocketEventContext}, {@link WebsocketConnectionContext} and if an
-	 * {@link javax.servlet.http.HttpSession} is present, then also {@link HttpSessionContext}.
-	 * @return a proxy for an {@code endpointClass} instance obtained from {@link Injector Guice}.
+	 * Calls {@link #getProxyForEndpoint(Object) getProxyForEndpoint}<code>(
+	 * {@link #injector}.{@link Injector#getInstance(Key) getInstance}(endpointClass))</code>.
 	 */
 	public <EndpointT> EndpointT getProxiedEndpointInstance(Class<EndpointT> endpointClass)
 			throws InvocationTargetException {
 		return getProxyForEndpoint(injector.getInstance(endpointClass));
 	}
 
-	// todo: javadoc
+
+
+	/**
+	 * Creates a {@link #getProxyClass(Class) dynamic context-aware proxy} for {@code endpoint}.
+	 * @return an instance of the dynamic proxy subclass of {@code endpoint}'s class that wraps
+	 *     {@code endpoint}.
+	 */
 	public <EndpointT> EndpointT getProxyForEndpoint(EndpointT endpoint)
 			throws InvocationTargetException {
 		@SuppressWarnings("unchecked")
@@ -96,7 +116,16 @@ public class GuiceEndpointConfigurator {
 
 
 
-	// todo: javadoc
+	/**
+	 * Creates an instance of {@code proxyClass}.
+	 * @return by default {@code proxyClass.getConstructor().newInstance()}, in instances wrapped
+	 *     by {@link GuiceServerEndpointConfigurator}s it must be
+	 *     {@link GuiceServerEndpointConfigurator#newGuiceEndpointConfigurator(Injector) overridden}
+	 *     to return an instance {@link
+	 *     javax.websocket.server.ServerEndpointConfig.Configurator#getEndpointInstance(Class)
+	 *     obtained} from container's default
+	 *     {@link javax.websocket.server.ServerEndpointConfig.Configurator}.
+	 */
 	protected  <ProxyT> ProxyT createEndpointProxyInstance(Class<ProxyT> proxyClass)
 			throws InstantiationException, InvocationTargetException {
 		try {
@@ -109,8 +138,15 @@ public class GuiceEndpointConfigurator {
 
 
 	/**
-	 * Returns a dynamic class of a context-aware proxy for {@code endpointClass}.
-	 * Exposed for proxy class pre-building.
+	 * Returns a dynamically created class of a context-aware proxy for {@code endpointClass}.
+	 * The proxy ensures that {@code endpoint} lifecycle methods are executed within
+	 * {@link WebsocketEventContext}, {@link WebsocketConnectionContext} and if an
+	 * {@link javax.servlet.http.HttpSession} is present, then also {@link HttpSessionContext}.
+	 * <p>
+	 * This method is usually called by {@link #getProxyForEndpoint(Object)}. Nevertheless, once
+	 * built, a proxy class is cached for subsequent requests for the same {@code endpointClass},
+	 * thus this method may be also called directly during an app's initialization to pre-build the
+	 * dynamic proxy classes.</p>
 	 */
 	public <EndpointT> Class<? extends EndpointT> getProxyClass(Class<EndpointT> endpointClass) {
 		@SuppressWarnings("unchecked")
@@ -123,10 +159,7 @@ public class GuiceEndpointConfigurator {
 
 
 
-	/**
-	 * Creates a dynamic proxy class that delegates calls to the associated
-	 * {@link EndpointProxyHandler} instance.
-	 */
+	/** Creates a new dynamic class of a context-aware proxy for {@code endpointClass}. */
 	<EndpointT> Class<? extends EndpointT> createProxyClass(Class<EndpointT> endpointClass) {
 		if ( !Endpoint.class.isAssignableFrom(endpointClass)) {
 			checkIfRequiredEndpointMethodsPresent(endpointClass);
@@ -173,11 +206,13 @@ public class GuiceEndpointConfigurator {
 	 * methods.
 	 * Additionally checks if {@link OnOpen} annotated method has a {@link Session} param.
 	 * <p>
-	 * Note the discrepancy between container implementations: Tyrus requires overriding methods to
-	 * be re-annotated with @{@link OnOpen} / @{@link OnClose} etc, while Jetty forbids it.<br/>
-	 * By default this configurator does Jetty-style checking, so some {@code Endpoints} that don't
-	 * meet Tyrus requirements will be allowed to deploy and their overridden life-cycle methods
-	 * will not be called by the container.</p>
+	 * Note the discrepancy between container implementations: Tyrus requires lifecycle methods
+	 * overridden in subclasses to be re-annotated with @{@link OnOpen} / @{@link OnClose} etc,
+	 * while Jetty forbids it.<br/>
+	 * This configurator performs a relaxed checking: it verifies only that a given annotation is
+	 * present and allows both duplicates and non-top-level annotating. As a result on Tyrus some
+	 * {@code Endpoints} that don't meet Tyrus-style requirements will be allowed to deploy, but
+	 * their overridden life-cycle methods will not be called by the container.</p>
 	 * @throws IllegalArgumentException if the check fails.
 	 */
 	protected void checkIfRequiredEndpointMethodsPresent(Class<?> endpointClass) {
@@ -194,8 +229,7 @@ public class GuiceEndpointConfigurator {
 							wantedAnnotationType.equals(OnOpen.class)
 							&& !Arrays.asList(method.getParameterTypes()).contains(Session.class)
 						) {
-							throw new IllegalArgumentException("method annotated with @OnOpen must "
-									+ "have a " + Session.class.getName() + " param");
+							throw new IllegalArgumentException(NO_ON_OPEN_SESSION_PARAM_MESSAGE);
 						}
 					}
 				}
@@ -204,10 +238,15 @@ public class GuiceEndpointConfigurator {
 			classUnderScan = classUnderScan.getSuperclass();
 		}
 		if ( !wantedMethodAnnotationTypes.isEmpty()) {
-			throw new IllegalArgumentException("endpoint class must have a method annotated with @"
+			throw new IllegalArgumentException(MISSING_LIFECYCLE_METHOD_MESSAGE
 					+ wantedMethodAnnotationTypes.iterator().next().getSimpleName());
 		}
 	}
+
+	static final String NO_ON_OPEN_SESSION_PARAM_MESSAGE =
+			"method annotated with @OnOpen must have a " + Session.class.getName() + " param";
+	static final String MISSING_LIFECYCLE_METHOD_MESSAGE =
+			"endpoint class must have a method annotated with @";
 
 
 

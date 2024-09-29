@@ -10,9 +10,11 @@ import pl.morgwai.base.guice.scopes.*;
 
 
 /**
- * Contains websocket Guice {@link Scope}s, {@link ContextTracker}s and some helper methods.
- * Usually a single app-wide instance is created at the app startup.
- * @see ServletWebsocketModule
+ * Contains websocket Guice {@link Scope}s, {@link ContextTracker}s and some helper utils.
+ * For standalone client {@link javax.websocket.WebSocketContainer}s, usually a single app-wide
+ * instance is created at the app startup. In case of servers, it should be embedded by a
+ * {@link ServletWebsocketModule}.
+ * @see pl.morgwai.base.servlet.guice.utils.PingingWebsocketModule
  */
 public class WebsocketModule implements Module {
 
@@ -58,59 +60,33 @@ public class WebsocketModule implements Module {
 
 
 	/**
-	 * Singleton of {@link #ctxTracker}.
-	 * Type {@code List<ContextTracker<?>>} is bound to it in {@link #configure(Binder)} method.
+	 * Client {@code Endpoint} classes that will be {@link #configure(Binder) bound} to a
+	 * {@link GuiceEndpointConfigurator} based {@link Provider}.
 	 */
-	public final List<ContextTracker<?>> allTrackers = List.of(ctxTracker);
-
-	/** {@code ContextBinder} created using {@link #allTrackers}. */
-	public final ContextBinder ctxBinder = new ContextBinder(allTrackers);
-
-	/** Calls {@link ContextTracker#getActiveContexts(List) getActiveContexts(allTrackers)}. */
-	public List<TrackableContext<?>> getActiveContexts() {
-		return ContextTracker.getActiveContexts(allTrackers);
-	}
-
-
-
-	static final TypeLiteral<ContextTracker<ContainerCallContext>> ctxTrackerType =
-			new TypeLiteral<>() {};
-	static final TypeLiteral<List<ContextTracker<?>>> allTrackersType = new TypeLiteral<>() {};
-	/** {@code Key} of {@link #ctxTracker}. */
-	public static final Key<ContextTracker<ContainerCallContext>> ctxTrackerKey =
-			Key.get(ctxTrackerType);
-	/** {@code Key} of {@link #allTrackers}. */
-	public static final Key<List<ContextTracker<?>>> allTrackersKey = Key.get(allTrackersType);
-
-
-
 	protected final Set<Class<?>> clientEndpointClasses;
 
-	// todo: javadoc
+	/** Initializes {@link #clientEndpointClasses}. */
 	public WebsocketModule(Set<Class<?>> clientEndpointClasses) {
 		this.clientEndpointClasses = clientEndpointClasses;
 	}
 
-	/** Calls {@link #WebsocketModule(Set)}. */
+	/** Calls {@link #WebsocketModule(Set) this(Set.of(clientEndpointClasses))}. */
 	public WebsocketModule(Class<?>... clientEndpointClasses) {
 		this(Set.of(clientEndpointClasses));
 	}
 
 
 
-	// todo: javadoc update
 	/**
-	 * Creates infrastructure bindings.
-	 * Specifically binds the following:
+	 * Binds {@link #clientEndpointClasses} annotated with {@link GuiceClientEndpoint} to
+	 * {@link Provider}s based on {@link GuiceEndpointConfigurator}.
+	 * Additionally binds some infrastructure stuff:
 	 * <ul>
 	 *   <li>{@link #allTrackersKey} to {@link #allTrackers}</li>
 	 *   <li>{@link ContextBinder} to {@link #ctxBinder}</li>
 	 *   <li>{@link #ctxTrackerKey} to {@link #ctxTracker}</li>
-	 *   <li>
-	 *       {@link ContainerCallContext}, {@link WebsocketConnectionContext} and
-	 *       {@link HttpSessionContext} to {@link Provider}s returning instances current for the
-	 *       calling {@code Thread}
-	 *   </li>
+	 *   <li>{@link ContainerCallContext} and {@link WebsocketConnectionContext} to
+	 *       {@link Provider}s returning instances current for the calling {@code Thread}</li>
 	 * </ul>
 	 */
 	@Override
@@ -141,4 +117,30 @@ public class WebsocketModule implements Module {
 			}
 		);
 	}
+
+
+
+	/**
+	 * Singleton of {@link #ctxTracker}.
+	 * {@link #allTrackersKey} is bound to this {@code List} in {@link #configure(Binder)} method.
+	 */
+	public final List<ContextTracker<?>> allTrackers = List.of(ctxTracker);
+	/** {@code ContextBinder} created using {@link #allTrackers}. */
+	public final ContextBinder ctxBinder = new ContextBinder(allTrackers);
+
+	/** Calls {@link ContextTracker#getActiveContexts(List) getActiveContexts(allTrackers)}. */
+	public List<TrackableContext<?>> getActiveContexts() {
+		return ContextTracker.getActiveContexts(allTrackers);
+	}
+
+
+
+	static final TypeLiteral<ContextTracker<ContainerCallContext>> ctxTrackerType =
+			new TypeLiteral<>() {};
+	static final TypeLiteral<List<ContextTracker<?>>> allTrackersType = new TypeLiteral<>() {};
+	/** {@code Key} of {@link #ctxTracker}. */
+	public static final Key<ContextTracker<ContainerCallContext>> ctxTrackerKey =
+			Key.get(ctxTrackerType);
+	/** {@code Key} of {@link #allTrackers}. */
+	public static final Key<List<ContextTracker<?>>> allTrackersKey = Key.get(allTrackersType);
 }

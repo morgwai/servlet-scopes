@@ -7,10 +7,6 @@ import com.google.inject.Inject;
 
 
 
-/**
- * Delegates to its wrapped {@link EchoEndpoint} instance. Added programmatically in
- * {@link pl.morgwai.base.servlet.guice.scopes.tests.jetty.ServletContextListener}.
- */
 public class ProgrammaticEndpoint extends Endpoint {
 
 
