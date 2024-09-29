@@ -16,7 +16,7 @@ public class GuiceEndpointConfiguratorGetProxyClassTests {
 
 
 	/** Test subject. */
-	final GuiceEndpointConfigurator configurator = new GuiceEndpointConfigurator(null, null) {
+	GuiceEndpointConfigurator configurator = new GuiceEndpointConfigurator(null, null, false) {
 		@Override
 		protected HashSet<Class<? extends Annotation>> getRequiredEndpointMethodAnnotationTypes() {
 			final var requiredAnnotationTypes = super.getRequiredEndpointMethodAnnotationTypes();
@@ -89,7 +89,7 @@ public class GuiceEndpointConfiguratorGetProxyClassTests {
 
 	@ServerEndpoint("/overriding")
 	public static class AnnotatedOverridingEndpoint extends AnnotatedEndpoint {
-		@OnOpen public void onOpen(Session connection) { super.onOpen(connection); }
+		@OnOpen @Override public void onOpen(Session connection) { super.onOpen(connection); }
 	}
 
 	@Test
@@ -101,12 +101,31 @@ public class GuiceEndpointConfiguratorGetProxyClassTests {
 
 	@ServerEndpoint("/overridingNotReAnnotating")
 	public static class AnnotatedOverridingNotReAnnotatingEndpoint extends AnnotatedEndpoint {
-		public void onOpen(Session connection) { super.onOpen(connection); }
+		@Override public void onOpen(Session connection) { super.onOpen(connection); }
 	}
 
 	@Test
 	public void testGetProxyClassForAnnotatedOverridingNotReAnnotatingEndpoint() {
 		testGetProxyClassForAnnotatedEndpoint(AnnotatedOverridingNotReAnnotatingEndpoint.class);
+	}
+
+	@Test
+	public void testGetProxyClassForAnnotatedOverridingNotReAnnotatingEndpointOnTyrus() {
+		configurator = new GuiceEndpointConfigurator(null, null, true) {
+			@Override
+			protected HashSet<Class<? extends Annotation>> getRequiredEndpointMethodAnnotationTypes(
+			) {
+				final var requiredAnnotationTypes =
+						super.getRequiredEndpointMethodAnnotationTypes();
+				requiredAnnotationTypes.add(OnClose.class);
+				return requiredAnnotationTypes;
+			}
+		};
+		try {
+			testGetProxyClassForAnnotatedEndpoint(AnnotatedOverridingNotReAnnotatingEndpoint.class);
+			fail("creating proxyClass for AnnotatedOverridingNotReAnnotatingEndpoint should fail on"
+					+ " Tyrus");
+		} catch (IllegalArgumentException expected) {}
 	}
 
 
