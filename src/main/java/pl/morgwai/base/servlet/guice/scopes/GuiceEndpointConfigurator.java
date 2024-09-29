@@ -11,6 +11,7 @@ import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 
 import com.google.inject.*;
+import com.google.inject.name.Named;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
@@ -18,6 +19,8 @@ import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.matcher.ElementMatchers;
 import pl.morgwai.base.guice.scopes.ContextTracker;
+
+import static com.google.inject.name.Names.named;
 
 
 
@@ -60,15 +63,38 @@ public class GuiceEndpointConfigurator {
 	protected final Injector injector;
 	protected final ContextTracker<ContainerCallContext> ctxTracker;
 
+	/** Controls verification style of {@link #checkIfRequiredEndpointMethodsPresent(Class)}. */
+	protected final boolean requireTopLevelMethodAnnotations;
+	/**
+	 * {@link Key#getAnnotation() Binding} {@link Named name} for
+	 * {@link #requireTopLevelMethodAnnotations}.
+	 */
+	public static final String REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_NAME =
+			".requireTopLevelMethodAnnotations";
+	/** Binding {@code Key} for {@link #requireTopLevelMethodAnnotations}. */
+	public static final Key<Boolean> REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY =
+			Key.get(Boolean.class, named(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_NAME));
+	/**
+	 * Name of the
+	 * {@link javax.servlet.ServletContext#getInitParameter(String) deployment init-param} that may
+	 * contain a value for {@link #requireTopLevelMethodAnnotations}.
+	 * {@link GuiceServletContextListener} will check if it is present and if so, it will pass it
+	 * to its {@link WebsocketModule#setRequireTopLevelMethodAnnotations(boolean) WebsocketModule}.
+	 */
+	public static final String REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM =
+			GuiceEndpointConfigurator.class.getName() + REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_NAME;
+
 
 
 	@Inject
 	public GuiceEndpointConfigurator(
 		Injector injector,
-		ContextTracker<ContainerCallContext> ctxTracker
+		ContextTracker<ContainerCallContext> ctxTracker,
+		@Named(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_NAME) boolean requireTopLevelMethodAnnotations
 	) {
 		this.injector = injector;
 		this.ctxTracker = ctxTracker;
+		this.requireTopLevelMethodAnnotations = requireTopLevelMethodAnnotations;
 	}
 
 
@@ -204,15 +230,15 @@ public class GuiceEndpointConfigurator {
 	 * Checks if annotated {@code endpointClass} has all the
 	 * {@link #getRequiredEndpointMethodAnnotationTypes() required} {@code Endpoint} life-cycle
 	 * methods.
-	 * Additionally checks if {@link OnOpen} annotated method has a {@link Session} param.
+	 * Additionally checks if @{@link OnOpen} annotated method has a {@link Session} param.
 	 * <p>
 	 * Note the discrepancy between container implementations: Tyrus requires lifecycle methods
 	 * overridden in subclasses to be re-annotated with @{@link OnOpen} / @{@link OnClose} etc,
-	 * while Jetty forbids it.<br/>
-	 * This configurator performs a relaxed checking: it verifies only that a given annotation is
-	 * present and allows both duplicates and non-top-level annotating. As a result on Tyrus some
-	 * {@code Endpoints} that don't meet Tyrus-style requirements will be allowed to deploy, but
-	 * their overridden life-cycle methods will not be called by the container.</p>
+	 * while Jetty forbids it and will throw an {@code Exception} in such case.<br/>
+	 * By default this method performs a relaxed checking: it verifies only that a given annotation
+	 * is present and allows both duplicates and non-top-level annotating. However, if
+	 * {@link #requireTopLevelMethodAnnotations} is set, then Tyrus-style checking will be
+	 * performed, meaning lifecycle methods will be required to be annotated at the top level.</p>
 	 * @throws IllegalArgumentException if the check fails.
 	 */
 	protected void checkIfRequiredEndpointMethodsPresent(Class<?> endpointClass) {
@@ -239,7 +265,7 @@ public class GuiceEndpointConfigurator {
 			}
 			classUnderScan = classUnderScan.getSuperclass();
 			methodsToScan = classUnderScan.getDeclaredMethods();
-		} while ( !classUnderScan.equals(Object.class));
+		} while ( !requireTopLevelMethodAnnotations && !classUnderScan.equals(Object.class));
 		if ( !wantedMethodAnnotationTypes.isEmpty()) {
 			throw new IllegalArgumentException(MISSING_LIFECYCLE_METHOD_MESSAGE
 					+ wantedMethodAnnotationTypes.iterator().next().getSimpleName());

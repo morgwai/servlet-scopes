@@ -9,6 +9,9 @@ import com.google.inject.Key;
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
+import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
+		.REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY;
+
 
 
 /** {@link GuiceServerEndpointConfigurator} that uses {@link PingingEndpointConfigurator}. */
@@ -29,6 +32,7 @@ public class PingingServerEndpointConfigurator extends GuiceServerEndpointConfig
 		return new PingingEndpointConfigurator(
 			injector,
 			injector.getInstance(WebsocketModule.ctxTrackerKey),
+			injector.getInstance(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY),
 			injector.getInstance(Key.get(WebsocketPingerService.class, PingingClientEndpoint.class))
 		) {
 			@Override
