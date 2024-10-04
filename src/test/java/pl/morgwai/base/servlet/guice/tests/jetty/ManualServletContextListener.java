@@ -62,7 +62,12 @@ public class ManualServletContextListener implements ServletContextListener {
 
 			final var modules = new LinkedList<Module>();
 			modules.add(servletModule);
-			modules.add(new ServiceModule(servletModule, executorManager, true));
+			modules.add(new ServiceModule(
+				servletModule.containerCallScope,
+				servletModule.websocketConnectionScope,
+				servletModule.httpSessionScope,
+				executorManager
+			));
 			final Injector injector = Guice.createInjector(modules);
 
 			final var requestCtxFilter = appDeployment.createFilter(RequestContextFilter.class);
