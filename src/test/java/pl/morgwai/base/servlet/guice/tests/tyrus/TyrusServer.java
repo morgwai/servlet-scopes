@@ -53,7 +53,12 @@ public class TyrusServer implements Server {
 		// create and store injector
 		final var modules = new LinkedList<Module>();
 		modules.add(servletModule);
-		modules.add(new ServiceModule(servletModule, executorManager, false));
+		modules.add(new ServiceModule(
+			servletModule.containerCallScope,
+			servletModule.websocketConnectionScope,
+			null,  // no HTTP session support
+			executorManager
+		));
 		Guice.createInjector(modules);  // servletModule does static injection that stores injector
 
 		tyrus = new org.glassfish.tyrus.server.Server(

@@ -1,7 +1,7 @@
 // Copyright 2023 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.tests.servercommon;
 
-import com.google.inject.Binder;
+import com.google.inject.*;
 import com.google.inject.Module;
 import com.google.inject.name.Names;
 import pl.morgwai.base.servlet.guice.scopes.*;
@@ -12,20 +12,23 @@ public class ServiceModule implements Module {
 
 
 
-	final ServletWebsocketModule servletModule;
+	final Scope containerCallScope;
+	final Scope websocketConnectionScope;
+	final Scope httpSessionScope;
 	final ExecutorManager executorManager;
-	final boolean httpSessionAvailable;
 
 
 
 	public ServiceModule(
-		ServletWebsocketModule servletModule,
-		ExecutorManager executorManager,
-		boolean httpSessionAvailable
+		Scope containerCallScope,
+		Scope websocketConnectionScope,
+		Scope httpSessionScope,
+		ExecutorManager executorManager
 	) {
-		this.servletModule = servletModule;
+		this.containerCallScope = containerCallScope;
+		this.websocketConnectionScope = websocketConnectionScope;
+		this.httpSessionScope = httpSessionScope;
 		this.executorManager = executorManager;
-		this.httpSessionAvailable = httpSessionAvailable;
 	}
 
 
@@ -40,16 +43,16 @@ public class ServiceModule implements Module {
 		binder.bind(Service.class)
 			.annotatedWith(Names.named(Service.CONTAINER_CALL))
 			.to(Service.class)
-			.in(servletModule.containerCallScope);
+			.in(containerCallScope);
 		binder.bind(Service.class)
 			.annotatedWith(Names.named(Service.WEBSOCKET_CONNECTION))
 			.to(Service.class)
-			.in(servletModule.websocketConnectionScope);
-		if (httpSessionAvailable) {
+			.in(websocketConnectionScope);
+		if (httpSessionScope != null) {
 			binder.bind(Service.class)
 				.annotatedWith(Names.named(Service.HTTP_SESSION))
 				.to(Service.class)
-				.in(servletModule.httpSessionScope);
+				.in(httpSessionScope);
 		} else {
 			binder.bind(Service.class)
 				.annotatedWith(Names.named(Service.HTTP_SESSION))

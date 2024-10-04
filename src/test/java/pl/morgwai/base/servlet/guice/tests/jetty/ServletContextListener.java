@@ -20,7 +20,12 @@ public class ServletContextListener extends PingingServletContextListener {
 	@Override
 	protected LinkedList<Module> configureInjections() {
 		final var modules = new LinkedList<Module>();
-		modules.add(new ServiceModule(servletModule, executorManager, true));
+		modules.add(new ServiceModule(
+			servletModule.containerCallScope,
+			servletModule.websocketConnectionScope,
+			servletModule.httpSessionScope,
+			executorManager
+		));
 		return modules;
 	}
 
