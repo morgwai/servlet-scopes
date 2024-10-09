@@ -137,10 +137,10 @@ public class ServletWebsocketModule implements Module {
 
 
 
-	/** Reference to {@link WebsocketModule#ctxTrackerKey websocketModule.ctxTrackerKey}. */
-	public static final Key<ContextTracker<ContainerCallContext>> ctxTrackerKey =
-			WebsocketModule.ctxTrackerKey;
-	/** Reference to {@link WebsocketModule#allTrackersKey websocketModule.allTrackersKey}. */
-	public static final Key<List<ContextTracker<?>>> allTrackersKey =
-			WebsocketModule.allTrackersKey;
+	/** Reference to {@link WebsocketModule#CTX_TRACKER_KEY websocketModule.ctxTrackerKey}. */
+	public static final Key<ContextTracker<ContainerCallContext>> CTX_TRACKER_KEY =
+			WebsocketModule.CTX_TRACKER_KEY;
+	/** Reference to {@link WebsocketModule#ALL_TRACKERS_KEY websocketModule.allTrackersKey}. */
+	public static final Key<List<ContextTracker<?>>> ALL_TRACKERS_KEY =
+			WebsocketModule.ALL_TRACKERS_KEY;
 }

@@ -195,7 +195,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	protected GuiceEndpointConfigurator newGuiceEndpointConfigurator(Injector injector) {
 		return new GuiceEndpointConfigurator(
 			injector,
-			injector.getInstance(WebsocketModule.ctxTrackerKey),
+			injector.getInstance(WebsocketModule.CTX_TRACKER_KEY),
 			injector.getInstance(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY)
 		) {
 			@Override
