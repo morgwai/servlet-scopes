@@ -54,11 +54,32 @@ public class WebsocketModule implements Module {
 		try {
 			return ((WebsocketEventContext) eventCtx).getConnectionContext();
 		} catch (ClassCastException e) {
-			throw new OutOfScopeException(
-				"cannot provide a websocketConnectionScope-d object within a ServletRequestContext"
-			);
+			throw new OutOfScopeException(WS_CONNECTION_CTX_WITHIN_SERVLET_CTX_MESSAGE);
 		}
 	}
+
+	static final String WS_CONNECTION_CTX_WITHIN_SERVLET_CTX_MESSAGE =
+			"cannot provide a websocketConnectionScope-d object within a ServletRequestContext";
+
+
+
+	/** Singleton of {@link #ctxTracker}. */
+	public final List<ContextTracker<?>> allTrackers = List.of(ctxTracker);
+	/** {@code ContextBinder} created using {@link #allTrackers}. */
+	public final ContextBinder ctxBinder = new ContextBinder(allTrackers);
+
+	/** Calls {@link ContextTracker#getActiveContexts(List) getActiveContexts(allTrackers)}. */
+	public List<TrackableContext<?>> getActiveContexts() {
+		return ContextTracker.getActiveContexts(allTrackers);
+	}
+
+
+
+	static final TypeLiteral<ContextTracker<ContainerCallContext>> CTX_TRACKER_TYPE =
+		new TypeLiteral<>() {};
+	/** {@code Key} of {@link #ctxTracker}. */
+	public static final Key<ContextTracker<ContainerCallContext>> CTX_TRACKER_KEY =
+		Key.get(CTX_TRACKER_TYPE);
 
 
 
@@ -132,8 +153,7 @@ public class WebsocketModule implements Module {
 	 *   <li>{@link GuiceEndpointConfigurator#REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY} to
 	 *       {@link #setRequireTopLevelMethodAnnotations(boolean) requireTopLevelMethodAnnotations
 	 *       flag value} (if unset, then {@code false} is assumed)</li>
-	 *   <li>{@link #ALL_TRACKERS_KEY} to {@link #allTrackers}</li>
-	 *   <li>{@link ContextBinder} to {@link #ctxBinder}</li>
+	 *   <li>{@link ContextTracker#ALL_TRACKERS_KEY} to {@link #allTrackers}</li>
 	 *   <li>{@link #CTX_TRACKER_KEY} to {@link #ctxTracker}</li>
 	 *   <li>{@link ContainerCallContext} and {@link WebsocketConnectionContext} to
 	 *       {@link Provider}s returning instances current for the calling {@code Thread}</li>
@@ -143,13 +163,13 @@ public class WebsocketModule implements Module {
 	public void configure(Binder binder) {
 		if (requireTopLevelMethodAnnotations == null) requireTopLevelMethodAnnotations = false;
 		binder.bind(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY)
-				.toInstance(requireTopLevelMethodAnnotations);
-		binder.bind(ALL_TRACKERS_KEY).toInstance(allTrackers);
-		binder.bind(ContextBinder.class).toInstance(ctxBinder);
+			.toInstance(requireTopLevelMethodAnnotations);
+		binder.bind(ContextTracker.ALL_TRACKERS_KEY).toInstance(allTrackers);
 		binder.bind(CTX_TRACKER_KEY).toInstance(ctxTracker);
-		binder.bind(ContainerCallContext.class).toProvider(ctxTracker::getCurrentContext);
-		binder.bind(WebsocketConnectionContext.class).toProvider(
-				() -> getWebsocketConnectionContext(ctxTracker.getCurrentContext()));
+		binder.bind(ContainerCallContext.class)
+			.toProvider(ctxTracker::getCurrentContext);
+		binder.bind(WebsocketConnectionContext.class).
+			toProvider(() -> getWebsocketConnectionContext(ctxTracker.getCurrentContext()));
 		for (var clientEndpointClass: clientEndpointClasses) {
 			bindClientEndpoint(binder, clientEndpointClass);
 		}
@@ -170,30 +190,4 @@ public class WebsocketModule implements Module {
 			}
 		);
 	}
-
-
-
-	/**
-	 * Singleton of {@link #ctxTracker}.
-	 * {@link #ALL_TRACKERS_KEY} is bound to this {@code List} in {@link #configure(Binder)} method.
-	 */
-	public final List<ContextTracker<?>> allTrackers = List.of(ctxTracker);
-	/** {@code ContextBinder} created using {@link #allTrackers}. */
-	public final ContextBinder ctxBinder = new ContextBinder(allTrackers);
-
-	/** Calls {@link ContextTracker#getActiveContexts(List) getActiveContexts(allTrackers)}. */
-	public List<TrackableContext<?>> getActiveContexts() {
-		return ContextTracker.getActiveContexts(allTrackers);
-	}
-
-
-
-	static final TypeLiteral<ContextTracker<ContainerCallContext>> CTX_TRACKER_TYPE =
-			new TypeLiteral<>() {};
-	static final TypeLiteral<List<ContextTracker<?>>> ALL_TRACKERS_TYPE = new TypeLiteral<>() {};
-	/** {@code Key} of {@link #ctxTracker}. */
-	public static final Key<ContextTracker<ContainerCallContext>> CTX_TRACKER_KEY =
-			Key.get(CTX_TRACKER_TYPE);
-	/** {@code Key} of {@link #allTrackers}. */
-	public static final Key<List<ContextTracker<?>>> ALL_TRACKERS_KEY = Key.get(ALL_TRACKERS_TYPE);
 }

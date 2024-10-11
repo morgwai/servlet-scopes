@@ -64,6 +64,18 @@ public class ServletWebsocketModule implements Module {
 
 
 
+	/** Reference to {@link WebsocketModule#allTrackers websocketModule.allTrackers}. */
+	public final List<ContextTracker<?>> allTrackers;
+	/** Reference to {@link WebsocketModule#ctxBinder websocketModule.ctxBinder}. */
+	public final ContextBinder ctxBinder;
+
+	/** Calls {@link WebsocketModule#getActiveContexts()}. */
+	public List<TrackableContext<?>> getActiveContexts() {
+		return websocketModule.getActiveContexts();
+	}
+
+
+
 	/**
 	 * {@link ServletContext} from
 	 * {@link #ServletWebsocketModule(ServletContext, WebsocketModule) the constructor} param.
@@ -122,25 +134,4 @@ public class ServletWebsocketModule implements Module {
 				() -> ctxTracker.getCurrentContext().getHttpSessionContext());
 		binder.requestStaticInjection(GuiceServerEndpointConfigurator.class);
 	}
-
-
-
-	/** Reference to {@link WebsocketModule#allTrackers websocketModule.allTrackers}. */
-	public final List<ContextTracker<?>> allTrackers;
-	/** Reference to {@link WebsocketModule#ctxBinder websocketModule.ctxBinder}. */
-	public final ContextBinder ctxBinder;
-
-	/** Calls {@link WebsocketModule#getActiveContexts()}. */
-	public List<TrackableContext<?>> getActiveContexts() {
-		return websocketModule.getActiveContexts();
-	}
-
-
-
-	/** Reference to {@link WebsocketModule#CTX_TRACKER_KEY websocketModule.ctxTrackerKey}. */
-	public static final Key<ContextTracker<ContainerCallContext>> CTX_TRACKER_KEY =
-			WebsocketModule.CTX_TRACKER_KEY;
-	/** Reference to {@link WebsocketModule#ALL_TRACKERS_KEY websocketModule.allTrackersKey}. */
-	public static final Key<List<ContextTracker<?>>> ALL_TRACKERS_KEY =
-			WebsocketModule.ALL_TRACKERS_KEY;
 }
