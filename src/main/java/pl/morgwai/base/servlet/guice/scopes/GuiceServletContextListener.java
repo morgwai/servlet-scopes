@@ -98,7 +98,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/**
 	 * An {@link ExecutorManager} that will be
-	 * {@link ExecutorManager#awaitTerminationOfAllExecutors(long, TimeUnit) terminated}
+	 * {@link ExecutorManager#awaitTermination(long, TimeUnit) terminated}
 	 * automatically in {@link #contextDestroyed(ServletContextEvent)}.
 	 * For use in {@link #configureInjections()}.
 	 * @see #getExecutorsTerminationTimeout()
@@ -401,7 +401,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Returns the timeout for {@link ExecutorManager#awaitTerminationOfAllExecutors(long, TimeUnit)
+	 * Returns the timeout for {@link ExecutorManager#awaitTermination(long, TimeUnit)
 	 * termination of all Executors} obtained from {@link #executorManager}.
 	 * By default {@value #DEFAULT_EXECUTORS_TERMINATION_TIMEOUT_SECONDS} seconds.
 	 * <p>
@@ -445,8 +445,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * The exact sequence of events is as follows:
 	 * <ol>
 	 *   <li>calls {@link GuiceServerEndpointConfigurator#deregisterDeployment(ServletContext)}</li>
-	 *   <li>{@link ExecutorManager#shutdownAllExecutors() shutdowns} {@link #executorManager} and
-	 *       {@link ExecutorManager#awaitTerminationOfAllExecutors(long, TimeUnit) awaits its
+	 *   <li>{@link ExecutorManager#shutdown() shutdowns} {@link #executorManager} and
+	 *       {@link ExecutorManager#awaitTermination(long, TimeUnit) awaits its
 	 *       termination} passing the result of {@link #getExecutorsTerminationTimeout()} as timeout
 	 *       param</li>
 	 *   <li>passes {@code Executor}s that failed to terminate (if any) to
@@ -458,10 +458,10 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	public final void contextDestroyed(ServletContextEvent destruction) {
 		log.info(deploymentName + " is shutting down");
 		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
-		executorManager.shutdownAllExecutors();
+		executorManager.shutdown();
 		List<ServletContextTrackingExecutor> unterminatedExecutors;
 		try {
-			unterminatedExecutors = executorManager.awaitTerminationOfAllExecutors(
+			unterminatedExecutors = executorManager.awaitTermination(
 					getExecutorsTerminationTimeout().toNanos(), NANOSECONDS);
 		} catch (InterruptedException e) {
 			unterminatedExecutors = executorManager.getExecutors().stream()

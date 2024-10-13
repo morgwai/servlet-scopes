@@ -249,7 +249,7 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 	public void tryTerminate() {
 		taskBlockingLatch.countDown();
 		try {
-			executorManager.enforceTerminationOfAllExecutors(50L, MILLISECONDS);
+			executorManager.enforceTermination(50L, MILLISECONDS);
 		} catch (InterruptedException ignored) {
 		} finally {
 			if ( !testSubject.isTerminated()) testSubject.shutdownNow();

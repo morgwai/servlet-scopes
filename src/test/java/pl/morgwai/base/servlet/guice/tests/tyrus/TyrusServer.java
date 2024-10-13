@@ -89,10 +89,10 @@ public class TyrusServer implements Server {
 		tyrus.stop();
 		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
 		pingerService.stop();
-		executorManager.shutdownAllExecutors();
+		executorManager.shutdown();
 		List<ServletContextTrackingExecutor> unterminated;
 		try {
-			unterminated = executorManager.awaitTerminationOfAllExecutors(100L, MILLISECONDS);
+			unterminated = executorManager.awaitTermination(100L, MILLISECONDS);
 		} catch (InterruptedException e) {
 			unterminated = executorManager.getExecutors().stream()
 				.filter((executor) -> !executor.isTerminated())

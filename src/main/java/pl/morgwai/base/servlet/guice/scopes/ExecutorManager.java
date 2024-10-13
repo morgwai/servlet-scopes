@@ -148,7 +148,7 @@ public class ExecutorManager {
 
 
 	/** Shutdowns all executors obtained from this {@code ExecutorManager}. */
-	public void shutdownAllExecutors() {
+	public void shutdown() {
 		for (var executor: executors) executor.shutdown();
 	}
 
@@ -160,7 +160,7 @@ public class ExecutorManager {
 	 * @return an empty list if all {@code Executors} were terminated, otherwise a list those that
 	 *     failed to terminate within {@code timeout}.
 	 */
-	public List<ServletContextTrackingExecutor> enforceTerminationOfAllExecutors(
+	public List<ServletContextTrackingExecutor> enforceTermination(
 		long timeout,
 		TimeUnit unit
 	) throws InterruptedException {
@@ -180,7 +180,7 @@ public class ExecutorManager {
 	 * @return an empty list if all {@code Executors} were terminated, otherwise a list those that
 	 *     failed to terminate within {@code timeout}.
 	 */
-	public List<ServletContextTrackingExecutor> awaitTerminationOfAllExecutors(
+	public List<ServletContextTrackingExecutor> awaitTermination(
 		long timeout,
 		TimeUnit unit
 	) throws InterruptedException {
@@ -198,27 +198,21 @@ public class ExecutorManager {
 	 * {@link ServletContextTrackingExecutor#awaitTermination() Awaits for termination} of all
 	 * {@code Executors} obtained from this {@code ExecutorManager}.
 	 */
-	public void awaitTerminationOfAllExecutors() throws InterruptedException {
+	public void awaitTermination() throws InterruptedException {
 		for (var executor: executors) executor.awaitTermination();
 	}
 
 
 
-	/**
-	 * Creates {@link Awaitable.WithUnit} of
-	 * {@link #enforceTerminationOfAllExecutors(long, TimeUnit)}.
-	 */
-	public Awaitable.WithUnit toAwaitableOfEnforcedTerminationOfAllExecutors() {
-		return (timeout, unit) -> enforceTerminationOfAllExecutors(timeout, unit).isEmpty();
+	/** Creates {@link Awaitable.WithUnit} of {@link #enforceTermination(long, TimeUnit)}. */
+	public Awaitable.WithUnit toAwaitableOfEnforcedTermination() {
+		return (timeout, unit) -> enforceTermination(timeout, unit).isEmpty();
 	}
 
 
 
-	/**
-	 * Creates {@link Awaitable.WithUnit} of
-	 * {@link #awaitTerminationOfAllExecutors(long, TimeUnit)}.
-	 */
-	public Awaitable.WithUnit toAwaitableOfTerminationOfAllExecutors() {
-		return (timeout, unit) -> awaitTerminationOfAllExecutors(timeout, unit).isEmpty();
+	/** Creates {@link Awaitable.WithUnit} of {@link #awaitTermination(long, TimeUnit)}. */
+	public Awaitable.WithUnit toAwaitableOfTermination() {
+		return (timeout, unit) -> awaitTermination(timeout, unit).isEmpty();
 	}
 }

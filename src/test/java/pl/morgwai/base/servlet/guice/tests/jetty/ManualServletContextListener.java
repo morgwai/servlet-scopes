@@ -171,10 +171,10 @@ public class ManualServletContextListener implements ServletContextListener {
 	public void contextDestroyed(ServletContextEvent destruction) {
 		pingerService.stop();
 		GuiceServerEndpointConfigurator.deregisterDeployment(destruction.getServletContext());
-		executorManager.shutdownAllExecutors();
+		executorManager.shutdown();
 		List<ServletContextTrackingExecutor> unterminated;
 		try {
-			unterminated = executorManager.awaitTerminationOfAllExecutors(5L, TimeUnit.SECONDS);
+			unterminated = executorManager.awaitTermination(5L, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			unterminated = executorManager.getExecutors().stream()
 				.filter((executor) -> !executor.isTerminated())
