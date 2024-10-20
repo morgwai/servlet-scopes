@@ -7,8 +7,13 @@ import javax.servlet.annotation.WebListener;
 import javax.websocket.DeploymentException;
 
 import com.google.inject.Module;
+import pl.morgwai.base.guice.scopes.ContextTrackingExecutorDecorator;
 import pl.morgwai.base.servlet.guice.tests.servercommon.*;
 import pl.morgwai.base.servlet.guice.utils.PingingServletContextListener;
+import pl.morgwai.base.utils.concurrent.NamingThreadFactory;
+import pl.morgwai.base.utils.concurrent.TaskTrackingThreadPoolExecutor;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 
 
@@ -19,12 +24,20 @@ public class ServletContextListener extends PingingServletContextListener {
 
 	@Override
 	protected LinkedList<Module> configureInjections() {
+		final var executor =
+				new TaskTrackingThreadPoolExecutor(2, new NamingThreadFactory("testExecutor"));
+		addShutdownHook(() -> {
+			try {
+				executor.tryEnforceTermination(5L, SECONDS);
+			} catch (InterruptedException ignored) {}
+		});
+
 		final var modules = new LinkedList<Module>();
 		modules.add(new ServiceModule(
-			servletModule.containerCallScope,
-			servletModule.websocketConnectionScope,
-			servletModule.httpSessionScope,
-			executorManager
+			containerCallScope,
+			websocketConnectionScope,
+			httpSessionScope,
+			new ContextTrackingExecutorDecorator(executor, ctxBinder)
 		));
 		return modules;
 	}

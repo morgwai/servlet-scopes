@@ -4,6 +4,8 @@ package pl.morgwai.base.servlet.guice.tests.servercommon;
 import com.google.inject.*;
 import com.google.inject.Module;
 import com.google.inject.name.Names;
+
+import pl.morgwai.base.guice.scopes.ContextTrackingExecutorDecorator;
 import pl.morgwai.base.servlet.guice.scopes.*;
 
 
@@ -15,7 +17,7 @@ public class ServiceModule implements Module {
 	final Scope containerCallScope;
 	final Scope websocketConnectionScope;
 	final Scope httpSessionScope;
-	final ExecutorManager executorManager;
+	final ContextTrackingExecutorDecorator executor;
 
 
 
@@ -23,21 +25,20 @@ public class ServiceModule implements Module {
 		Scope containerCallScope,
 		Scope websocketConnectionScope,
 		Scope httpSessionScope,
-		ExecutorManager executorManager
+		ContextTrackingExecutorDecorator executor
 	) {
 		this.containerCallScope = containerCallScope;
 		this.websocketConnectionScope = websocketConnectionScope;
 		this.httpSessionScope = httpSessionScope;
-		this.executorManager = executorManager;
+		this.executor = executor;
 	}
 
 
 
 	@Override
 	public void configure(Binder binder) {
-		final var executor = executorManager.newContextTrackingExecutor("testExecutor", 2);
 		// usually Executors are bound with some name, but in this app there's only 1
-		binder.bind(ServletContextTrackingExecutor.class).toInstance(executor);
+		binder.bind(ContextTrackingExecutorDecorator.class).toInstance(executor);
 
 		// bind Service in 3 different scopes depending on the value of @Named
 		binder.bind(Service.class)

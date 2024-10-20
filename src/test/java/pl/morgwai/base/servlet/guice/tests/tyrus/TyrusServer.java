@@ -2,7 +2,6 @@
 package pl.morgwai.base.servlet.guice.tests.tyrus;
 
 import java.util.*;
-import java.util.stream.Collectors;
 import javax.websocket.DeploymentException;
 import javax.websocket.Endpoint;
 import javax.websocket.server.ServerApplicationConfig;
@@ -11,10 +10,13 @@ import javax.websocket.server.ServerEndpointConfig;
 import com.google.inject.Module;
 import com.google.inject.*;
 import org.glassfish.tyrus.core.cluster.ClusterContext;
+import pl.morgwai.base.guice.scopes.ContextTrackingExecutorDecorator;
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.guice.tests.servercommon.*;
 import pl.morgwai.base.servlet.guice.utils.*;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
+import pl.morgwai.base.utils.concurrent.NamingThreadFactory;
+import pl.morgwai.base.utils.concurrent.TaskTrackingThreadPoolExecutor;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -26,9 +28,9 @@ public class TyrusServer implements Server {
 
 	final String deploymentPath;
 	final StandaloneWebsocketContainerServletContext appDeployment;
-	final ExecutorManager executorManager;
 	final WebsocketPingerService pingerService;
 	final org.glassfish.tyrus.server.Server tyrus;
+	final TaskTrackingThreadPoolExecutor executor;
 
 
 
@@ -48,7 +50,7 @@ public class TyrusServer implements Server {
 			appDeployment,
 			new PingingWebsocketModule(pingerService, true)
 		);
-		executorManager = new ExecutorManager(servletModule.ctxBinder);
+		executor = new TaskTrackingThreadPoolExecutor(2, new NamingThreadFactory("testExecutor"));
 
 		// create and store injector
 		final var modules = new LinkedList<Module>();
@@ -57,7 +59,7 @@ public class TyrusServer implements Server {
 			servletModule.containerCallScope,
 			servletModule.websocketConnectionScope,
 			null,  // no HTTP session support
-			executorManager
+			new ContextTrackingExecutorDecorator(executor, servletModule.ctxBinder)
 		));
 		Guice.createInjector(modules);  // servletModule does static injection that stores injector
 
@@ -88,17 +90,11 @@ public class TyrusServer implements Server {
 	public void stop() {
 		tyrus.stop();
 		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
+		executor.shutdown();
 		pingerService.stop();
-		executorManager.shutdownAllExecutors();
-		List<ServletContextTrackingExecutor> unterminated;
 		try {
-			unterminated = executorManager.awaitTerminationOfAllExecutors(100L, MILLISECONDS);
-		} catch (InterruptedException e) {
-			unterminated = executorManager.getExecutors().stream()
-				.filter((executor) -> !executor.isTerminated())
-				.collect(Collectors.toList());
-		}
-		for (var executor: unterminated) executor.shutdownNow();
+			executor.tryEnforceTermination(100L, MILLISECONDS);
+		} catch (InterruptedException ignored) {}
 	}
 
 

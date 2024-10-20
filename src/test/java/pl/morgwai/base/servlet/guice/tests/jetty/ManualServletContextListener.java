@@ -2,8 +2,6 @@
 package pl.morgwai.base.servlet.guice.tests.jetty;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import javax.servlet.ServletContextListener;
 import javax.servlet.*;
 import javax.servlet.annotation.WebListener;
@@ -13,12 +11,17 @@ import javax.websocket.server.ServerEndpointConfig;
 
 import com.google.inject.Module;
 import com.google.inject.*;
+import pl.morgwai.base.guice.scopes.ContextTrackingExecutorDecorator;
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.guice.tests.servercommon.*;
 import pl.morgwai.base.servlet.guice.utils.PingingServerEndpointConfigurator;
 import pl.morgwai.base.servlet.guice.utils.PingingWebsocketModule;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
+import pl.morgwai.base.utils.concurrent.NamingThreadFactory;
+import pl.morgwai.base.utils.concurrent.TaskTrackingThreadPoolExecutor;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static pl.morgwai.base.servlet.guice.tests.servercommon.Server.*;
 
 
@@ -35,7 +38,7 @@ public class ManualServletContextListener implements ServletContextListener {
 
 	ServletWebsocketModule servletModule;
 	WebsocketPingerService pingerService;
-	ExecutorManager executorManager;
+	TaskTrackingThreadPoolExecutor executor;
 
 
 
@@ -47,7 +50,7 @@ public class ManualServletContextListener implements ServletContextListener {
 				intervalFromProperty != null
 					? Long.parseLong(intervalFromProperty)
 					: DEFAULT_PING_INTERVAL_MILLIS,
-				TimeUnit.MILLISECONDS,
+				MILLISECONDS,
 				1
 			);
 			final ServletContext appDeployment = initialization.getServletContext();
@@ -58,15 +61,16 @@ public class ManualServletContextListener implements ServletContextListener {
 			final ServerContainer endpointContainer = ((ServerContainer)
 					appDeployment.getAttribute(ServerContainer.class.getName()));
 			appDeployment.addListener(new HttpSessionContext.SessionContextCreator());
-			executorManager = new ExecutorManager(servletModule.ctxBinder);
 
+			executor = new TaskTrackingThreadPoolExecutor(
+					2, new NamingThreadFactory("testExecutor"));
 			final var modules = new LinkedList<Module>();
 			modules.add(servletModule);
 			modules.add(new ServiceModule(
 				servletModule.containerCallScope,
 				servletModule.websocketConnectionScope,
 				servletModule.httpSessionScope,
-				executorManager
+				new ContextTrackingExecutorDecorator(executor, servletModule.ctxBinder)
 			));
 			final Injector injector = Guice.createInjector(modules);
 
@@ -169,19 +173,11 @@ public class ManualServletContextListener implements ServletContextListener {
 
 	@Override
 	public void contextDestroyed(ServletContextEvent destruction) {
+		executor.shutdown();
 		pingerService.stop();
 		GuiceServerEndpointConfigurator.deregisterDeployment(destruction.getServletContext());
-		executorManager.shutdownAllExecutors();
-		List<ServletContextTrackingExecutor> unterminated;
 		try {
-			unterminated = executorManager.awaitTerminationOfAllExecutors(5L, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
-			unterminated = executorManager.getExecutors().stream()
-				.filter((executor) -> !executor.isTerminated())
-				.collect(Collectors.toList());
-		}
-		for (var executor: unterminated) {
-			executor.shutdownNow();  // ...or something more specific
-		}
+			executor.tryEnforceTermination(5L, SECONDS);
+		} catch (InterruptedException ignored) {}
 	}
 }
