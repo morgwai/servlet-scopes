@@ -23,6 +23,7 @@ import pl.morgwai.base.utils.concurrent.TaskTrackingThreadPoolExecutor;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static pl.morgwai.base.servlet.guice.tests.servercommon.Server.*;
+import static pl.morgwai.base.utils.concurrent.Awaitable.awaitMultiple;
 
 
 
@@ -174,10 +175,14 @@ public class ManualServletContextListener implements ServletContextListener {
 	@Override
 	public void contextDestroyed(ServletContextEvent destruction) {
 		executor.shutdown();
-		pingerService.stop();
+		pingerService.shutdown();
 		GuiceServerEndpointConfigurator.deregisterDeployment(destruction.getServletContext());
 		try {
-			executor.tryEnforceTermination(5L, SECONDS);
+			awaitMultiple(
+				5L, SECONDS,
+				executor.toAwaitableOfEnforcedTermination(),
+				pingerService::tryEnforceTermination
+			);
 		} catch (InterruptedException ignored) {}
 	}
 }
