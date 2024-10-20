@@ -1,7 +1,6 @@
 // Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
-import java.util.*;
 import javax.servlet.ServletContext;
 
 import com.google.inject.Module;
@@ -24,10 +23,10 @@ public class ServletWebsocketModule implements Module {
 
 
 	/**
-	 * Scopes objects to the {@link HttpSessionContext Context of an HttpSessions}.
-	 * This {@code Scope} is induced by {@link ContainerCallContext}s obtained from
-	 * {@link #ctxTracker}, so it may be active both within
-	 * {@link ServletRequestContext}s and {@link WebsocketEventContext}s.
+	 * Scopes objects to the {@link HttpSessionContext Contexts of HttpSessions}.
+	 * As {@link HttpSessionContext} is induced by {@link ContainerCallContext}, this
+	 * {@link Scope} may be active both within {@link ServletRequestContext}s and
+	 * {@link WebsocketEventContext}s.
 	 * <p>
 	 * <b>NOTE:</b> it is not possible to create an {@link javax.servlet.http.HttpSession} from the
 	 * websocket {@code Endpoint} layer if it doesn't already exist. To safely use this
@@ -50,17 +49,17 @@ public class ServletWebsocketModule implements Module {
 	 */
 	public final WebsocketModule websocketModule;
 
-	/** Reference to {@link WebsocketModule#ctxTracker websocketModule.ctxTracker}. */
-	public final ContextTracker<ContainerCallContext> ctxTracker;
 	/**
 	 * Reference to {@link WebsocketModule#containerCallScope websocketModule.containerCallScope}.
 	 */
-	public final Scope containerCallScope;
+	public final ContextScope<ContainerCallContext> containerCallScope;
 	/**
 	 * Reference to
 	 * {@link WebsocketModule#websocketConnectionScope websocketModule.websocketConnectionScope}.
 	 */
 	public final Scope websocketConnectionScope;
+	/** Reference to {@link WebsocketModule#ctxBinder websocketModule.ctxBinder}. */
+	public final ContextBinder ctxBinder;
 
 
 
@@ -87,60 +86,34 @@ public class ServletWebsocketModule implements Module {
 	/** For {@link GuiceServletContextListener}. */
 	ServletWebsocketModule(WebsocketModule websocketModule) {
 		this.websocketModule = websocketModule;
-		httpSessionScope = new InducedContextScope<>(
-			"ServletWebsocketModule.httpSessionScope",
-			websocketModule.ctxTracker,
-			ContainerCallContext::getHttpSessionContext
-		);
-
-		ctxTracker = websocketModule.ctxTracker;
 		containerCallScope = websocketModule.containerCallScope;
 		websocketConnectionScope = websocketModule.websocketConnectionScope;
-		allTrackers = websocketModule.allTrackers;
 		ctxBinder = websocketModule.ctxBinder;
+		httpSessionScope = websocketModule.packageExposedNewInducedContextScope(
+			"ServletWebsocketModule.httpSessionScope",
+			HttpSessionContext.class,
+			containerCallScope.tracker,
+			ContainerCallContext::getHttpSessionContext
+		);
 	}
 
 
 
 	/**
-	 * {@link Binder#install(Module) Installs} {@link #websocketModule} and
+	 * {@link Binder#install(Module) Installs} {@link #websocketModule}, binds
+	 * {@link ServletContext} type to {@link #appDeployment} and
 	 * {@link Binder#requestStaticInjection(Class[]) injects static fields} of
 	 * {@link GuiceServerEndpointConfigurator}.
-	 * Additionally binds some infrastructure stuff:
-	 * <ul>
-	 *   <li>{@link ServletContext} to {@link #getAppDeployment() appDeployment}</li>
-	 *   <li>{@link HttpSessionContext} to a {@link Provider} returning instance current for the
-	 *       calling {@code Thread}</li>
-	 * </ul>
+	 * This is in order for {@link GuiceServerEndpointConfigurator} instances created by the
+	 * container (for {@code Endpoint}s annotated
+	 * with @{@link javax.websocket.server.ServerEndpoint} using
+	 * {@link GuiceServerEndpointConfigurator}) to get a reference to the {@link Injector}.</p>
 	 */
 	@Override
 	public void configure(Binder binder) {
 		if (appDeployment == null) throw new IllegalStateException("appDeployment not set");
 		binder.install(websocketModule);
 		binder.bind(ServletContext.class).toInstance(appDeployment);
-		binder.bind(HttpSessionContext.class).toProvider(
-				() -> ctxTracker.getCurrentContext().getHttpSessionContext());
 		binder.requestStaticInjection(GuiceServerEndpointConfigurator.class);
 	}
-
-
-
-	/** Reference to {@link WebsocketModule#allTrackers websocketModule.allTrackers}. */
-	public final List<ContextTracker<?>> allTrackers;
-	/** Reference to {@link WebsocketModule#ctxBinder websocketModule.ctxBinder}. */
-	public final ContextBinder ctxBinder;
-
-	/** Calls {@link WebsocketModule#getActiveContexts()}. */
-	public List<TrackableContext<?>> getActiveContexts() {
-		return websocketModule.getActiveContexts();
-	}
-
-
-
-	/** Reference to {@link WebsocketModule#CTX_TRACKER_KEY websocketModule.ctxTrackerKey}. */
-	public static final Key<ContextTracker<ContainerCallContext>> CTX_TRACKER_KEY =
-			WebsocketModule.CTX_TRACKER_KEY;
-	/** Reference to {@link WebsocketModule#ALL_TRACKERS_KEY websocketModule.allTrackersKey}. */
-	public static final Key<List<ContextTracker<?>>> ALL_TRACKERS_KEY =
-			WebsocketModule.ALL_TRACKERS_KEY;
 }

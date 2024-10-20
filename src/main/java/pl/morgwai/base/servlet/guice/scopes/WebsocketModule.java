@@ -2,8 +2,8 @@
 package pl.morgwai.base.servlet.guice.scopes;
 
 import java.util.*;
+import java.util.function.Function;
 
-import com.google.inject.Module;
 import com.google.inject.*;
 import pl.morgwai.base.guice.scopes.*;
 
@@ -19,12 +19,9 @@ import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
  * {@link ServletWebsocketModule}.
  * @see pl.morgwai.base.servlet.guice.utils.PingingWebsocketModule
  */
-public class WebsocketModule implements Module {
+public class WebsocketModule extends ContextScopesModule {
 
 
-
-	/** Allows tracking of {@link ServletRequestContext}s and {@link WebsocketEventContext}s. */
-	public final ContextTracker<ContainerCallContext> ctxTracker = new ContextTracker<>();
 
 	/**
 	 * Scopes objects to the {@code Context} of either an
@@ -32,10 +29,8 @@ public class WebsocketModule implements Module {
 	 * {@link WebsocketEventContext websocket event} depending which type is active at the moment of
 	 * a given {@link Provider#get() provisioning}.
 	 */
-	public final Scope containerCallScope =
-			new ContextScope<>("WebsocketModule.containerCallScope", ctxTracker);
-
-
+	public final ContextScope<ContainerCallContext> containerCallScope =
+			newContextScope("WebsocketModule.containerCallScope", ContainerCallContext.class);
 
 	/**
 	 * Scopes objects to the {@link WebsocketConnectionContext Context of a websocket connections
@@ -43,9 +38,10 @@ public class WebsocketModule implements Module {
 	 * This {@code Scope} is induced by and active <b>only</b> within
 	 * {@link WebsocketEventContext}s.
 	 */
-	public final Scope websocketConnectionScope = new InducedContextScope<>(
+	public final Scope websocketConnectionScope = newInducedContextScope(
 		"WebsocketModule.websocketConnectionScope",
-		ctxTracker,
+		WebsocketConnectionContext.class,
+		containerCallScope.tracker,
 		WebsocketModule::getWebsocketConnectionContext
 	);
 
@@ -53,11 +49,14 @@ public class WebsocketModule implements Module {
 		try {
 			return ((WebsocketEventContext) eventCtx).getConnectionContext();
 		} catch (ClassCastException e) {
-			throw new OutOfScopeException(
-				"cannot provide a websocketConnectionScope-d Object within a ServletRequestContext"
-			);
+			throw new OutOfScopeException(WS_CONNECTION_CTX_WITHIN_SERVLET_CTX_MESSAGE);
 		}
 	}
+
+	static final String WS_CONNECTION_CTX_WITHIN_SERVLET_CTX_MESSAGE =
+			"cannot provide a websocketConnectionScope-d Object within a ServletRequestContext";
+
+	public final ContextBinder ctxBinder = newContextBinder();
 
 
 
@@ -124,31 +123,19 @@ public class WebsocketModule implements Module {
 
 
 	/**
-	 * Binds {@link #clientEndpointClasses} annotated with {@link GuiceClientEndpoint} to
+	 * Calls {@link ContextScopesModule#configure(Binder) super} and binds
+	 * {@link #clientEndpointClasses} annotated with {@link GuiceClientEndpoint} to
 	 * {@link Provider}s based on {@link GuiceEndpointConfigurator}.
-	 * Additionally binds some infrastructure stuff:
-	 * <ul>
-	 *   <li>{@link GuiceEndpointConfigurator#REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY} to
-	 *       {@link #setRequireTopLevelMethodAnnotations(boolean) requireTopLevelMethodAnnotations
-	 *       flag value} (if unset, then {@code false} is assumed)</li>
-	 *   <li>{@link #ALL_TRACKERS_KEY} to {@link #allTrackers}</li>
-	 *   <li>{@link ContextBinder} to {@link #ctxBinder}</li>
-	 *   <li>{@link #CTX_TRACKER_KEY} to {@link #ctxTracker}</li>
-	 *   <li>{@link ContainerCallContext} and {@link WebsocketConnectionContext} to
-	 *       {@link Provider}s returning instances current for the calling {@code Thread}</li>
-	 * </ul>
+	 * Additionally binds {@link GuiceEndpointConfigurator#REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY}
+	 * to {@link #setRequireTopLevelMethodAnnotations(boolean)
+	 * requireTopLevelMethodAnnotations flag value} (if unset, then {@code false} is assumed).
 	 */
 	@Override
 	public void configure(Binder binder) {
+		super.configure(binder);
 		if (requireTopLevelMethodAnnotations == null) requireTopLevelMethodAnnotations = false;
 		binder.bind(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY)
-				.toInstance(requireTopLevelMethodAnnotations);
-		binder.bind(ALL_TRACKERS_KEY).toInstance(allTrackers);
-		binder.bind(ContextBinder.class).toInstance(ctxBinder);
-		binder.bind(CTX_TRACKER_KEY).toInstance(ctxTracker);
-		binder.bind(ContainerCallContext.class).toProvider(ctxTracker::getCurrentContext);
-		binder.bind(WebsocketConnectionContext.class).toProvider(
-				() -> getWebsocketConnectionContext(ctxTracker.getCurrentContext()));
+			.toInstance(requireTopLevelMethodAnnotations);
 		for (var clientEndpointClass: clientEndpointClasses) {
 			bindClientEndpoint(binder, clientEndpointClass);
 		}
@@ -172,27 +159,24 @@ public class WebsocketModule implements Module {
 
 
 
-	/**
-	 * Singleton of {@link #ctxTracker}.
-	 * {@link #ALL_TRACKERS_KEY} is bound to this {@code List} in {@link #configure(Binder)} method.
-	 */
-	public final List<ContextTracker<?>> allTrackers = List.of(ctxTracker);
-	/** {@code ContextBinder} created using {@link #allTrackers}. */
-	public final ContextBinder ctxBinder = new ContextBinder(allTrackers);
-
-	/** Calls {@link ContextTracker#getActiveContexts(List) getActiveContexts(allTrackers)}. */
-	public List<TrackableContext<?>> getActiveContexts() {
-		return ContextTracker.getActiveContexts(allTrackers);
-	}
-
-
-
 	static final TypeLiteral<ContextTracker<ContainerCallContext>> CTX_TRACKER_TYPE =
 			new TypeLiteral<>() {};
-	static final TypeLiteral<List<ContextTracker<?>>> ALL_TRACKERS_TYPE = new TypeLiteral<>() {};
-	/** {@code Key} of {@link #ctxTracker}. */
+	/** {@code Key} for the {@link ContextTracker} of {@link #containerCallScope}. */
 	public static final Key<ContextTracker<ContainerCallContext>> CTX_TRACKER_KEY =
 			Key.get(CTX_TRACKER_TYPE);
-	/** {@code Key} of {@link #allTrackers}. */
-	public static final Key<List<ContextTracker<?>>> ALL_TRACKERS_KEY = Key.get(ALL_TRACKERS_TYPE);
+
+
+
+	/** For {@link ServletWebsocketModule}. */
+	<
+		BaseContextT extends TrackableContext<? super BaseContextT>,
+		InducedContextT extends InjectionContext
+	> InducedContextScope<BaseContextT, InducedContextT> packageExposedNewInducedContextScope(
+		String name,
+		Class<InducedContextT> inducedCtxClass,
+		ContextTracker<BaseContextT> baseCtxTracker,
+		Function<BaseContextT, InducedContextT> inducedCtxRetriever
+	) {
+		return newInducedContextScope(name, inducedCtxClass, baseCtxTracker, inducedCtxRetriever);
+	}
 }

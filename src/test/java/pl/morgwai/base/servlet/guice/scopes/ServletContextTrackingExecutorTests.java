@@ -15,6 +15,7 @@ import org.junit.*;
 import org.easymock.*;
 
 import pl.morgwai.base.guice.scopes.ContextBoundRunnable;
+import pl.morgwai.base.guice.scopes.ContextTracker;
 import pl.morgwai.base.utils.concurrent.NamingThreadFactory;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -35,9 +36,10 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 
 	@Mock HttpServletRequest servletRequest;
 	final ServletWebsocketModule servletModule = new ServletWebsocketModule(new WebsocketModule());
+	final ContextTracker<ContainerCallContext> ctxTracker =
+			servletModule.containerCallScope.tracker;
 	final ExecutorManager executorManager = new ExecutorManager(servletModule.ctxBinder);
-	final ServletRequestContext requestCtx =
-			new ServletRequestContext(servletRequest, servletModule.ctxTracker);
+	final ServletRequestContext requestCtx = new ServletRequestContext(servletRequest, ctxTracker);
 
 	@Mock Session wsConnection;
 	boolean wsConnectionClosed = false;
@@ -109,9 +111,9 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 
 		replayAll();
 
-		wsConnectionProxy = new WebsocketConnectionProxy(wsConnection, servletModule.ctxTracker);
+		wsConnectionProxy = new WebsocketConnectionProxy(wsConnection, ctxTracker);
 		wsConnectionCtx = new WebsocketConnectionContext(wsConnectionProxy);
-		wsEventCtx = new WebsocketEventContext(wsConnectionCtx, null, servletModule.ctxTracker);
+		wsEventCtx = new WebsocketEventContext(wsConnectionCtx, null, ctxTracker);
 	}
 
 
@@ -130,7 +132,7 @@ public class ServletContextTrackingExecutorTests extends EasyMockSupport {
 		ctx.executeWithinSelf(() -> testSubject.execute(() -> {
 			try {
 				assertSame("context should be transferred when passing task to executor",
-						ctx, servletModule.ctxTracker.getCurrentContext());
+						ctx, ctxTracker.getCurrentContext());
 			} catch (AssertionError e) {
 				asyncError[0] = e;
 			} finally {
