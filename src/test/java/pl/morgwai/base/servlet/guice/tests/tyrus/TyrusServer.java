@@ -19,6 +19,8 @@ import pl.morgwai.base.utils.concurrent.NamingThreadFactory;
 import pl.morgwai.base.utils.concurrent.TaskTrackingThreadPoolExecutor;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static pl.morgwai.base.utils.concurrent.Awaitable.awaitMultiple;
 
 
 
@@ -89,11 +91,15 @@ public class TyrusServer implements Server {
 	@Override
 	public void stop() {
 		tyrus.stop();
-		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
 		executor.shutdown();
-		pingerService.stop();
+		pingerService.shutdown();
+		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
 		try {
-			executor.tryEnforceTermination(100L, MILLISECONDS);
+			awaitMultiple(
+				5L, SECONDS,
+				executor.toAwaitableOfEnforcedTermination(),
+				pingerService::tryEnforceTermination
+			);
 		} catch (InterruptedException ignored) {}
 	}
 
