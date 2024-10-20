@@ -7,17 +7,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.google.inject.Inject;
-import pl.morgwai.base.servlet.guice.scopes.ServletContextTrackingExecutor;
+import pl.morgwai.base.guice.scopes.ContextTrackingExecutorDecorator;
 
 
 
 /**
  * Receives requests from {@link ForwardingServlet},
  * {@link HttpServletRequest#startAsync() starts async processing}, dispatches processing to its
- * {@link ServletContextTrackingExecutor} and from there {@link AsyncContext#dispatch() dispatches}
- * back to the container in a way specified by {@link #MODE_PARAM} and {@link #TARGET_PATH_PARAM}.
- * If a request comes back to this {@code Servlet} {@link DispatcherType#ASYNC asynchronously}, it
- * is {@link #doAsyncHandling(HttpServletRequest, HttpServletResponse) handled}.
+ * {@code ContextTrackingExecutor} and from there {@link AsyncContext#dispatch() dispatches} back to
+ * the container in a way specified by {@link #MODE_PARAM} and {@link #TARGET_PATH_PARAM}. If a
+ * request comes back to this {@code Servlet} {@link DispatcherType#ASYNC asynchronously}, it is
+ * {@link #doAsyncHandling(HttpServletRequest, HttpServletResponse) handled}.
  */
 public class AsyncServlet extends TestServlet {
 
@@ -45,7 +45,7 @@ public class AsyncServlet extends TestServlet {
 	 */
 	public static final String TARGET_PATH_PARAM = "targetPath";
 
-	@Inject	ServletContextTrackingExecutor executor;
+	@Inject ContextTrackingExecutorDecorator executor;
 
 
 

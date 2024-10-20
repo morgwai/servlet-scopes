@@ -1,9 +1,7 @@
 // Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
-import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.*;
@@ -16,10 +14,8 @@ import javax.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.Module;
 import com.google.inject.*;
+import pl.morgwai.base.guice.scopes.ContextBinder;
 
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.toList;
 import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
 		.REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM;
 
@@ -29,8 +25,8 @@ import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
  * Base class for app {@link ServletContextListener}s, creates and configures the app-wide
  * {@link Injector} and {@link ServletWebsocketModule}, performs
  * {@link GuiceServerEndpointConfigurator} initialization.
- * Also performs a cleanup of {@link ServletContextTrackingExecutor}s and provides helper methods
- * for programmatically adding {@link Servlet}s, {@link Filter}s and websocket {@code Endpoints}.
+ * Also provides helper methods for programmatically adding {@link Servlet}s, {@link Filter}s and
+ * websocket {@code Endpoints}.
  * <p>
  * Usually a single subclass of this class should be created in a given app and either annotated
  * with {@link javax.servlet.annotation.WebListener @WebListener} or enlisted in the app's
@@ -93,18 +89,11 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * {@link #configureInjections()}.
 	 */
 	protected final Scope websocketConnectionScope = servletModule.websocketConnectionScope;
-
-
-
 	/**
-	 * An {@link ExecutorManager} that will be
-	 * {@link ExecutorManager#awaitTerminationOfAllExecutors(long, TimeUnit) terminated}
-	 * automatically in {@link #contextDestroyed(ServletContextEvent)}.
-	 * For use in {@link #configureInjections()}.
-	 * @see #getExecutorsTerminationTimeout()
-	 * @see #handleUnterminatedExecutors(List)
+	 * Reference to {@link #servletModule}'s {@link ServletWebsocketModule#ctxBinder ctxBinder}, for
+	 * use in {@link #configureInjections()}.
 	 */
-	protected final ExecutorManager executorManager = new ExecutorManager(servletModule.ctxBinder);
+	protected final ContextBinder ctxBinder = servletModule.ctxBinder;
 
 
 
@@ -401,34 +390,6 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Returns the timeout for {@link ExecutorManager#awaitTerminationOfAllExecutors(long, TimeUnit)
-	 * termination of all Executors} obtained from {@link #executorManager}.
-	 * By default {@value #DEFAULT_EXECUTORS_TERMINATION_TIMEOUT_SECONDS} seconds.
-	 * <p>
-	 * This method is called by {@link #contextDestroyed(ServletContextEvent)} and may be overridden
-	 * if a different value needs to be used.</p>
-	 */
-	protected Duration getExecutorsTerminationTimeout() {
-		return Duration.ofSeconds(DEFAULT_EXECUTORS_TERMINATION_TIMEOUT_SECONDS);
-	}
-
-	static final long DEFAULT_EXECUTORS_TERMINATION_TIMEOUT_SECONDS = 5L;
-
-	/**
-	 * Handles executors that failed to terminate in {@link #contextDestroyed(ServletContextEvent)}.
-	 * By default calls {@link java.util.concurrent.ExecutorService#shutdownNow() shutdownNow()} for
-	 * each executor and hopes for the best... Subclasses may override this method to handle
-	 * unterminated executors in a more specialized way.
-	 */
-	protected void handleUnterminatedExecutors(
-		List<ServletContextTrackingExecutor> unterminatedExecutors
-	) {
-		for (var executor: unterminatedExecutors) executor.shutdownNow();
-	}
-
-
-
-	/**
 	 * Adds {@code shutdownHook} to be run at the end of
 	 * {@link #contextDestroyed(ServletContextEvent)}.
 	 */
@@ -441,34 +402,13 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Shutdowns the app.
-	 * The exact sequence of events is as follows:
-	 * <ol>
-	 *   <li>calls {@link GuiceServerEndpointConfigurator#deregisterDeployment(ServletContext)}</li>
-	 *   <li>{@link ExecutorManager#shutdownAllExecutors() shutdowns} {@link #executorManager} and
-	 *       {@link ExecutorManager#awaitTerminationOfAllExecutors(long, TimeUnit) awaits its
-	 *       termination} passing the result of {@link #getExecutorsTerminationTimeout()} as timeout
-	 *       param</li>
-	 *   <li>passes {@code Executor}s that failed to terminate (if any) to
-	 *       {@link #handleUnterminatedExecutors(List)}</li>
-	 *   <li>calls all {@link #addShutdownHook(Runnable) registered shutdown hooks}</li>
-	 * </ol>
+	 * {@link GuiceServerEndpointConfigurator#deregisterDeployment(ServletContext) Deregisters this
+	 * deployment} and calls all {@link #addShutdownHook(Runnable) registered shutdown hooks}.
 	 */
 	@Override
 	public final void contextDestroyed(ServletContextEvent destruction) {
 		log.info(deploymentName + " is shutting down");
 		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
-		executorManager.shutdownAllExecutors();
-		List<ServletContextTrackingExecutor> unterminatedExecutors;
-		try {
-			unterminatedExecutors = executorManager.awaitTerminationOfAllExecutors(
-					getExecutorsTerminationTimeout().toNanos(), NANOSECONDS);
-		} catch (InterruptedException e) {
-			unterminatedExecutors = executorManager.getExecutors().stream()
-				.filter(not(ServletContextTrackingExecutor::isTerminated))
-				.collect(toList());
-		}
-		if ( !unterminatedExecutors.isEmpty()) handleUnterminatedExecutors(unterminatedExecutors);
 		for (var shutdownHook : shutdownHooks) shutdownHook.run();
 	}
 
