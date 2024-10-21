@@ -1,6 +1,7 @@
 // Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -14,11 +15,15 @@ import javax.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.Module;
 import com.google.inject.*;
+import pl.morgwai.base.guice.scopes.ContextBinder;
+import pl.morgwai.base.utils.concurrent.Awaitable;
 
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
 		.REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM;
+import static pl.morgwai.base.utils.concurrent.Awaitable.awaitMultiple;
+import static pl.morgwai.base.utils.concurrent.Awaitable.newEntry;
 
-import pl.morgwai.base.guice.scopes.ContextBinder;
 
 
 /**
@@ -392,6 +397,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	/**
 	 * Adds {@code shutdownHook} to be run at the end of
 	 * {@link #contextDestroyed(ServletContextEvent)}.
+	 * These hooks will be run <i>before</i>
+	 * {@link #addAwaitableShutdownHook(Awaitable.WithUnit) Awaitable ones}.
 	 */
 	protected void addShutdownHook(Runnable shutdownHook) {
 		shutdownHooks.add(shutdownHook);
@@ -402,14 +409,50 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
+	 * Adds {@link Awaitable} {@code shutdownHook} to be run at the end of
+	 * {@link #contextDestroyed(ServletContextEvent)}.
+	 * These hooks will be executed <i>after</i>
+	 * {@link #addShutdownHook(Runnable) non-Awaitable ones}.
+	 */
+	protected void addAwaitableShutdownHook(Awaitable.WithUnit shutdownHook) {
+		awaitableShutdownHooks.add(shutdownHook);
+	}
+
+	private final List<Awaitable.WithUnit> awaitableShutdownHooks = new LinkedList<>();
+
+
+
+	/**
+	 * Joint timeout for
+	 * {@link #addAwaitableShutdownHook(Awaitable.WithUnit) Awaitable shutdown hooks}.
+	 * By default {@value #SHUTDOWN_TIMEOUT_SECONDS} seconds.
+	 */
+	Duration getShutdownTimeout() {
+		return Duration.ofSeconds(SHUTDOWN_TIMEOUT_SECONDS);
+	}
+
+	static final long SHUTDOWN_TIMEOUT_SECONDS = 5L;
+
+
+
+	/**
 	 * {@link GuiceServerEndpointConfigurator#deregisterDeployment(ServletContext) Deregisters this
-	 * deployment} and calls all {@link #addShutdownHook(Runnable) registered shutdown hooks}.
+	 * deployment}, calls {@link #addShutdownHook(Runnable) non-Awaitable shutdown hooks}, then
+	 * {@link #addAwaitableShutdownHook(Awaitable.WithUnit) Awaitable ones}.
+	 * Uses the result of {@link #getShutdownTimeout()} as the joint timeout for
+	 * {@link #addAwaitableShutdownHook(Awaitable.WithUnit) Awaitable hooks}.
 	 */
 	@Override
 	public final void contextDestroyed(ServletContextEvent destruction) {
 		log.info(deploymentName + " is shutting down");
 		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
-		for (var shutdownHook : shutdownHooks) shutdownHook.run();
+		for (var shutdownHook: shutdownHooks) shutdownHook.run();
+		try {
+			awaitMultiple(
+				getShutdownTimeout().toNanos(), NANOSECONDS,
+				awaitableShutdownHooks.stream().map(o -> newEntry(o, o))
+			);
+		} catch (InterruptedException ignored) {}
 	}
 
 

@@ -164,11 +164,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	@Override
 	protected PingingServerEndpointConfigurator createEndpointConfigurator(
 			ServletContext appDeployment) {
-		addShutdownHook(() -> {
-			try {
-				pingerService.tryEnforceTermination();
-			} catch (InterruptedException ignored) {}
-		});
+		addShutdownHook(pingerService::shutdown);
+		addAwaitableShutdownHook(pingerService::tryEnforceTermination);
 		return new PingingServerEndpointConfigurator(appDeployment);
 	}
 }
