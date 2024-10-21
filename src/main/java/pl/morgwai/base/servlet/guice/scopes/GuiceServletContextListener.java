@@ -341,6 +341,9 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * <ol>
 	 *   <li>initializes {@link #appDeployment} with a reference from {@code initialization} event,
 	 *       then initializes {@link #deploymentName} and {@link #endpointContainer}</li>
+	 *   <li>if {@link WebsocketModule#setRequireTopLevelMethodAnnotations(boolean)} hasn't been
+	 *       set yet, sets it to the value of
+	 *       {@link GuiceEndpointConfigurator#REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM}.</li>
 	 *   <li>calls {@link #configureInjections()}</li>
 	 *   <li>initializes {@link #injector} by passing {@link Module}s from the previous point and
 	 *       {@link #servletModule} to {@link #createInjector(LinkedList)}</li>
@@ -353,6 +356,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	@Override
 	public final void contextInitialized(ServletContextEvent initialization) {
 		try {
+			// 1
 			appDeployment = initialization.getServletContext();
 			final String nameFromDescriptor = appDeployment.getServletContextName();
 			deploymentName = (nameFromDescriptor != null && !nameFromDescriptor.isBlank())
@@ -361,19 +365,29 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 							? "rootApp" : "app at " + appDeployment.getContextPath();
 			log.info(deploymentName + " is being deployed");
 			servletModule.setAppDeployment(appDeployment);
-			servletModule.websocketModule.setRequireTopLevelMethodAnnotations(Boolean.parseBoolean(
-				appDeployment.getInitParameter(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM)
-			));
 			endpointContainer = (ServerContainer)
 					appDeployment.getAttribute(ServerContainer.class.getName());
 			appDeployment.addListener(new HttpSessionContext.SessionContextCreator());
 
+			// 2
+			final var websocketModule = servletModule.websocketModule;
+			if (websocketModule.requireTopLevelMethodAnnotations == null) {
+				websocketModule.setRequireTopLevelMethodAnnotations(Boolean.parseBoolean(
+					appDeployment.getInitParameter(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM)
+				));
+			}
+
+			// 3
 			final var modules = configureInjections();
 			modules.add(servletModule);
 
+			// 4
 			injector = createInjector(modules);
 
+			// 5
 			endpointConfigurator = createEndpointConfigurator(appDeployment);
+
+			// 6
 			addFilter(RequestContextFilter.class.getSimpleName(), RequestContextFilter.class)
 				.addMappingForUrlPatterns(
 					EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC),
@@ -381,6 +395,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 					"/*"
 				);
 
+			// 7
 			configureServletsFiltersEndpoints();
 			log.info(deploymentName + " deployed successfully");
 		} catch (Throwable e) {
