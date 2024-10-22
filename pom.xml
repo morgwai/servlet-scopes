@@ -48,7 +48,6 @@
 		<maven.compiler.release>11</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<guice.scopes.version>10.3</guice.scopes.version>
-		<utils.version>5.2</utils.version>
 		<servlet.utils.version>6.0</servlet.utils.version>
 		<guice.version>6.0.0</guice.version><!--jakarta:<guice.version>7.0.0</guice.version>-->
 	</properties>
@@ -64,11 +63,6 @@
 			<groupId>pl.morgwai.base</groupId>
 			<artifactId>guice-context-scopes</artifactId>
 			<version>${guice.scopes.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>pl.morgwai.base</groupId>
-			<artifactId>java-utils</artifactId>
-			<version>${utils.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>pl.morgwai.base</groupId>
@@ -98,6 +92,12 @@
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<version>[2.2.220,2.999.9999]</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>pl.morgwai.base</groupId>
+			<artifactId>java-utils</artifactId>
+			<version>5.2</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -256,7 +256,6 @@
 					<overview>${basedir}/src/main/java/overview.html</overview>
 					<links>
 						<link>https://javadoc.io/doc/pl.morgwai.base/guice-context-scopes/${guice.scopes.version}</link>
-						<link>https://javadoc.io/doc/pl.morgwai.base/java-utils/${utils.version}</link>
 						<link>https://javadoc.io/doc/pl.morgwai.base/servlet-utils/${servlet.utils.version}-javax</link><!--jakarta-->
 						<link>https://google.github.io/guice/api-docs/${guice.version}/javadoc</link>
 						<link>https://javadoc.io/doc/javax.websocket/javax.websocket-api/1.1</link>
@@ -269,10 +268,6 @@
 						<offlineLink>
 							<url>https://javadoc.io/doc/pl.morgwai.base/guice-context-scopes/${guice.scopes.version}</url>
 							<location>${settings.localRepository}/pl/morgwai/base/guice-context-scopes/${guice.scopes.version}</location>
-						</offlineLink>
-						<offlineLink>
-							<url>https://javadoc.io/doc/pl.morgwai.base/java-utils/${utils.version}</url>
-							<location>${settings.localRepository}/pl/morgwai/base/java-utils/${utils.version}</location>
 						</offlineLink>
 						<offlineLink>
 							<url>https://javadoc.io/doc/pl.morgwai.base/servlet-utils/${servlet.utils.version}-javax</url><!--jakarta-->

@@ -24,6 +24,11 @@
 			<artifactId>guice</artifactId>
 			<version>${guice.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>pl.morgwai.base</groupId>
+			<artifactId>java-utils</artifactId>
+			<version>5.2</version>
+		</dependency>
 	</dependencies>
 
 	<profiles>
