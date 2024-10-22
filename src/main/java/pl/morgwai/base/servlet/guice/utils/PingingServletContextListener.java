@@ -3,6 +3,7 @@ package pl.morgwai.base.servlet.guice.utils;
 
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.logging.Logger;
 import javax.servlet.ServletContext;
 
 import pl.morgwai.base.servlet.guice.scopes.*;
@@ -165,9 +166,13 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 			ServletContext appDeployment) {
 		addShutdownHook(() -> {
 			try {
-				pingerService.tryEnforceTermination();
+				if ( !pingerService.tryEnforceTermination()) {
+					log.warning(deploymentName + ": pingerService failed to shutdown cleanly");
+				}
 			} catch (InterruptedException ignored) {}
 		});
 		return new PingingServerEndpointConfigurator(appDeployment);
 	}
+
+	static final Logger log = Logger.getLogger(PingingServletContextListener.class.getName());
 }
