@@ -41,7 +41,17 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 
-	private final List<Runnable> shutdownHooks = new LinkedList<>();
+	/** Action to be performed at an app shutdown. See {@link #addShutdownHook(ShutdownHook)}. */
+	public interface ShutdownHook {
+		void shutdown() throws InterruptedException;
+	}
+
+	/** Adds {@code shutdownHook} to be run by {@link #contextDestroyed(ServletContextEvent)}. */
+	protected void addShutdownHook(ShutdownHook shutdownHook) {
+		shutdownHooks.add(shutdownHook);
+	}
+
+	private final List<ShutdownHook> shutdownHooks = new LinkedList<>();
 
 
 
@@ -407,24 +417,27 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Adds {@code shutdownHook} to be run at the end of
-	 * {@link #contextDestroyed(ServletContextEvent)}.
-	 */
-	protected void addShutdownHook(Runnable shutdownHook) {
-		shutdownHooks.add(shutdownHook);
-	}
-
-
-
-	/**
 	 * {@link GuiceServerEndpointConfigurator#deregisterDeployment(ServletContext) Deregisters this
-	 * deployment} and calls all {@link #addShutdownHook(Runnable) registered shutdown hooks}.
+	 * deployment} and executes all {@link #addShutdownHook(ShutdownHook) registered}
+	 * {@link ShutdownHook}s.
+	 * If a {@link ShutdownHook} being executed throws an {@link InterruptedException}, the
+	 * {@link Thread#currentThread() current Thread} will be
+	 * {@link Thread#interrupt() marked as interrupted} and the execution of the remaining ones will
+	 * continue.
 	 */
 	@Override
 	public final void contextDestroyed(ServletContextEvent destruction) {
 		log.info(deploymentName + " is shutting down");
 		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
-		for (var shutdownHook: shutdownHooks) shutdownHook.run();
+		final var currentThread = Thread.currentThread();
+		for (var shutdownHook: shutdownHooks) {
+			try {
+				shutdownHook.shutdown();
+			} catch (InterruptedException e) {
+				currentThread.interrupt();
+			}
+		}
+		final var ignored = Thread.interrupted();
 	}
 
 
