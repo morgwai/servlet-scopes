@@ -41,6 +41,10 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 
+	private final List<Runnable> shutdownHooks = new LinkedList<>();
+
+
+
 	/**
 	 * Returns client {@code Endpoint} classes that will be
 	 * {@link WebsocketModule#WebsocketModule(Set) bound for injection} in
@@ -410,8 +414,6 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		shutdownHooks.add(shutdownHook);
 	}
 
-	private final List<Runnable> shutdownHooks = new LinkedList<>();
-
 
 
 	/**
@@ -422,7 +424,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	public final void contextDestroyed(ServletContextEvent destruction) {
 		log.info(deploymentName + " is shutting down");
 		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
-		for (var shutdownHook : shutdownHooks) shutdownHook.run();
+		for (var shutdownHook: shutdownHooks) shutdownHook.run();
 	}
 
 

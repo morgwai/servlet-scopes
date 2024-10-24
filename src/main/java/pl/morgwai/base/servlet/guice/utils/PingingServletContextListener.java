@@ -151,19 +151,6 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	@Override
 	protected PingingWebsocketModule createWebsocketModule(Set<Class<?>> clientEndpointClasses) {
 		pingerService = createPingerService();
-		return new PingingWebsocketModule(pingerService, clientEndpointClasses);
-	}
-
-
-
-	/**
-	 * Overrides {@link #endpointConfigurator} to be a {@link PingingServerEndpointConfigurator}.
-	 * Also {@link #addShutdownHook(Runnable) schedules} {@link #pingerService}'s
-	 * {@link WebsocketPingerService#shutdown() shutdown} at the app shutdown.
-	 */
-	@Override
-	protected PingingServerEndpointConfigurator createEndpointConfigurator(
-			ServletContext appDeployment) {
 		addShutdownHook(() -> {
 			try {
 				if ( !pingerService.tryEnforceTermination()) {
@@ -171,8 +158,17 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 				}
 			} catch (InterruptedException ignored) {}
 		});
-		return new PingingServerEndpointConfigurator(appDeployment);
+		return new PingingWebsocketModule(pingerService, clientEndpointClasses);
 	}
 
 	static final Logger log = Logger.getLogger(PingingServletContextListener.class.getName());
+
+
+
+	/** Overrides {@link #endpointConfigurator} to be a {@link PingingServerEndpointConfigurator}.*/
+	@Override
+	protected PingingServerEndpointConfigurator createEndpointConfigurator(
+			ServletContext appDeployment) {
+		return new PingingServerEndpointConfigurator(appDeployment);
+	}
 }
