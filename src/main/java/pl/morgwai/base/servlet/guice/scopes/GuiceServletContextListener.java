@@ -113,7 +113,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/**
 	 * Deployment reference for use in {@link #configureInjections()} and
-	 * {@link #configureServletsFiltersEndpoints()}.
+	 * {@link #addServletsFiltersEndpoints()}.
 	 */
 	protected ServletContext appDeployment;
 	/**
@@ -141,7 +141,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/**
 	 * The app-wide {@link Injector}.
-	 * For use in {@link #configureServletsFiltersEndpoints()}. Initialized with the result of
+	 * For use in {@link #addServletsFiltersEndpoints()}. Initialized with the result of
 	 * {@link #createInjector(LinkedList)} by {@link #contextInitialized(ServletContextEvent)}.
 	 * <p>
 	 * The app-wide {@code Injector} is also stored as a
@@ -165,9 +165,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 
-	/**
-	 * {@code Endpoint} container reference for use in {@link #configureServletsFiltersEndpoints()}.
-	 */
+	/** {@code Endpoint} container reference for use in {@link #addServletsFiltersEndpoints()}. */
 	protected ServerContainer endpointContainer;
 
 	/**
@@ -200,7 +198,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * Adds an {@code Endpoint} using {@link #endpointConfigurator}.
 	 * Pre-builds a dynamic proxy class for {@code endpointClass} in advance.
 	 * </p>
-	 * For use in {@link #configureServletsFiltersEndpoints()}. Useful mostly for unannotated
+	 * For use in {@link #addServletsFiltersEndpoints()}. Useful mostly for unannotated
 	 * {@code Endpoint}s extending {@link javax.websocket.Endpoint}.</p>
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path) throws DeploymentException {
@@ -211,7 +209,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	/**
 	 * Adds an {@code Endpoint} using {@code configurator}.
 	 * </p>
-	 * For use in {@link #configureServletsFiltersEndpoints()}. Useful mostly for unannotated
+	 * For use in {@link #addServletsFiltersEndpoints()}. Useful mostly for unannotated
 	 * {@code Endpoint}s extending {@link javax.websocket.Endpoint}.</p>
 	 */
 	protected void addEndpoint(Class<?> endpointClass, String path, Configurator configurator)
@@ -234,7 +232,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * {@link Registration.Dynamic#setAsyncSupported(boolean) async support} under {@code name} at
 	 * {@link ServletRegistration#addMapping(String...) urlPatterns}.
 	 * <p>
-	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
+	 * For use in {@link #addServletsFiltersEndpoints()}.</p>
 	 */
 	protected ServletRegistration.Dynamic addServlet(
 		String name,
@@ -260,7 +258,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * {@link FilterRegistration.Dynamic#addMappingForUrlPatterns(EnumSet, boolean, String...)} or
 	 * {@link FilterRegistration.Dynamic#addMappingForServletNames(EnumSet, boolean, String...)}.
 	 * <p>
-	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
+	 * For use in {@link #addServletsFiltersEndpoints()}.</p>
 	 */
 	protected FilterRegistration.Dynamic addFilter(String name, Filter filter) {
 		injector.injectMembers(filter);
@@ -278,7 +276,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * {@link FilterRegistration.Dynamic#addMappingForUrlPatterns(EnumSet, boolean, String...)
 	 * urlPatterns} with {@code dispatcherTypes}.
 	 * <p>
-	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
+	 * For use in {@link #addServletsFiltersEndpoints()}.</p>
 	 */
 	protected FilterRegistration.Dynamic addFilter(
 		String name,
@@ -301,7 +299,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * {@link FilterRegistration.Dynamic#addMappingForUrlPatterns(EnumSet, boolean, String...)
 	 * urlPatterns} with {@link DispatcherType#REQUEST}.
 	 * <p>
-	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
+	 * For use in {@link #addServletsFiltersEndpoints()}.</p>
 	 */
 	protected FilterRegistration.Dynamic addFilter(
 		String name,
@@ -319,7 +317,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * This is necessary for websocket {@code Endpoints} that use
 	 * {@link ServletWebsocketModule#httpSessionScope httpSessionScope}.
 	 * <p>
-	 * For use in {@link #configureServletsFiltersEndpoints()}.</p>
+	 * For use in {@link #addServletsFiltersEndpoints()}.</p>
 	 */
 	protected void addEnsureSessionFilter(String... urlPatterns) {
 		addFilter("ensureSessionFilter", (request, response, chain) -> {
@@ -340,7 +338,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * {@link #addFilter(String, Class, String...)}, {@link #addEndpoint(Class, String)} are
 	 * provided for the most common cases.</p>
 	 */
-	protected abstract void configureServletsFiltersEndpoints() throws Exception;
+	protected abstract void addServletsFiltersEndpoints() throws Exception;
 
 
 
@@ -359,7 +357,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 *   <li>Initializes {@link #endpointConfigurator} with
 	 *       {@link #createEndpointConfigurator(ServletContext)}.</li>
 	 *   <li>Installs {@link RequestContextFilter} and calls
-	 *       {@link #configureServletsFiltersEndpoints()}.</li>
+	 *       {@link #addServletsFiltersEndpoints()}.</li>
 	 * </ol>
 	 */
 	@Override
@@ -403,7 +401,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 					false,
 					"/*"
 				);
-			configureServletsFiltersEndpoints();
+			addServletsFiltersEndpoints();
 			log.info(deploymentName + " deployed successfully");
 		} catch (Throwable e) {
 			final var message = deploymentName + " failed to deploy";

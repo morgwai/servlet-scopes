@@ -113,7 +113,7 @@ public class JettyNode extends org.eclipse.jetty.server.Server {
 
 
 
-		@Override protected void configureServletsFiltersEndpoints() throws Exception {
+		@Override protected void addServletsFiltersEndpoints() throws Exception {
 			addServlet(
 				NodeInfoServlet.class.getSimpleName(),
 				NodeInfoServlet.class,
