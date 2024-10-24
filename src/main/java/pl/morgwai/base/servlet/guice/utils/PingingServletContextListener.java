@@ -152,11 +152,9 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	protected PingingWebsocketModule createWebsocketModule(Set<Class<?>> clientEndpointClasses) {
 		pingerService = createPingerService();
 		addShutdownHook(() -> {
-			try {
-				if ( !pingerService.tryEnforceTermination()) {
-					log.warning(deploymentName + ": pingerService failed to shutdown cleanly");
-				}
-			} catch (InterruptedException ignored) {}
+			if ( !pingerService.tryEnforceTermination()) {
+				log.warning(deploymentName + ": pingerService failed to shutdown cleanly");
+			}
 		});
 		return new PingingWebsocketModule(pingerService, clientEndpointClasses);
 	}
