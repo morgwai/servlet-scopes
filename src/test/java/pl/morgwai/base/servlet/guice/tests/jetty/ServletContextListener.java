@@ -45,7 +45,7 @@ public class ServletContextListener extends PingingServletContextListener {
 
 
 	@Override
-	protected void configureServletsFiltersEndpoints() throws ServletException, DeploymentException
+	protected void addServletsFiltersEndpoints() throws ServletException, DeploymentException
 	{
 		addServlet(
 			"IndexPageServlet",
