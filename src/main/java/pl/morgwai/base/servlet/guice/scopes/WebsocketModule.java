@@ -60,40 +60,24 @@ public class WebsocketModule extends ContextScopesModule {
 
 
 
+	/** See {@link GuiceEndpointConfigurator#checkIfRequiredEndpointMethodsPresent(Class)}. */
+	protected final boolean requireTopLevelMethodAnnotations;
+
 	/**
 	 * Client {@code Endpoint} classes that will be {@link #configure(Binder) bound} to a
 	 * {@link GuiceEndpointConfigurator} based {@link Provider} for use
 	 * with @{@link GuiceClientEndpoint} annotation.
 	 */
 	protected final Set<Class<?>> clientEndpointClasses;
-	Boolean requireTopLevelMethodAnnotations;
 
 
 
-	/**
-	 * Initializes {@link #clientEndpointClasses} and leaves
-	 * {@link #setRequireTopLevelMethodAnnotations(boolean) requireTopLevelMethodAnnotations} flag
-	 * unset.
-	 */
-	public WebsocketModule(Set<Class<?>> clientEndpointClasses) {
-		this.clientEndpointClasses = clientEndpointClasses;
-	}
-
-	/**
-	 * Calls {@link #WebsocketModule(Set) this(clientEndpointClasses)} and sets
-	 * {@link #setRequireTopLevelMethodAnnotations(boolean) requireTopLevelMethodAnnotations} flag.
-	 */
 	public WebsocketModule(
 		boolean requireTopLevelMethodAnnotations,
 		Set<Class<?>> clientEndpointClasses
 	) {
-		this(clientEndpointClasses);
 		this.requireTopLevelMethodAnnotations = requireTopLevelMethodAnnotations;
-	}
-
-	/** Calls {@link #WebsocketModule(Set) this(Set.of(clientEndpointClasses))}. */
-	public WebsocketModule(Class<?>... clientEndpointClasses) {
-		this(Set.of(clientEndpointClasses));
+		this.clientEndpointClasses = Set.copyOf(clientEndpointClasses);
 	}
 
 	/**
@@ -110,30 +94,15 @@ public class WebsocketModule extends ContextScopesModule {
 
 
 	/**
-	 * Value to be injected as {@link GuiceEndpointConfigurator#requireTopLevelMethodAnnotations}.
-	 * @throws IllegalStateException if a value for the flag is already set.
-	 */
-	public void setRequireTopLevelMethodAnnotations(boolean requireTopLevelMethodAnnotations) {
-		if (this.requireTopLevelMethodAnnotations != null) {
-			throw new IllegalStateException("requireTopLevelMethodAnnotations already set");
-		}
-		this.requireTopLevelMethodAnnotations = requireTopLevelMethodAnnotations;
-	}
-
-
-
-	/**
 	 * Calls {@link ContextScopesModule#configure(Binder) super} and binds
 	 * {@link #clientEndpointClasses} annotated with {@link GuiceClientEndpoint} to
 	 * {@link Provider}s based on {@link GuiceEndpointConfigurator}.
 	 * Additionally binds {@link GuiceEndpointConfigurator#REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY}
-	 * to {@link #setRequireTopLevelMethodAnnotations(boolean)
-	 * requireTopLevelMethodAnnotations flag value} (if unset, then {@code false} is assumed).
+	 * to {@link #requireTopLevelMethodAnnotations}.
 	 */
 	@Override
 	public void configure(Binder binder) {
 		super.configure(binder);
-		if (requireTopLevelMethodAnnotations == null) requireTopLevelMethodAnnotations = false;
 		binder.bind(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY)
 			.toInstance(requireTopLevelMethodAnnotations);
 		for (var clientEndpointClass: clientEndpointClasses) {

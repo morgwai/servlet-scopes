@@ -22,44 +22,13 @@ public class PingingWebsocketModule extends WebsocketModule {
 
 
 
-	/**
-	 * Calls {@link WebsocketModule#WebsocketModule(Set) super(clientEndpointClasses)}, initializes
-	 * the associated {@link WebsocketPingerService} and leaves
-	 * {@link WebsocketModule#setRequireTopLevelMethodAnnotations(boolean)
-	 * requireTopLevelMethodAnnotations} flag unset.
-	 */
-	public PingingWebsocketModule(
-		WebsocketPingerService pingerService,
-		Set<Class<?>> clientEndpointClasses
-	) {
-		super(clientEndpointClasses);
-		this.pingerService = pingerService;
-	}
-
-	/**
-	 * Calls {@link #PingingWebsocketModule(WebsocketPingerService, Set)
-	 * this(pingerService, clientEndpointClasses)} and sets
-	 * {@link WebsocketModule#setRequireTopLevelMethodAnnotations(boolean)
-	 * requireTopLevelMethodAnnotations} flag.
-	 */
 	public PingingWebsocketModule(
 		WebsocketPingerService pingerService,
 		boolean requireTopLevelMethodAnnotations,
 		Set<Class<?>> clientEndpointClasses
 	) {
-		this(pingerService, clientEndpointClasses);
-		setRequireTopLevelMethodAnnotations(requireTopLevelMethodAnnotations);
-	}
-
-	/**
-	 * Calls {@link #PingingWebsocketModule(WebsocketPingerService, Set)
-	 * this(pingerService, Set.of(clientEndpointClasses))}.
-	 */
-	public PingingWebsocketModule(
-		WebsocketPingerService pingerService,
-		Class<?>... clientEndpointClasses
-	) {
-		this(pingerService, Set.of(clientEndpointClasses));
+		super(requireTopLevelMethodAnnotations, clientEndpointClasses);
+		this.pingerService = pingerService;
 	}
 
 	/**
@@ -81,7 +50,8 @@ public class PingingWebsocketModule extends WebsocketModule {
 	 * {@link #clientEndpointClasses} annotated with {@link PingingClientEndpoint} to
 	 * {@link Provider}s based on {@link PingingEndpointConfigurator}.
 	 * Also binds {@link WebsocketPingerService} class to the instance from
-	 * {@link #PingingWebsocketModule(WebsocketPingerService, Set) the constructor}'s param.
+	 * {@link #PingingWebsocketModule(WebsocketPingerService, boolean, Set) the constructor}'s
+	 * param.
 	 */
 	@Override
 	public void configure(Binder binder) {

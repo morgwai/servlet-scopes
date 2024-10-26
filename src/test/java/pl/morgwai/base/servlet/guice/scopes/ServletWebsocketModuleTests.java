@@ -25,7 +25,7 @@ public class ServletWebsocketModuleTests extends EasyMockSupport {
 
 
 	final ServletContext testDeployment = new StandaloneWebsocketContainerServletContext("/test");
-	final WebsocketModule websocketModule = new WebsocketModule();
+	final WebsocketModule websocketModule = new WebsocketModule(false);
 	final ContextTracker<ContainerCallContext> ctxTracker =
 			websocketModule.containerCallScope.tracker;
 	final ServletWebsocketModule servletModule =

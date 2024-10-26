@@ -40,9 +40,9 @@ import static com.google.inject.name.Names.named;
  *   <li>by obtaining {@link GuiceEndpointConfigurator} from the created {@link Injector} and
  *       calling either {@link #getProxiedEndpointInstance(Class)} or
  *       {@link #getProxyForEndpoint(Object)}</li>
- *   <li>if some {@code endpointClass} was passed as a param to one of {@link WebsocketModule}'s
- *       {@link WebsocketModule#WebsocketModule(Class[]) constructors}, then it will be injected to
- *       fields and params annotated with @{@link GuiceClientEndpoint}</li>
+ *   <li>if some {@code endpointClass} was passed to {@link WebsocketModule}'s
+ *       {@link WebsocketModule#WebsocketModule(boolean, java.util.Set)}  constructor}, then it will
+ *       be injected to fields and params annotated with @{@link GuiceClientEndpoint}</li>
  * </ul>
  * <p>
  * To use this class for server {@code Endpoints}, see {@link GuiceServerEndpointConfigurator}.</p>
@@ -78,8 +78,7 @@ public class GuiceEndpointConfigurator {
 	 * Name of the
 	 * {@link javax.servlet.ServletContext#getInitParameter(String) deployment init-param} that may
 	 * contain a value for {@link #requireTopLevelMethodAnnotations}.
-	 * {@link GuiceServletContextListener} will check if it is present and if so, it will pass it
-	 * to its {@link WebsocketModule#setRequireTopLevelMethodAnnotations(boolean) WebsocketModule}.
+	 * @see GuiceServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
 	 */
 	public static final String REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM =
 			GuiceEndpointConfigurator.class.getName() + REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_NAME;

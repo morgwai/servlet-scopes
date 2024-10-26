@@ -57,7 +57,7 @@ public class ManualServletContextListener implements ServletContextListener {
 			final ServletContext appDeployment = initialization.getServletContext();
 			servletModule = new ServletWebsocketModule(
 				appDeployment,
-				new PingingWebsocketModule(pingerService)
+				new PingingWebsocketModule(pingerService, false)
 			);
 			final ServerContainer endpointContainer = ((ServerContainer)
 					appDeployment.getAttribute(ServerContainer.class.getName()));

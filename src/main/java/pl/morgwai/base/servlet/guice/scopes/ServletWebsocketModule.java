@@ -48,7 +48,6 @@ public class ServletWebsocketModule implements Module {
 	 * {@link #ServletWebsocketModule(ServletContext, WebsocketModule) the constructor} param.
 	 */
 	public final WebsocketModule websocketModule;
-
 	/**
 	 * Reference to {@link WebsocketModule#containerCallScope websocketModule.containerCallScope}.
 	 */
@@ -61,30 +60,16 @@ public class ServletWebsocketModule implements Module {
 	/** Reference to {@link WebsocketModule#ctxBinder websocketModule.ctxBinder}. */
 	public final ContextBinder ctxBinder;
 
-
-
 	/**
 	 * {@link ServletContext} from
 	 * {@link #ServletWebsocketModule(ServletContext, WebsocketModule) the constructor} param.
 	 */
-	public ServletContext getAppDeployment() { return appDeployment; }
-	ServletContext appDeployment;
-
-	/** For {@link GuiceServletContextListener}. */
-	void setAppDeployment(ServletContext appDeployment) {
-		assert this.appDeployment == null : "appDeployment already set";
-		this.appDeployment = appDeployment;
-	}
+	public final ServletContext appDeployment;
 
 
 
 	public ServletWebsocketModule(ServletContext appDeployment, WebsocketModule websocketModule) {
-		this(websocketModule);
 		this.appDeployment = appDeployment;
-	}
-
-	/** For {@link GuiceServletContextListener}. */
-	ServletWebsocketModule(WebsocketModule websocketModule) {
 		this.websocketModule = websocketModule;
 		containerCallScope = websocketModule.containerCallScope;
 		websocketConnectionScope = websocketModule.websocketConnectionScope;
@@ -111,7 +96,6 @@ public class ServletWebsocketModule implements Module {
 	 */
 	@Override
 	public void configure(Binder binder) {
-		if (appDeployment == null) throw new IllegalStateException("appDeployment not set");
 		binder.install(websocketModule);
 		binder.bind(ServletContext.class).toInstance(appDeployment);
 		binder.requestStaticInjection(GuiceServerEndpointConfigurator.class);

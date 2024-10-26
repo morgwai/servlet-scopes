@@ -38,7 +38,7 @@ public abstract class WebsocketIntegrationTests {
 	protected String appWebsocketUrl;
 
 	protected final WebsocketModule clientWebsocketModule =
-			new WebsocketModule(TestGuiceClientEndpoint.class);
+			new WebsocketModule(false, TestGuiceClientEndpoint.class);
 	protected final Injector clientInjector = Guice.createInjector(clientWebsocketModule);
 	protected final CookieManager cookieManager = new CookieManager();
 	protected final org.eclipse.jetty.client.HttpClient wsHttpClient =

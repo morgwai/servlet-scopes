@@ -22,7 +22,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	/**
 	 * The app-wide {@link WebsocketPingerService} to which
 	 * {@link PingingServerEndpointConfigurator} registers {@code Endpoints}.
-	 * Initialized by {@link #createWebsocketModule(Set)} with the result of
+	 * Initialized by {@link #createWebsocketModule(boolean, Set)} with the result of
 	 * {@link #createPingerService()}.
 	 */
 	protected WebsocketPingerService pingerService;
@@ -117,8 +117,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 * {@link #createScheduler()} and {@link #shouldSynchronizePingSending()} to configure the
 	 * {@link WebsocketPingerService}.
 	 * <p>
-	 * This method is called once in {@link #createWebsocketModule(Set)} and may be overridden
-	 * if further customizations are required.</p>
+	 * This method is called once in {@link #createWebsocketModule(boolean, Set)} and may be
+	 * overridden if further customizations are required.</p>
 	 */
 	protected WebsocketPingerService createPingerService() {
 		if (isPingerInKeepAliveOnlyMode()) {
@@ -149,14 +149,21 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 * {@link PingingWebsocketModule}.
 	 */
 	@Override
-	protected PingingWebsocketModule createWebsocketModule(Set<Class<?>> clientEndpointClasses) {
+	protected PingingWebsocketModule createWebsocketModule(
+		boolean requireTopLevelMethodAnnotations,
+		Set<Class<?>> clientEndpointClasses
+	) {
 		pingerService = createPingerService();
 		addShutdownHook(() -> {
 			if ( !pingerService.tryEnforceTermination()) {
 				log.warning(deploymentName + ": pingerService failed to shutdown cleanly");
 			}
 		});
-		return new PingingWebsocketModule(pingerService, clientEndpointClasses);
+		return new PingingWebsocketModule(
+			pingerService,
+			requireTopLevelMethodAnnotations,
+			clientEndpointClasses
+		);
 	}
 
 	static final Logger log = Logger.getLogger(PingingServletContextListener.class.getName());

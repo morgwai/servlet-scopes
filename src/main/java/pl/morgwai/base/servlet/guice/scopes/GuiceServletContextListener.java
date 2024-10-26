@@ -56,62 +56,6 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * Returns client {@code Endpoint} classes that will be
-	 * {@link WebsocketModule#WebsocketModule(Set) bound for injection} in
-	 * {@link #createWebsocketModule(Set) the app-wide WebsocketModule}.
-	 * Called by constructor.
-	 * @return by default an empty {@code Set}, may be overridden in subclasses.
-	 */
-	protected Set<Class<?>> getClientEndpointClasses() { return Set.of(); }
-
-	/**
-	 * Creates the app-wide {@link WebsocketModule} passed to {@link #servletModule}.
-	 * Called by the implicit constructor.
-	 * @param clientEndpointClasses the result of {@link #getClientEndpointClasses()} that should be
-	 *     passed to {@link WebsocketModule#WebsocketModule(Set) WebsocketModule's constructor}.
-	 * @return by default a new {@link WebsocketModule}, may be overridden if more specialized
-	 *     implementation is needed.
-	 * @see pl.morgwai.base.servlet.guice.utils.PingingWebsocketModule
-	 */
-	protected WebsocketModule createWebsocketModule(Set<Class<?>> clientEndpointClasses) {
-		return new WebsocketModule(clientEndpointClasses);
-	}
-
-
-
-	/**
-	 * The app-wide {@link ServletWebsocketModule}, for use in {@link #configureInjections()}.
-	 * Initialized with the result of {@link #createWebsocketModule(Set)} by constructor.
-	 */
-	protected final ServletWebsocketModule servletModule =
-			new ServletWebsocketModule(createWebsocketModule(getClientEndpointClasses()));
-	/**
-	 * Reference to {@link #servletModule}'s
-	 * {@link ServletWebsocketModule#containerCallScope containerCallScope}, for use in
-	 * {@link #configureInjections()}.
-	 */
-	protected final Scope containerCallScope = servletModule.containerCallScope;
-	/**
-	 * Reference to {@link #servletModule}'s
-	 * {@link ServletWebsocketModule#httpSessionScope httpSessionScope}, for use in
-	 * {@link #configureInjections()}.
-	 */
-	protected final Scope httpSessionScope = servletModule.httpSessionScope;
-	/**
-	 * Reference to {@link #servletModule}'s
-	 * {@link ServletWebsocketModule#websocketConnectionScope websocketConnectionScope}, for use in
-	 * {@link #configureInjections()}.
-	 */
-	protected final Scope websocketConnectionScope = servletModule.websocketConnectionScope;
-	/**
-	 * Reference to {@link #servletModule}'s {@link ServletWebsocketModule#ctxBinder ctxBinder}, for
-	 * use in {@link #configureInjections()}.
-	 */
-	protected final ContextBinder ctxBinder = servletModule.ctxBinder;
-
-
-
-	/**
 	 * Deployment reference for use in {@link #configureInjections()} and
 	 * {@link #addServletsFiltersEndpoints()}.
 	 */
@@ -126,12 +70,59 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
+	 * Returns client {@code Endpoint} {@code Class}es that will be bound for injection in
+	 * {@link #createWebsocketModule(boolean, Set) the app-wide WebsocketModule}.
+	 * @return by default an empty {@code Set}, may be overridden in subclasses.
+	 */
+	protected Set<Class<?>> getClientEndpointClasses() { return Set.of(); }
+
+	/**
+	 * Creates the app-wide {@link WebsocketModule} passed to {@link #servletModule}.
+	 * @return by default a new {@link WebsocketModule}, may be overridden if more specialized
+	 *     implementation is needed.
+	 * @see pl.morgwai.base.servlet.guice.utils.PingingWebsocketModule
+	 */
+	protected WebsocketModule createWebsocketModule(
+		boolean requireTopLevelMethodAnnotations,
+		Set<Class<?>> clientEndpointClasses
+	) {
+		return new WebsocketModule(requireTopLevelMethodAnnotations, clientEndpointClasses);
+	}
+
+
+
+	/** The app-wide {@link ServletWebsocketModule} for use in {@link #configureInjections()}. */
+	protected ServletWebsocketModule servletModule;
+	/**
+	 * Reference to {@link #servletModule}'s
+	 * {@link ServletWebsocketModule#containerCallScope containerCallScope}, for use in
+	 * {@link #configureInjections()}.
+	 */
+	protected Scope containerCallScope;
+	/**
+	 * Reference to {@link #servletModule}'s
+	 * {@link ServletWebsocketModule#httpSessionScope httpSessionScope}, for use in
+	 * {@link #configureInjections()}.
+	 */
+	protected Scope httpSessionScope;
+	/**
+	 * Reference to {@link #servletModule}'s
+	 * {@link ServletWebsocketModule#websocketConnectionScope websocketConnectionScope}, for use in
+	 * {@link #configureInjections()}.
+	 */
+	protected Scope websocketConnectionScope;
+	/**
+	 * Reference to {@link #servletModule}'s {@link ServletWebsocketModule#ctxBinder ctxBinder}, for
+	 * use in {@link #configureInjections()}.
+	 */
+	protected ContextBinder ctxBinder;
+
+
+
+	/**
 	 * Creates {@link Module}s with bindings for user-defined components.
-	 * Called by {@link #contextInitialized(ServletContextEvent)} right after {@link #appDeployment}
-	 * and {@link #deploymentName} are initialized. The result will be passed to
-	 * {@link #createInjector(LinkedList)}.
-	 * {@link #servletModule} and other internal {@code Modules} will be added automatically to the
-	 * result.
+	 * The result will be passed to {@link #createInjector(LinkedList)}. {@link #servletModule} and
+	 * other internal {@code Modules} will be added automatically to the result.
 	 * <p>
 	 * Implementations may use {@link com.google.inject.Scope}s,
 	 * {@link pl.morgwai.base.guice.scopes.ContextTracker}s and helpers from {@link #servletModule}
@@ -142,7 +133,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	/**
 	 * The app-wide {@link Injector}.
 	 * For use in {@link #addServletsFiltersEndpoints()}. Initialized with the result of
-	 * {@link #createInjector(LinkedList)} by {@link #contextInitialized(ServletContextEvent)}.
+	 * {@link #createInjector(LinkedList)}.
 	 * <p>
 	 * The app-wide {@code Injector} is also stored as a
 	 * {@link ServletContext#getAttribute(String) deployment attribute} under
@@ -152,7 +143,6 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 	/**
 	 * Creates {@link #injector the app-wide Injector}.
-	 * Called by {@link #contextInitialized(ServletContextEvent)}.
 	 * @param modules the result of {@link #configureInjections()} plus {@link #servletModule} and
 	 *      some other infrastructure {@link Module}s.
 	 * @return by default the result of
@@ -171,8 +161,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	/**
 	 * The {@link Configurator} instance used by {@link #addEndpoint(Class, String)} to create
 	 * {@code Endpoint} instances.
-	 * Initialized with the result of {@link #createEndpointConfigurator(ServletContext)} by
-	 * {@link #contextInitialized(ServletContextEvent)}.
+	 * Initialized with the result of {@link #createEndpointConfigurator(ServletContext)}.
 	 * <p>
 	 * Note that this instance will be shared among all {@code Endpoints} created by
 	 * {@link #addEndpoint(Class, String)}, but {@code Endpoints} annotated with
@@ -184,7 +173,6 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	/**
 	 * Creates the {@link Configurator} that will be used by {@link #addEndpoint(Class, String)}
 	 * ({@link #endpointConfigurator}).
-	 * Called by {@link #contextInitialized(ServletContextEvent)}.
 	 * @return by default a new {@link GuiceServerEndpointConfigurator}. May be
 	 *     overridden if a more specialized implementation is needed.
 	 * @see pl.morgwai.base.servlet.guice.utils.PingingServerEndpointConfigurator
@@ -348,9 +336,10 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 * <ol>
 	 *   <li>Initializes {@link #appDeployment} with a reference from {@code initialization} event,
 	 *       then initializes {@link #deploymentName} and {@link #endpointContainer}.</li>
-	 *   <li>If {@link WebsocketModule#setRequireTopLevelMethodAnnotations(boolean)} hasn't been
-	 *       set yet, sets it to the value of
-	 *       {@link GuiceEndpointConfigurator#REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM}.</li>
+	 *   <li>Obtains
+	 *       {@link GuiceEndpointConfigurator#REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM} from
+	 *       {@link #appDeployment}, calls {@link #getClientEndpointClasses()} and
+	 *       {@link #createWebsocketModule(boolean, Set)} to initialize {@link #servletModule}.</li>
 	 *   <li>Calls {@link #configureInjections()}.</li>
 	 *   <li>Initializes {@link #injector} by passing {@link Module}s from the previous point and
 	 *       {@link #servletModule} to {@link #createInjector(LinkedList)}.</li>
@@ -371,18 +360,25 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 					: appDeployment.getContextPath().isEmpty()
 							? "root-app" : "app at \"" + appDeployment.getContextPath() + '"';
 			log.info(deploymentName + " is being deployed");
-			servletModule.setAppDeployment(appDeployment);
 			endpointContainer = (ServerContainer)
 					appDeployment.getAttribute(ServerContainer.class.getName());
 			appDeployment.addListener(new HttpSessionContext.SessionContextCreator());
 
 			// 2
-			final var websocketModule = servletModule.websocketModule;
-			if (websocketModule.requireTopLevelMethodAnnotations == null) {
-				websocketModule.setRequireTopLevelMethodAnnotations(Boolean.parseBoolean(
-					appDeployment.getInitParameter(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM)
-				));
-			}
+			final var requireTopLevelMethodAnnotations = Boolean.parseBoolean(
+				appDeployment.getInitParameter(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM)
+			);
+			servletModule = new ServletWebsocketModule(
+				appDeployment,
+				createWebsocketModule(
+					requireTopLevelMethodAnnotations,
+					getClientEndpointClasses()
+				)
+			);
+			containerCallScope = servletModule.containerCallScope;
+			httpSessionScope = servletModule.httpSessionScope;
+			websocketConnectionScope = servletModule.websocketConnectionScope;
+			ctxBinder = servletModule.ctxBinder;
 
 			// 3
 			final var modules = configureInjections();
