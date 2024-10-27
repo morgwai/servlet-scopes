@@ -29,17 +29,16 @@ public class TyrusServer implements Server {
 
 
 	final String deploymentPath;
-	final StandaloneWebsocketContainerServletContext appDeployment;
 	final WebsocketPingerService pingerService;
 	final org.glassfish.tyrus.server.Server tyrus;
 	final TaskTrackingThreadPoolExecutor executor;
+	final Injector injector;
 
 
 
 	public TyrusServer(int port, String deploymentPath, ClusterContext clusterCtx)
 			throws DeploymentException {
 		this.deploymentPath = deploymentPath;
-		appDeployment = new StandaloneWebsocketContainerServletContext(deploymentPath);
 		final var intervalFromProperty = System.getProperty(PING_INTERVAL_MILLIS_PROPERTY);
 		pingerService = new WebsocketPingerService(
 			intervalFromProperty != null
@@ -48,22 +47,19 @@ public class TyrusServer implements Server {
 			MILLISECONDS,
 			1
 		);
-		final var servletModule = new ServletWebsocketModule(
-			appDeployment,
-			new PingingWebsocketModule(pingerService, true)
-		);
+		final var websocketModule = new PingingWebsocketModule(deploymentPath, pingerService, true);
 		executor = new TaskTrackingThreadPoolExecutor(2, new NamingThreadFactory("testExecutor"));
 
 		// create and store injector
 		final var modules = new LinkedList<Module>();
-		modules.add(servletModule);
+		modules.add(websocketModule);
 		modules.add(new ServiceModule(
-			servletModule.containerCallScope,
-			servletModule.websocketConnectionScope,
+			websocketModule.containerCallScope,
+			websocketModule.websocketConnectionScope,
 			null,  // no HTTP session support
-			new ContextTrackingExecutorDecorator(executor, servletModule.ctxBinder)
+			new ContextTrackingExecutorDecorator(executor, websocketModule.ctxBinder)
 		));
-		Guice.createInjector(modules);  // servletModule does static injection that stores injector
+		injector = Guice.createInjector(modules);
 
 		tyrus = new org.glassfish.tyrus.server.Server(
 			"localhost",
@@ -93,7 +89,7 @@ public class TyrusServer implements Server {
 		tyrus.stop();
 		executor.shutdown();
 		pingerService.shutdown();
-		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
+		GuiceServerEndpointConfigurator.deregisterDeployment(injector);
 		try {
 			awaitMultiple(
 				5L, SECONDS,

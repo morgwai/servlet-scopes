@@ -18,7 +18,6 @@ import org.easymock.Mock;
 
 import com.google.inject.Injector;
 import pl.morgwai.base.guice.scopes.ContextTracker;
-import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
 
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.*;
@@ -74,10 +73,7 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 			.andAnswer(() -> requestUri)
 			.anyTimes();
 
-		mockDeployment = new StandaloneWebsocketContainerServletContext(
-			MOCK_DEPLOYMENT_PATH,
-			"mockApp"
-		) {
+		mockDeployment = new StandaloneWebsocketServerDeployment(MOCK_DEPLOYMENT_PATH, "mockApp") {
 			@Override public ServletContext getContext(String path) {
 				if (
 					path.equals(MOCK_DEPLOYMENT_PATH)
@@ -182,7 +178,7 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 		replayAll();
 
 		mockDeployment.setAttribute(Injector.class.getName(), mockInjector);
-		final var secondDeployment = new StandaloneWebsocketContainerServletContext(
+		final var secondDeployment = new StandaloneWebsocketServerDeployment(
 			"/secondDeploymentPath",
 			"secondApp"
 		);

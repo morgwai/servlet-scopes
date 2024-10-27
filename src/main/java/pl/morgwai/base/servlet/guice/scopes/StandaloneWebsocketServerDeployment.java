@@ -1,5 +1,5 @@
-// Copyright 2023 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
-package pl.morgwai.base.servlet.guice.utils;
+// Copyright 2024 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
+package pl.morgwai.base.servlet.guice.scopes;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -11,9 +11,8 @@ import javax.servlet.descriptor.JspConfigDescriptor;
 
 
 /**
- * A fake {@link ServletContext} useful for configuring
- * {@link pl.morgwai.base.servlet.guice.scopes.ServletWebsocketModule} in standalone websocket
- * server apps.
+ * A fake {@link ServletContext} for configuring {@link GuiceServerEndpointConfigurator} in
+ * standalone websocket server apps.
  * Most methods throw an {@link UnsupportedOperationException} except the below ones:
  * <ul>
  *     <li>{@link #getAttribute(String)}</li>
@@ -23,13 +22,12 @@ import javax.servlet.descriptor.JspConfigDescriptor;
  *     <li>{@link #getInitParameter(String)}</li>
  *     <li>{@link #getInitParameterNames()}</li>
  *     <li>{@link #getServletContextName()}</li>
- *     <li>{@link #getVirtualServerName()}</li>
  *     <li>{@link #removeAttribute(String)}</li>
  *     <li>{@link #setAttribute(String, Object)}</li>
  *     <li>{@link #setInitParameter(String, String)}</li>
  * </ul>
  */
-public class StandaloneWebsocketContainerServletContext implements ServletContext {
+class StandaloneWebsocketServerDeployment implements ServletContext {
 
 
 
@@ -39,42 +37,15 @@ public class StandaloneWebsocketContainerServletContext implements ServletContex
 	@Override public String getServletContextName() { return servletContextName; }
 	final String servletContextName;
 
-	@Override public String getVirtualServerName() { return virtualServerName; }
-	final String virtualServerName;
 
 
-
-	/**
-	 * Initializes values to be returned by the corresponding methods.
-	 * @param contextPath value returned by {@link #getContextPath()}.
-	 * @param servletContextName value returned by {@link #getServletContextName()}.
-	 * @param virtualServerName value returned by {@link #getVirtualServerName()}.
-	 */
-	public StandaloneWebsocketContainerServletContext(
-		String contextPath,
-		String servletContextName,
-		String virtualServerName
-	) {
+	public StandaloneWebsocketServerDeployment(String contextPath, String servletContextName) {
 		this.contextPath = contextPath;
 		this.servletContextName = servletContextName;
-		this.virtualServerName = virtualServerName;
 	}
 
-	/**
-	 * Calls {@link #StandaloneWebsocketContainerServletContext(String, String, String)
-	 * this(contextPath, "app at " + contextPath, null)}.
-	 */
-	public StandaloneWebsocketContainerServletContext(String contextPath) {
-		this(contextPath, "app at " + contextPath, null);
-	}
-
-	/**
-	 * Calls {@link #StandaloneWebsocketContainerServletContext(String, String, String)
-	 * this(contextPath, servletContextName, null)}.
-	 */
-	public StandaloneWebsocketContainerServletContext(String contextPath, String servletContextName)
-	{
-		this(contextPath, servletContextName, null);
+	public StandaloneWebsocketServerDeployment(String contextPath) {
+		this(contextPath, "app at " + contextPath);
 	}
 
 
@@ -133,6 +104,7 @@ public class StandaloneWebsocketContainerServletContext implements ServletContex
 
 	// all the other below methods throw an UnsupportedOperationException
 
+	@Override public String getVirtualServerName() { throw new UnsupportedOperationException(); }
 	@Override public int getMajorVersion() { throw new UnsupportedOperationException(); }
 	@Override public int getMinorVersion() { throw new UnsupportedOperationException(); }
 	@Override public int getEffectiveMajorVersion() { throw new UnsupportedOperationException(); }

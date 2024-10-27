@@ -65,8 +65,9 @@ import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
  *     // other methods here...
  * }</pre>
  * <p>
- * At an app shutdown {@link #deregisterDeployment(ServletContext)} must be called to avoid resource
- * leaks (if an app uses {@link GuiceServletContextListener} then this is done automatically).</p>
+ * At an app shutdown {@link #deregisterDeployment(ServletContext)} or
+ * {@link #deregisterDeployment(Injector)} must be called to avoid resource leaks (if an app uses
+ * {@link GuiceServletContextListener} then this is done automatically).</p>
  */
 public class GuiceServerEndpointConfigurator extends Configurator {
 
@@ -98,7 +99,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	 * {@link Injector} class.
 	 * <p>
 	 * This method is called automatically during static injection requested by
-	 * {@link ServletWebsocketModule}.</p>
+	 * {@link ServletWebsocketModule} or {@link WebsocketModule}.</p>
 	 */
 	@Inject
 	static void registerDeployment(ServletContext appDeployment, Injector injector) {
@@ -124,6 +125,11 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 			log.warning("attempting to deregister unregistered deployment with path \""
 					+ appDeployment.getContextPath() + '"');
 		}
+	}
+
+	/** Variant of {@link #deregisterDeployment(ServletContext)} for standalone websocket apps. */
+	public static void deregisterDeployment(Injector injector) {
+		deregisterDeployment(injector.getInstance(ServletContext.class));
 	}
 
 

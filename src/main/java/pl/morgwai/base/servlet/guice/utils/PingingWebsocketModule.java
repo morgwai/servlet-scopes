@@ -22,6 +22,49 @@ public class PingingWebsocketModule extends WebsocketModule {
 
 
 
+	/**
+	 * Constructs a new instance for use in standalone
+	 * {@link javax.websocket.server.ServerContainer}s.
+	 */
+	public PingingWebsocketModule(
+		String standaloneServerDeploymentPath,
+		WebsocketPingerService pingerService,
+		boolean requireTopLevelMethodAnnotations,
+		Set<Class<?>> clientEndpointClasses
+	) {
+		super(
+			standaloneServerDeploymentPath,
+			requireTopLevelMethodAnnotations,
+			clientEndpointClasses
+		);
+		this.pingerService = pingerService;
+	}
+
+	/**
+	 * Calls {@link #PingingWebsocketModule(String, WebsocketPingerService, boolean, Set)
+	 * this(standaloneServerDeploymentPath, pingerService, requireTopLevelMethodAnnotations,
+	 * Set.of(clientEndpointClasses))}.
+	 */
+	public PingingWebsocketModule(
+		String standaloneServerDeploymentPath,
+		WebsocketPingerService pingerService,
+		boolean requireTopLevelMethodAnnotations,
+		Class<?>... clientEndpointClasses
+	) {
+		this(
+			standaloneServerDeploymentPath,
+			pingerService,
+			requireTopLevelMethodAnnotations,
+			Set.of(clientEndpointClasses)
+		);
+	}
+
+
+
+	/**
+	 * Constructs a new instance for use in websocket apps that are embedded in {@code Servlet}
+	 * containers or are client-only.
+	 */
 	public PingingWebsocketModule(
 		WebsocketPingerService pingerService,
 		boolean requireTopLevelMethodAnnotations,

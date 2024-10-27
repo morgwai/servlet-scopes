@@ -7,8 +7,6 @@ import javax.servlet.http.HttpSession;
 import javax.websocket.Session;
 import org.junit.Test;
 
-import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
-
 import static org.easymock.EasyMock.*;
 import static pl.morgwai.base.guice.scopes.ContextSerializationTestUtils.testContextSerialization;
 import static pl.morgwai.base.servlet.guice.scopes.HttpSessionContext.CUSTOM_SERIALIZATION_PARAM;
@@ -37,7 +35,7 @@ public class ContextSerializationTests {
 
 	public void testHttpSessionContextSerialization(boolean customSerialization) throws IOException
 	{
-		final var servletContextMock = new StandaloneWebsocketContainerServletContext("");
+		final var servletContextMock = new StandaloneWebsocketServerDeployment("");
 		servletContextMock.setInitParameter(
 			CUSTOM_SERIALIZATION_PARAM,
 			String.valueOf(customSerialization)

@@ -10,13 +10,12 @@ import pl.morgwai.base.guice.scopes.*;
 
 
 /**
- * Embeds a {@link WebsocketModule} and adds functionality for {@code Servlet} and websocket server
- * containers.
- * Most notably defines {@link #httpSessionScope} and setups
- * {@link GuiceServerEndpointConfigurator}.
+ * Embeds a {@link WebsocketModule} and defines {@link #httpSessionScope}.
+ * Usually a single instance is created at an app startup in the
+ * {@link javax.servlet.ServletContextListener} and passed to
+ * {@link Guice#createInjector(com.google.inject.Module...) create the app-wide Injector}.
  * @see GuiceServletContextListener#servletModule
  * @see pl.morgwai.base.servlet.guice.utils.PingingWebsocketModule
- * @see pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext
  */
 public class ServletWebsocketModule implements Module {
 
@@ -69,6 +68,11 @@ public class ServletWebsocketModule implements Module {
 
 
 	public ServletWebsocketModule(ServletContext appDeployment, WebsocketModule websocketModule) {
+		if (websocketModule.standaloneServerDeployment != null) {
+			throw new IllegalArgumentException(
+				"WebsocketModule created with the standalone server container constructor variant"
+			);
+		}
 		this.appDeployment = appDeployment;
 		this.websocketModule = websocketModule;
 		containerCallScope = websocketModule.containerCallScope;

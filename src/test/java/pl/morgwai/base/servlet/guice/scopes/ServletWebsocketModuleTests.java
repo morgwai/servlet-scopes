@@ -13,7 +13,6 @@ import org.junit.*;
 
 import com.google.inject.*;
 import pl.morgwai.base.guice.scopes.ContextTracker;
-import pl.morgwai.base.servlet.guice.utils.StandaloneWebsocketContainerServletContext;
 
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.*;
@@ -24,7 +23,7 @@ public class ServletWebsocketModuleTests extends EasyMockSupport {
 
 
 
-	final ServletContext testDeployment = new StandaloneWebsocketContainerServletContext("/test");
+	final ServletContext testDeployment = new StandaloneWebsocketServerDeployment("/test");
 	final WebsocketModule websocketModule = new WebsocketModule(false);
 	final ContextTracker<ContainerCallContext> ctxTracker =
 			websocketModule.containerCallScope.tracker;
