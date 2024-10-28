@@ -254,7 +254,7 @@ public abstract class WebsocketIntegrationTests {
 	 * closes it immediately: intended for tests of invalid {@code Endpoint} classes that should
 	 * fail to instantiate.
 	 */
-	protected Session testOpenConnectionToServerEndpoint(String type) throws Exception {
+	protected Session testOpenConnectionToInvalidServerEndpoint(String type) throws Exception {
 		final var url = URI.create(appWebsocketUrl + WEBSOCKET_PATH + type);
 		final var clientEndpoint = new PluggableClientEndpoint(
 			(message) -> {},
@@ -273,7 +273,8 @@ public abstract class WebsocketIntegrationTests {
 		logger.setLevel(Level.OFF);
 		Session connection = null;
 		try {
-			connection = testOpenConnectionToServerEndpoint(OnOpenWithoutSessionParamEndpoint.TYPE);
+			connection = testOpenConnectionToInvalidServerEndpoint(
+					OnOpenWithoutSessionParamEndpoint.TYPE);
 			fail("instantiation of OnOpenWithoutSessionParamEndpoint should throw an Exception");
 		} catch (Exception expected) {
 		} finally {
@@ -293,7 +294,8 @@ public abstract class WebsocketIntegrationTests {
 		logger.setLevel(Level.OFF);
 		Session connection = null;
 		try {
-			connection = testOpenConnectionToServerEndpoint(PingingWithoutOnCloseEndpoint.TYPE);
+			connection = testOpenConnectionToInvalidServerEndpoint(
+					PingingWithoutOnCloseEndpoint.TYPE);
 			fail("instantiation of PingingWithoutOnCloseEndpoint should throw an Exception");
 		} catch (Exception expected) {
 		} finally {

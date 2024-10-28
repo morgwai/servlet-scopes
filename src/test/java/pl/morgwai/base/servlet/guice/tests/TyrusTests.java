@@ -28,8 +28,8 @@ public class TyrusTests extends WebsocketIntegrationTests {
 
 	/** TyrusServer reports error only after send attempt and not even right away... */
 	@Override
-	protected Session testOpenConnectionToServerEndpoint(String type) throws Exception {
-		final var connection = super.testOpenConnectionToServerEndpoint(type);
+	protected Session testOpenConnectionToInvalidServerEndpoint(String type) throws Exception {
+		final var connection = super.testOpenConnectionToInvalidServerEndpoint(type);
 		Thread.sleep(100L);
 		connection.getBasicRemote().sendText("yo");
 		return connection;
