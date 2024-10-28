@@ -78,7 +78,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	 * {@link ServletContext appDeployments} for container-created {@code Configurator} instances to
 	 * obtain a reference to their respective {@link ServletContext appDeployments} in
 	 * {@link #modifyHandshake(ServerEndpointConfig, HandshakeRequest, HandshakeResponse)} to call
-	 * {@link #initialize(ServletContext)}.
+	 * {@link #initialize(Injector)}.
 	 * {@link WeakReference} wrapping prevents leaks of {@link ServletContext appDeployments} if
 	 * {@link #deregisterDeployment(ServletContext)} is not called. Empty {@link WeakReference}
 	 * objects together with their path keys will still be leaked though, but that's very little
@@ -105,6 +105,10 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	static void registerDeployment(ServletContext appDeployment, Injector injector) {
 		appDeployment.setAttribute(Injector.class.getName(), injector);
 		appDeployments.put(appDeployment.getContextPath(), new WeakReference<>(appDeployment));
+	}
+
+	static Injector getInjectorFromDeployment(ServletContext appDeployment) {
+		return (Injector) appDeployment.getAttribute(Injector.class.getName());
 	}
 
 
@@ -134,7 +138,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 
 
 
-	volatile ServletContext appDeployment;
+	volatile Injector injector;
 	GuiceEndpointConfigurator backingConfigurator;
 
 
@@ -158,7 +162,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	 * {@code Endpoints}.
 	 */
 	public GuiceServerEndpointConfigurator(ServletContext appDeployment) {
-		initialize(appDeployment);
+		initialize(getInjectorFromDeployment(appDeployment));
 	}
 
 
@@ -175,12 +179,11 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	 *     {@link ServletContext#getAttribute(String) attribute} of {@code appDeployment} is not an
 	 *     {@link Injector}.
 	 */
-	void initialize(ServletContext appDeployment) {
-		backingConfigurator = newGuiceEndpointConfigurator(
-				(Injector) appDeployment.getAttribute(Injector.class.getName()));
-		// this.appDeployment is used fot double-checked locking in modifyHandshake(...), so
+	void initialize(Injector injector) {
+		backingConfigurator = newGuiceEndpointConfigurator(injector);
+		// this.injector is used fot double-checked locking in modifyHandshake(...), so
 		// the below assignment must be the last statement of this method
-		this.appDeployment = appDeployment;
+		this.injector = injector;
 	}
 
 
@@ -273,27 +276,36 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 		if (httpSession != null) {
 			config.getUserProperties().put(HttpSession.class.getName(), httpSession);
 		}
-		if (this.appDeployment != null) return;
+		if (this.injector != null) return;
 
 		// uninitialized container-created Configurator instance using param-less constructor:
 		// retrieve appDeployment and call initialize(...)
 		synchronized (this) {
-			if (this.appDeployment != null) return;
-			final var appDeployment = getAppDeployment(config, request);
-			initialize(appDeployment);
+			if (this.injector != null) return;
+			final var injector = getInjector(config, request);
+			initialize(injector);
 		}
 	}
 
-	ServletContext getAppDeployment(ServerEndpointConfig config, HandshakeRequest request) {
+	Injector getInjector(ServerEndpointConfig config, HandshakeRequest request) {
 		final var httpSession = request.getHttpSession();
-		if (httpSession != null) return ((HttpSession) httpSession).getServletContext();
+		if (httpSession != null) {
+			return getInjectorFromDeployment(((HttpSession) httpSession).getServletContext());
+		}
 
 		// try retrieving from appDeployments Map (appDeploymentPath -> appDeployment)
 		final var requestPath = request.getRequestURI().getPath();
 		final var appDeploymentPath = requestPath.substring(
 				0, requestPath.lastIndexOf(config.getPath()));
 		final var appDeploymentRef = appDeployments.get(appDeploymentPath);
-		if (appDeploymentRef != null) return appDeploymentRef.get();
+		if (appDeploymentRef != null) {
+			System.gc();  // flush WeakReferences from appDeployments
+			try {
+				return getInjectorFromDeployment(appDeploymentRef.get());
+			} catch (NullPointerException e) {
+				throw new IllegalStateException(REF_LOST_MESSAGE);
+			}
+		}
 
 		// pick first non-null from appDeployments and ask it for a reference to the desired one
 		// (for cases when the desired deployment is matched by more than 1 path (as described in
@@ -316,9 +328,12 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 			System.err.println(deploymentNotFoundMessage);
 			if (appDeployment == null) throw new NoSuchElementException(deploymentNotFoundMessage);
 		}
-		return appDeployment;
+		return getInjectorFromDeployment(appDeployment);
 	}
 
+	static final String REF_LOST_MESSAGE = "lost a reference to the deployment, the app probably "
+			+ "does not call GuiceServerEndpointConfigurator.deregisterDeployment(injector) at its "
+			+ "shutdown";
 	static final String DEPLOYMENT_NOT_FOUND_MESSAGE = "could not find a deployment for the "
 			+ "request path \"%s\" (calculated app deployment path: \"%s\")";
 

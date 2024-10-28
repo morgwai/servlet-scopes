@@ -14,9 +14,7 @@ public class TyrusTests extends WebsocketIntegrationTests {
 
 	@Override
 	protected Server createServer() throws Exception {
-		final var tyrus = new TyrusServer(-1, Server.TEST_APP_PATH);
-		System.gc();  // make sure WeakReference in GuiceServerEndpointConfigurator is not lost
-		return tyrus;
+		return new TyrusServer(-1, Server.TEST_APP_PATH);
 	}
 
 
