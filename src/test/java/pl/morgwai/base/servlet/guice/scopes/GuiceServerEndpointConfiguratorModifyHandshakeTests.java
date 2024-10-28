@@ -73,7 +73,7 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 			.andAnswer(() -> requestUri)
 			.anyTimes();
 
-		mockDeployment = new StandaloneWebsocketServerDeployment(MOCK_DEPLOYMENT_PATH, "mockApp") {
+		mockDeployment = new FakeAppDeployment(MOCK_DEPLOYMENT_PATH, "mockApp") {
 			@Override public ServletContext getContext(String path) {
 				if (
 					path.equals(MOCK_DEPLOYMENT_PATH)
@@ -178,7 +178,7 @@ public class GuiceServerEndpointConfiguratorModifyHandshakeTests extends EasyMoc
 		replayAll();
 
 		mockDeployment.setAttribute(Injector.class.getName(), mockInjector);
-		final var secondDeployment = new StandaloneWebsocketServerDeployment(
+		final var secondDeployment = new FakeAppDeployment(
 			"/secondDeploymentPath",
 			"secondApp"
 		);

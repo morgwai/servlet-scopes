@@ -35,7 +35,7 @@ public class ContextSerializationTests {
 
 	public void testHttpSessionContextSerialization(boolean customSerialization) throws IOException
 	{
-		final var servletContextMock = new StandaloneWebsocketServerDeployment("");
+		final var servletContextMock = new FakeAppDeployment("");
 		servletContextMock.setInitParameter(
 			CUSTOM_SERIALIZATION_PARAM,
 			String.valueOf(customSerialization)

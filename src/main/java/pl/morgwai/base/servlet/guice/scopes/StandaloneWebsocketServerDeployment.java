@@ -19,12 +19,8 @@ import javax.servlet.descriptor.JspConfigDescriptor;
  *     <li>{@link #getAttributeNames()}</li>
  *     <li>{@link #getContext(String)}</li>
  *     <li>{@link #getContextPath()}</li>
- *     <li>{@link #getInitParameter(String)}</li>
- *     <li>{@link #getInitParameterNames()}</li>
- *     <li>{@link #getServletContextName()}</li>
  *     <li>{@link #removeAttribute(String)}</li>
  *     <li>{@link #setAttribute(String, Object)}</li>
- *     <li>{@link #setInitParameter(String, String)}</li>
  * </ul>
  */
 class StandaloneWebsocketServerDeployment implements ServletContext {
@@ -34,18 +30,10 @@ class StandaloneWebsocketServerDeployment implements ServletContext {
 	@Override public String getContextPath() { return contextPath; }
 	final String contextPath;
 
-	@Override public String getServletContextName() { return servletContextName; }
-	final String servletContextName;
 
-
-
-	public StandaloneWebsocketServerDeployment(String contextPath, String servletContextName) {
-		this.contextPath = contextPath;
-		this.servletContextName = servletContextName;
-	}
 
 	public StandaloneWebsocketServerDeployment(String contextPath) {
-		this(contextPath, "app at " + contextPath);
+		this.contextPath = contextPath;
 	}
 
 
@@ -82,28 +70,16 @@ class StandaloneWebsocketServerDeployment implements ServletContext {
 
 
 
-	final Map<String, String> initParams = new HashMap<>(5);
-
-	@Override
-	public String getInitParameter(String name) {
-		return initParams.get(name);
-	}
-
-	@Override
-	public Enumeration<String> getInitParameterNames() {
-		return Collections.enumeration(initParams.keySet());
-	}
-
-	@Override public boolean setInitParameter(String name, String value) {
-		if (initParams.containsKey(name)) return false;
-		initParams.put(name, value);
-		return true;
-	}
-
-
-
 	// all the other below methods throw an UnsupportedOperationException
 
+	@Override public boolean setInitParameter(String name, String value) {
+		throw new UnsupportedOperationException();
+	}
+	@Override
+	public String getInitParameter(String name) { throw new UnsupportedOperationException(); }
+	@Override
+	public Enumeration<String> getInitParameterNames() { throw new UnsupportedOperationException();}
+	@Override public String getServletContextName() { throw new UnsupportedOperationException(); }
 	@Override public String getVirtualServerName() { throw new UnsupportedOperationException(); }
 	@Override public int getMajorVersion() { throw new UnsupportedOperationException(); }
 	@Override public int getMinorVersion() { throw new UnsupportedOperationException(); }
