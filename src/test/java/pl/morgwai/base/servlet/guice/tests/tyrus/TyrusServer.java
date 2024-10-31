@@ -38,7 +38,7 @@ public class TyrusServer implements Server {
 
 	public TyrusServer(int port, String deploymentPath, ClusterContext clusterCtx)
 			throws DeploymentException {
-		this.deploymentPath = deploymentPath;
+		this.deploymentPath = deploymentPath.equals("/") ? "": deploymentPath;
 		final var intervalFromProperty = System.getProperty(PING_INTERVAL_MILLIS_PROPERTY);
 		pingerService = new WebsocketPingerService(
 			intervalFromProperty != null
@@ -47,12 +47,14 @@ public class TyrusServer implements Server {
 			MILLISECONDS,
 			1
 		);
-		final var websocketModule = new PingingWebsocketModule(deploymentPath, pingerService, true);
+		final var websocketModule = new PingingWebsocketModule(pingerService, true);
+		final var websocketServerModule = new StandaloneWebsocketServerModule(deploymentPath);
 		executor = new TaskTrackingThreadPoolExecutor(2, new NamingThreadFactory("testExecutor"));
 
 		// create and store injector
 		final var modules = new LinkedList<Module>();
 		modules.add(websocketModule);
+		modules.add(websocketServerModule);
 		modules.add(new ServiceModule(
 			websocketModule.containerCallScope,
 			websocketModule.websocketConnectionScope,
@@ -64,7 +66,7 @@ public class TyrusServer implements Server {
 		tyrus = new org.glassfish.tyrus.server.Server(
 			"localhost",
 			port,
-			deploymentPath,
+			this.deploymentPath,
 			clusterCtx == null ? null : Map.of(ClusterContext.CLUSTER_CONTEXT, clusterCtx),
 			TyrusConfig.class
 		);

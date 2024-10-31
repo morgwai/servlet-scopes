@@ -13,11 +13,11 @@ import static pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurat
 
 
 /**
+ * {@link Module} for mixed Servlet-websocket apps.
  * Embeds a {@link WebsocketModule} and defines {@link #httpSessionScope}.
- * Usually a single instance is created at an app startup in the
- * {@link javax.servlet.ServletContextListener} and passed to
- * {@link Guice#createInjector(com.google.inject.Module...) create the app-wide Injector}.
- * @see GuiceServletContextListener#servletModule
+ * <p>
+ * Usually a single instance is created in {@link javax.servlet.ServletContextListener} and passed
+ * to {@link Guice#createInjector(Module...)} together with other {@link Module}s.</p>
  * @see pl.morgwai.base.servlet.guice.utils.PingingWebsocketModule
  */
 public class ServletWebsocketModule implements Module {
@@ -71,11 +71,6 @@ public class ServletWebsocketModule implements Module {
 
 
 	public ServletWebsocketModule(ServletContext appDeployment, WebsocketModule websocketModule) {
-		if (websocketModule.standaloneServerDeploymentPath != null) {
-			throw new IllegalArgumentException(
-				"WebsocketModule created with the standalone server container constructor variant"
-			);
-		}
 		this.appDeployment = appDeployment;
 		this.websocketModule = websocketModule;
 		containerCallScope = websocketModule.containerCallScope;
@@ -96,12 +91,11 @@ public class ServletWebsocketModule implements Module {
 	 * {@link ServletContext} type to {@link #appDeployment}, stores the resulting {@link Injector}
 	 * in {@link #appDeployment} and static structures of {@link GuiceServerEndpointConfigurator}
 	 * class.
-	 * This is in order for {@link GuiceServerEndpointConfigurator} instances created by the
-	 * container (for {@code Endpoint}s annotated
-	 * with @{@link javax.websocket.server.ServerEndpoint} using
-	 * {@link GuiceServerEndpointConfigurator}) to obtain a reference to the {@link Injector}.
+	 * This allows {@link GuiceServerEndpointConfigurator} instances created by the container (for
+	 * {@code Endpoint}s annotated with @{@link javax.websocket.server.ServerEndpoint}) to get a
+	 * reference to the {@link Injector}.
 	 * <p>
-	 * The {@link Injector} is stored in {@link #appDeployment}'s
+	 * The resulting {@link Injector} is stored in {@link #appDeployment}'s
 	 * {@link ServletContext#getAttribute(String) attribute} named after
 	 * {@link Class#getName() fully-qualified name} of {@link Injector} class.</p>
 	 */

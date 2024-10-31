@@ -9,22 +9,31 @@ import pl.morgwai.base.guice.scopes.*;
 
 import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
 		.REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY;
-import static pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator
-		.APP_DEPLOYMENT_PATH_KEY;
 
 
 
 /**
- * Contains websocket Guice {@link Scope}s, {@link ContextTracker}s and some helper utils.
- * Usually a single instance is created at an app startup and passed to
- * {@link Guice#createInjector(com.google.inject.Module...) create the app-wide Injector}.
+ * Contains websocket Guice {@link Scope}s and a {@link ContextBinder}.
+ * Usually a single instance is created at the startup and its member {@link Scope}s passed to
+ * other {@link com.google.inject.Module}s to scope their bindings: see
+ * <a href="https://github.com/morgwai/guice-context-scopes#developing-portable-modules">"Developing
+ * portable Modules"</a> article.
  * <p>
- * Appropriate constructor variant must be used depending whether the app is a
- * {@link #WebsocketModule(String, boolean, Set) standalone websocket ServerContainer} or if it is
- * {@link #WebsocketModule(boolean, Set) embeded in a Servlet container or client-only}.</p>
- * <p>
- * In case of websocket apps embedded in {@code Servlet} containers, an instance should be then
- * embedded by a {@link ServletWebsocketModule}.</p>
+ * Next, depending on the app type, different steps should be performed:</p>
+ * <ul>
+ *   <li>In case of standalone client-only websocket apps, the {@link WebsocketModule} instance
+ *       should just be passed to {@link Guice#createInjector(com.google.inject.Module...)} method
+ *       along with other {@link com.google.inject.Module}s to create the app-wide
+ *       {@link Injector}.</li>
+ *   <li>In case of standalone websocket server or mixed client-server apps, the
+ *       {@link WebsocketModule} instance should be passed to
+ *       {@link Guice#createInjector(com.google.inject.Module...)} together with a
+ *       {@link StandaloneWebsocketServerModule} and other {@link com.google.inject.Module}s.</li>
+ *   <li>In case of websocket apps embedded in {@code Servlet} containers, the
+ *       {@link WebsocketModule} instance should be embedded by a
+ *       {@link ServletWebsocketModule#ServletWebsocketModule(javax.servlet.ServletContext,
+ *       WebsocketModule) ServletModule} instance.</li>
+ * </ul>
  * @see pl.morgwai.base.servlet.guice.utils.PingingWebsocketModule
  */
 public class WebsocketModule extends ContextScopesModule {
@@ -78,47 +87,14 @@ public class WebsocketModule extends ContextScopesModule {
 	 */
 	protected final Set<Class<?>> clientEndpointClasses;
 
-	final String standaloneServerDeploymentPath;
 
 
-
-	/**
-	 * Constructs a new instance for use in standalone
-	 * {@link javax.websocket.server.ServerContainer}s.
-	 */
 	public WebsocketModule(
-		String standaloneServerDeploymentPath,
 		boolean requireTopLevelMethodAnnotations,
 		Set<Class<?>> clientEndpointClasses
 	) {
 		this.requireTopLevelMethodAnnotations = requireTopLevelMethodAnnotations;
 		this.clientEndpointClasses = Set.copyOf(clientEndpointClasses);
-		this.standaloneServerDeploymentPath = standaloneServerDeploymentPath;
-	}
-
-	/**
-	 * Calls {@link #WebsocketModule(String, boolean, Set)
-	 * this(serverDeploymentPath, requireTopLevelMethodAnnotations, Set.of(clientEndpointClasses))}.
-	 */
-	public WebsocketModule(
-		String serverDeploymentPath,
-		boolean requireTopLevelMethodAnnotations,
-		Class<?>... clientEndpointClasses
-	) {
-		this(serverDeploymentPath, requireTopLevelMethodAnnotations, Set.of(clientEndpointClasses));
-	}
-
-
-
-	/**
-	 * Constructs a new instance for use in websocket apps that are embedded in {@code Servlet}
-	 * containers or are client-only.
-	 */
-	public WebsocketModule(
-		boolean requireTopLevelMethodAnnotations,
-		Set<Class<?>> clientEndpointClasses
-	) {
-		this(null, requireTopLevelMethodAnnotations, clientEndpointClasses);
 	}
 
 	/**
@@ -140,26 +116,12 @@ public class WebsocketModule extends ContextScopesModule {
 	 * {@link Provider}s based on {@link GuiceEndpointConfigurator}.
 	 * Additionally binds {@link GuiceEndpointConfigurator#REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY}
 	 * to {@link #requireTopLevelMethodAnnotations}.
-	 * <p>
-	 * If this {@code WebsocketModule} was created using {@link
-	 * #WebsocketModule(String, boolean, Set) the standalone websocket server constructor variant},
-	 * then this method also {@link Binder#requestStaticInjection(Class[]) injects static fields} of
-	 * {@link GuiceServerEndpointConfigurator}. This is in order for
-	 * {@link GuiceServerEndpointConfigurator} instances created by the container (for
-	 * {@code Endpoint}s annotated with @{@link javax.websocket.server.ServerEndpoint} using
-	 * {@link GuiceServerEndpointConfigurator}) to get a reference to the {@link Injector}.</p>
 	 */
 	@Override
 	public void configure(Binder binder) {
 		super.configure(binder);
 		binder.bind(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY)
 			.toInstance(requireTopLevelMethodAnnotations);
-		if (standaloneServerDeploymentPath != null) {
-			binder.bind(APP_DEPLOYMENT_PATH_KEY)
-				.toInstance(standaloneServerDeploymentPath);
-			binder.requestStaticInjection(GuiceServerEndpointConfigurator.class);
-					// calls GuiceServerEndpointConfigurator.registerInjector(...)
-		}
 		for (var clientEndpointClass: clientEndpointClasses) {
 			bindClientEndpoint(binder, clientEndpointClass);
 		}

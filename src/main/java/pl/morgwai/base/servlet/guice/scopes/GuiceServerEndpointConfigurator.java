@@ -25,8 +25,9 @@ import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
 /**
  * {@link GuiceEndpointConfigurator#getProxiedEndpointInstance(Class)
  * Obtains server Endpoint instances} from a {@link GuiceEndpointConfigurator}.
- * To enable this {@code Configurator}, a {@link ServletWebsocketModule} must be passed to
- * {@link Guice#createInjector(com.google.inject.Module...)} first.
+ * To use this {@code Configurator}, first either a {@link ServletWebsocketModule} or a
+ * {@link StandaloneWebsocketServerModule} must be passed to
+ * {@link Guice#createInjector(com.google.inject.Module...)}.
  * <p>
  * To use this {@code Configurator} for programmatically added {@code Endpoints}, create an instance
  * using {@link #GuiceServerEndpointConfigurator(Injector)} and pass it to the
@@ -101,7 +102,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	/**
 	 * Stores {@code injector} in {@link #deploymentInjectors}.
 	 * This method is called automatically during static injection requested by a
-	 * {@link ServletWebsocketModule} or a {@link WebsocketModule}.
+	 * {@link ServletWebsocketModule} or a {@link StandaloneWebsocketServerModule}.
 	 */
 	@Inject
 	static void registerInjector(Injector injector) {
@@ -328,7 +329,9 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 			+  "probably does not call GuiceServerEndpointConfigurator.deregisterInjector(injector)"
 			+ " at its shutdown";
 	static final String INJECTOR_NOT_FOUND_MESSAGE = "could not find an Injector for the "
-			+ "request path \"%s\" (calculated app deployment path: %s)";
+			+ "request path \"%s\" (calculated app deployment path: %s), either a "
+			+ "ServletWebsocketModule or a StandaloneWebsocketServerModule must be passed to "
+			+ "Guice.createInjector(...)";
 
 
 
