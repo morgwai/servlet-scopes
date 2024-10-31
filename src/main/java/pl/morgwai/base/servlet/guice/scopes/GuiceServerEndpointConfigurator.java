@@ -16,6 +16,7 @@ import javax.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.*;
 
+import static com.google.inject.name.Names.named;
 import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
 		.REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY;
 
@@ -28,7 +29,7 @@ import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
  * {@link Guice#createInjector(com.google.inject.Module...)} first.
  * <p>
  * To use this {@code Configurator} for programmatically added {@code Endpoints}, create an instance
- * using {@link #GuiceServerEndpointConfigurator(ServletContext)} and pass it to the
+ * using {@link #GuiceServerEndpointConfigurator(Injector)} and pass it to the
  * {@link ServerEndpointConfig.Builder#configurator(Configurator) config}:</p>
  * <pre>{@code
  * final var configurator = new GuiceServerEndpointConfigurator(servletContext);
@@ -65,75 +66,70 @@ import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
  *     // other methods here...
  * }</pre>
  * <p>
- * At an app shutdown {@link #deregisterDeployment(ServletContext)} or
- * {@link #deregisterDeployment(Injector)} must be called to avoid resource leaks (if an app uses
- * {@link GuiceServletContextListener} then this is done automatically).</p>
+ * At the app shutdown {@link #deregisterInjector(Injector)} must be called to avoid resource leaks
+ * (in apps that  uses {@link GuiceServletContextListener} this is done automatically).</p>
  */
 public class GuiceServerEndpointConfigurator extends Configurator {
 
 
 
 	/**
-	 * Maps {@link ServletContext#getContextPath() app deployment paths} to
-	 * {@link ServletContext appDeployments} for container-created {@code Configurator} instances to
-	 * obtain a reference to their respective {@link ServletContext appDeployments} in
+	 * {@link com.google.inject.name.Named Binding name} for a {@link String} containing the root
+	 * path of a given server app.
+	 */
+	public static final String APP_DEPLOYMENT_PATH_BINDING_NAME = "appDeploymentPath";
+	/** {@code Key} for a {@link String} containing the root path of a given server app. */
+	public static final Key<String> APP_DEPLOYMENT_PATH_KEY =
+			Key.get(String.class, named(APP_DEPLOYMENT_PATH_BINDING_NAME));
+
+	/**
+	 * Maps {@link ServletContext#getContextPath() app deployment paths} to their
+	 * {@link Injector}s for container-created {@code Configurator} instances to
+	 * obtain a reference to their respective {@link Injector} in
 	 * {@link #modifyHandshake(ServerEndpointConfig, HandshakeRequest, HandshakeResponse)} to call
 	 * {@link #initialize(Injector)}.
-	 * {@link WeakReference} wrapping prevents leaks of {@link ServletContext appDeployments} if
-	 * {@link #deregisterDeployment(ServletContext)} is not called. Empty {@link WeakReference}
+	 * {@link WeakReference} wrapping prevents leaks of {@link Injector}s if
+	 * {@link #deregisterInjector(Injector)} is not called. Empty {@link WeakReference}s
 	 * objects together with their path keys will still be leaked though, but that's very little
-	 * comparing to whole {@link ServletContext appDeployments}.
+	 * comparing to whole {@link Injector}s.
 	 */
-	static final ConcurrentMap<String, WeakReference<ServletContext>> appDeployments =
+	static final ConcurrentMap<String, WeakReference<Injector>> deploymentInjectors =
 			new ConcurrentHashMap<>(5);
 
 
 
 	/**
-	 * Stores {@code appDeployment} and {@code injector} in the static structures for
-	 * container-created {@code Configurator} instances to initialize their references to these
-	 * objects in their first invocation of
-	 * {@link #modifyHandshake(ServerEndpointConfig, HandshakeRequest, HandshakeResponse)}.
-	 * Stores {@code injector} as an {@link ServletContext#setAttribute(String, Object) attribute}
-	 * of {@code appDeployment} under {@link Class#getName() fully-qualified name} of
-	 * {@link Injector} class.
-	 * <p>
-	 * This method is called automatically during static injection requested by
-	 * {@link ServletWebsocketModule} or {@link WebsocketModule}.</p>
+	 * Stores {@code injector} in {@link #deploymentInjectors}.
+	 * This method is called automatically during static injection requested by a
+	 * {@link ServletWebsocketModule} or a {@link WebsocketModule}.
 	 */
 	@Inject
-	static void registerDeployment(ServletContext appDeployment, Injector injector) {
-		appDeployment.setAttribute(Injector.class.getName(), injector);
-		appDeployments.put(appDeployment.getContextPath(), new WeakReference<>(appDeployment));
-	}
-
-	static Injector getInjectorFromDeployment(ServletContext appDeployment) {
-		return (Injector) appDeployment.getAttribute(Injector.class.getName());
+	static void registerInjector(Injector injector) {
+		deploymentInjectors.put(
+			injector.getInstance(APP_DEPLOYMENT_PATH_KEY),
+			new WeakReference<>(injector)
+		);
 	}
 
 
 
 	/**
-	 * Removes the reference to {@code appDeployment} and the associated {@link Injector} from the
-	 * static structures.
+	 * Removes {@code injector} from the static structures of this class.
 	 * <p>
 	 * This method is called automatically by
 	 * {@link GuiceServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)},
-	 * apps that don't use it must call this method manually during their shutdowns.</p>
+	 * apps that don't use it must call this method manually during their shutdowns to prevent
+	 * resource leaks.</p>
 	 */
-	public static void deregisterDeployment(ServletContext appDeployment) {
-		final var deregisteredDeployment = appDeployments.remove(appDeployment.getContextPath());
+	public static void deregisterInjector(Injector injector) {
+		final var appDeploymentPath = injector.getInstance(APP_DEPLOYMENT_PATH_KEY);
+		final var deregisteredDeployment = deploymentInjectors.remove(appDeploymentPath);
 		if (deregisteredDeployment != null) {
 			deregisteredDeployment.clear();
 		} else {
-			log.warning("attempting to deregister unregistered deployment with path \""
-					+ appDeployment.getContextPath() + '"');
+			log.warning("attempting to deregister an unregistered Injector for the app at \""
+					+ appDeploymentPath + '"');
 		}
-	}
-
-	/** Variant of {@link #deregisterDeployment(ServletContext)} for standalone websocket apps. */
-	public static void deregisterDeployment(Injector injector) {
-		deregisterDeployment(injector.getInstance(ServletContext.class));
 	}
 
 
@@ -149,8 +145,8 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	 * {@link ServerEndpoint#configurator() configurator}.
 	 * Such instances are not properly initialized until their first invocation of
 	 * {@link #modifyHandshake(ServerEndpointConfig, HandshakeRequest, HandshakeResponse)} when they
-	 * obtain references to their {@link ServletContext appDeployment} and {@link Injector} from
-	 * the static structures filled with {@link #registerDeployment(ServletContext, Injector)}.
+	 * obtain references to their respective {@link Injector}s from the static structures of this
+	 * class.
 	 */
 	public GuiceServerEndpointConfigurator() {}
 
@@ -161,23 +157,17 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	 * {@link ServerEndpointConfig.Builder#configurator(Configurator) configuring} programmatic
 	 * {@code Endpoints}.
 	 */
-	public GuiceServerEndpointConfigurator(ServletContext appDeployment) {
-		initialize(getInjectorFromDeployment(appDeployment));
+	public GuiceServerEndpointConfigurator(Injector injector) {
+		initialize(injector);
 	}
 
 
 
 	/**
-	 * Initializes {@link #backingConfigurator} using {@link Injector} obtained from
-	 * {@code appDeployment}'s {@link ServletContext#getAttribute(String) attribute}.
-	 * Called either by {@link #GuiceServerEndpointConfigurator(ServletContext)} or by
+	 * Initializes {@link #backingConfigurator} using {@code injector}.
+	 * Called either by {@link #GuiceServerEndpointConfigurator(Injector)} or by
 	 * {@link #modifyHandshake(ServerEndpointConfig, HandshakeRequest, HandshakeResponse)} in case
 	 * of container-created instances for {@code Endpoints} annotated with {@link ServerEndpoint}.
-	 * @throws NullPointerException if {@code appDeployment} does not contain an {@link Injector}
-	 *     {@link ServletContext#getAttribute(String) attribute}.
-	 * @throws ClassCastException if {@link Injector}
-	 *     {@link ServletContext#getAttribute(String) attribute} of {@code appDeployment} is not an
-	 *     {@link Injector}.
 	 */
 	void initialize(Injector injector) {
 		backingConfigurator = newGuiceEndpointConfigurator(injector);
@@ -195,7 +185,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	 * {@link #createEndpointProxyInstance(Class)} of this {@code GuiceServerEndpointConfigurator}.
 	 * Obtains all arguments required by {@link
 	 * GuiceEndpointConfigurator#GuiceEndpointConfigurator(Injector,
-	 * pl.morgwai.base.guice.scopes.ContextTracker) the constructor of
+	 * pl.morgwai.base.guice.scopes.ContextTracker, boolean) the constructor of
 	 * GuiceEndpointConfigurator} from {@code injector}.
 	 * @return by default an instance of anonymous subclass of {@link GuiceEndpointConfigurator},
 	 *     may be overridden if more specialized implementation is needed.
@@ -263,8 +253,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	 * <p>
 	 * For container-created {@code Configurator} instances using
 	 * {@link #GuiceServerEndpointConfigurator() the paramless constructor}, this method on its
-	 * first invocation will also initialize the references to the respective
-	 * {@link ServletContext appDeployment} and {@link Injector}.</p>
+	 * first invocation will also initialize the reference to the app {@link Injector}.</p>
 	 */
 	@Override
 	public void modifyHandshake(
@@ -279,7 +268,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 		if (this.injector != null) return;
 
 		// uninitialized container-created Configurator instance using param-less constructor:
-		// retrieve appDeployment and call initialize(...)
+		// retrieve the Injector and call initialize(...)
 		synchronized (this) {
 			if (this.injector != null) return;
 			final var injector = getInjector(config, request);
@@ -287,40 +276,40 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 		}
 	}
 
-	Injector getInjector(ServerEndpointConfig config, HandshakeRequest request) {
+	static Injector getInjector(ServerEndpointConfig config, HandshakeRequest request) {
 		final var httpSession = request.getHttpSession();
 		if (httpSession != null) {
 			return getInjectorFromDeployment(((HttpSession) httpSession).getServletContext());
 		}
 
-		// try retrieving from appDeployments Map (appDeploymentPath -> appDeployment)
+		// try retrieving from deploymentInjectors Map (appDeploymentPath -> Injector)
 		final var requestPath = request.getRequestURI().getPath();
 		final var appDeploymentPath = requestPath.substring(
 				0, requestPath.lastIndexOf(config.getPath()));
-		final var appDeploymentRef = appDeployments.get(appDeploymentPath);
-		if (appDeploymentRef != null) {
-			System.gc();  // flush WeakReferences from appDeployments
-			try {
-				return getInjectorFromDeployment(appDeploymentRef.get());
-			} catch (NullPointerException e) {
-				throw new IllegalStateException(REF_LOST_MESSAGE);
-			}
+		final var injectorRef = deploymentInjectors.get(appDeploymentPath);
+		if (injectorRef != null) {
+			System.gc();  // flush WeakReferences from deploymentInjectors
+			final var injector = injectorRef.get();
+			if (injector == null) throw new IllegalStateException(INJECTOR_REF_LOST_MESSAGE);
+			return injector;
 		}
 
-		// pick first non-null from appDeployments and ask it for a reference to the desired one
+		// pick first non-null from deploymentInjectors, get its ServletContext, ask it for a
+		// reference to the ServletContext of this app and get the Injector from its attribute
 		// (for cases when the desired deployment is matched by more than 1 path (as described in
 		// ServletContext.getContextPath() javadoc) and request comes to a non-primary path)
 		ServletContext appDeployment = null;
-		for (var deploymentRef: appDeployments.values()) {
-			final var randomDeployment = deploymentRef.get();
-			if (randomDeployment != null) {
+		for (var randomInjectorRef: deploymentInjectors.values()) {
+			final var randomInjector = randomInjectorRef.get();
+			if (randomInjector != null) {
+				final var randomDeployment = randomInjector.getInstance(ServletContext.class);
 				appDeployment = randomDeployment.getContext(appDeploymentPath);
 				if (appDeployment != null) break;
 			}
 		}
 		if (appDeployment == null || appDeploymentPath.equals(appDeployment.getContextPath())) {
 			final var deploymentNotFoundMessage = String.format(
-				DEPLOYMENT_NOT_FOUND_MESSAGE,
+				INJECTOR_NOT_FOUND_MESSAGE,
 				requestPath,
 				appDeploymentPath.isEmpty() ? "\"\" (root-app)" : '"' + appDeploymentPath + '"'
 			);
@@ -331,11 +320,15 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 		return getInjectorFromDeployment(appDeployment);
 	}
 
-	static final String REF_LOST_MESSAGE = "lost a reference to the deployment, the app probably "
-			+ "does not call GuiceServerEndpointConfigurator.deregisterDeployment(injector) at its "
-			+ "shutdown";
-	static final String DEPLOYMENT_NOT_FOUND_MESSAGE = "could not find a deployment for the "
-			+ "request path \"%s\" (calculated app deployment path: \"%s\")";
+	static Injector getInjectorFromDeployment(ServletContext appDeployment) {
+		return (Injector) appDeployment.getAttribute(Injector.class.getName());
+	}
+
+	static final String INJECTOR_REF_LOST_MESSAGE = "lost a reference to the Injector, the app "
+			+  "probably does not call GuiceServerEndpointConfigurator.deregisterInjector(injector)"
+			+ " at its shutdown";
+	static final String INJECTOR_NOT_FOUND_MESSAGE = "could not find an Injector for the "
+			+ "request path \"%s\" (calculated app deployment path: %s)";
 
 
 

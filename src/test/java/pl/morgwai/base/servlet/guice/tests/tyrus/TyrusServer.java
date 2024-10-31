@@ -89,7 +89,7 @@ public class TyrusServer implements Server {
 		tyrus.stop();
 		executor.shutdown();
 		pingerService.shutdown();
-		GuiceServerEndpointConfigurator.deregisterDeployment(injector);
+		GuiceServerEndpointConfigurator.deregisterInjector(injector);
 		try {
 			awaitMultiple(
 				5L, SECONDS,

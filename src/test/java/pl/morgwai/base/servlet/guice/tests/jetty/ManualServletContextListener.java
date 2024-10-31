@@ -37,9 +37,9 @@ public class ManualServletContextListener implements ServletContextListener {
 
 
 
-	ServletWebsocketModule servletModule;
 	WebsocketPingerService pingerService;
 	TaskTrackingThreadPoolExecutor executor;
+	Injector injector;
 
 
 
@@ -55,7 +55,7 @@ public class ManualServletContextListener implements ServletContextListener {
 				1
 			);
 			final ServletContext appDeployment = initialization.getServletContext();
-			servletModule = new ServletWebsocketModule(
+			ServletWebsocketModule servletModule = new ServletWebsocketModule(
 				appDeployment,
 				new PingingWebsocketModule(pingerService, false)
 			);
@@ -73,7 +73,7 @@ public class ManualServletContextListener implements ServletContextListener {
 				servletModule.httpSessionScope,
 				new ContextTrackingExecutorDecorator(executor, servletModule.ctxBinder)
 			));
-			final Injector injector = Guice.createInjector(modules);
+			injector = Guice.createInjector(modules);
 
 			final var requestCtxFilter = appDeployment.createFilter(RequestContextFilter.class);
 			injector.injectMembers(requestCtxFilter);
@@ -86,7 +86,7 @@ public class ManualServletContextListener implements ServletContextListener {
 				"/*"
 			);
 
-			final var endpointConfigurator = new PingingServerEndpointConfigurator(appDeployment);
+			final var endpointConfigurator = new PingingServerEndpointConfigurator(injector);
 
 			final var indexPageServlet = appDeployment.createServlet(ResourceServlet.class);
 			injector.injectMembers(indexPageServlet);
@@ -176,7 +176,7 @@ public class ManualServletContextListener implements ServletContextListener {
 	public void contextDestroyed(ServletContextEvent destruction) {
 		executor.shutdown();
 		pingerService.shutdown();
-		GuiceServerEndpointConfigurator.deregisterDeployment(destruction.getServletContext());
+		GuiceServerEndpointConfigurator.deregisterInjector(injector);
 		try {
 			awaitMultiple(
 				5L, SECONDS,

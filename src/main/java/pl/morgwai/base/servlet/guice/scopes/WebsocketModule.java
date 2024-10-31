@@ -3,13 +3,14 @@ package pl.morgwai.base.servlet.guice.scopes;
 
 import java.util.Set;
 import java.util.function.Function;
-import javax.servlet.ServletContext;
 
 import com.google.inject.*;
 import pl.morgwai.base.guice.scopes.*;
 
 import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
 		.REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY;
+import static pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator
+		.APP_DEPLOYMENT_PATH_KEY;
 
 
 
@@ -77,7 +78,7 @@ public class WebsocketModule extends ContextScopesModule {
 	 */
 	protected final Set<Class<?>> clientEndpointClasses;
 
-	final StandaloneWebsocketServerDeployment standaloneServerDeployment;
+	final String standaloneServerDeploymentPath;
 
 
 
@@ -92,9 +93,7 @@ public class WebsocketModule extends ContextScopesModule {
 	) {
 		this.requireTopLevelMethodAnnotations = requireTopLevelMethodAnnotations;
 		this.clientEndpointClasses = Set.copyOf(clientEndpointClasses);
-		standaloneServerDeployment = standaloneServerDeploymentPath != null
-				? new StandaloneWebsocketServerDeployment(standaloneServerDeploymentPath)
-				: null;
+		this.standaloneServerDeploymentPath = standaloneServerDeploymentPath;
 	}
 
 	/**
@@ -154,11 +153,11 @@ public class WebsocketModule extends ContextScopesModule {
 	public void configure(Binder binder) {
 		super.configure(binder);
 		binder.bind(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY)
-			.toInstance(requireTopLevelMethodAnnotations);
-		if (standaloneServerDeployment != null) {
-			binder.bind(ServletContext.class)
-				.toInstance(standaloneServerDeployment);
+				.toInstance(requireTopLevelMethodAnnotations);
+		if (standaloneServerDeploymentPath != null) {
+			binder.bind(APP_DEPLOYMENT_PATH_KEY).toInstance(standaloneServerDeploymentPath);
 			binder.requestStaticInjection(GuiceServerEndpointConfigurator.class);
+					// calls GuiceServerEndpointConfigurator.registerInjector(...)
 		}
 		for (var clientEndpointClass: clientEndpointClasses) {
 			bindClientEndpoint(binder, clientEndpointClass);

@@ -2,7 +2,6 @@
 package pl.morgwai.base.servlet.guice.utils;
 
 import java.lang.reflect.InvocationTargetException;
-import javax.servlet.ServletContext;
 
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -21,8 +20,8 @@ public class PingingServerEndpointConfigurator extends GuiceServerEndpointConfig
 
 	public PingingServerEndpointConfigurator() {}
 
-	public PingingServerEndpointConfigurator(ServletContext appDeployment) {
-		super(appDeployment);
+	public PingingServerEndpointConfigurator(Injector injector) {
+		super(injector);
 	}
 
 

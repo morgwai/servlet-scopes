@@ -4,8 +4,8 @@ package pl.morgwai.base.servlet.guice.utils;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
-import javax.servlet.ServletContext;
 
+import com.google.inject.Injector;
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
@@ -172,8 +172,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 	/** Overrides {@link #endpointConfigurator} to be a {@link PingingServerEndpointConfigurator}.*/
 	@Override
-	protected PingingServerEndpointConfigurator createEndpointConfigurator(
-			ServletContext appDeployment) {
-		return new PingingServerEndpointConfigurator(appDeployment);
+	protected PingingServerEndpointConfigurator createEndpointConfigurator(Injector injector) {
+		return new PingingServerEndpointConfigurator(injector);
 	}
 }

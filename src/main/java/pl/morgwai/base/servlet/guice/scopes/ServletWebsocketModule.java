@@ -7,6 +7,9 @@ import com.google.inject.Module;
 import com.google.inject.*;
 import pl.morgwai.base.guice.scopes.*;
 
+import static pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurator
+		.APP_DEPLOYMENT_PATH_KEY;
+
 
 
 /**
@@ -68,7 +71,7 @@ public class ServletWebsocketModule implements Module {
 
 
 	public ServletWebsocketModule(ServletContext appDeployment, WebsocketModule websocketModule) {
-		if (websocketModule.standaloneServerDeployment != null) {
+		if (websocketModule.standaloneServerDeploymentPath != null) {
 			throw new IllegalArgumentException(
 				"WebsocketModule created with the standalone server container constructor variant"
 			);
@@ -90,18 +93,32 @@ public class ServletWebsocketModule implements Module {
 
 	/**
 	 * {@link Binder#install(Module) Installs} {@link #websocketModule}, binds
-	 * {@link ServletContext} type to {@link #appDeployment} and
-	 * {@link Binder#requestStaticInjection(Class[]) injects static fields} of
-	 * {@link GuiceServerEndpointConfigurator}.
+	 * {@link ServletContext} type to {@link #appDeployment}, stores the resulting {@link Injector}
+	 * in {@link #appDeployment} and static structures of {@link GuiceServerEndpointConfigurator}
+	 * class.
 	 * This is in order for {@link GuiceServerEndpointConfigurator} instances created by the
 	 * container (for {@code Endpoint}s annotated
 	 * with @{@link javax.websocket.server.ServerEndpoint} using
-	 * {@link GuiceServerEndpointConfigurator}) to get a reference to the {@link Injector}.</p>
+	 * {@link GuiceServerEndpointConfigurator}) to obtain a reference to the {@link Injector}.
+	 * <p>
+	 * The {@link Injector} is stored in {@link #appDeployment}'s
+	 * {@link ServletContext#getAttribute(String) attribute} named after
+	 * {@link Class#getName() fully-qualified name} of {@link Injector} class.</p>
 	 */
 	@Override
 	public void configure(Binder binder) {
 		binder.install(websocketModule);
 		binder.bind(ServletContext.class).toInstance(appDeployment);
+		binder.bind(APP_DEPLOYMENT_PATH_KEY).toInstance(appDeployment.getContextPath());
+		binder.requestStaticInjection(ServletWebsocketModule.class);
+				// calls storeInjectorInDeployment(...)
 		binder.requestStaticInjection(GuiceServerEndpointConfigurator.class);
+				// calls GuiceServerEndpointConfigurator.registerInjector(...)
+	}
+
+	/** Called by {@link #configure(Binder)}. */
+	@Inject
+	static void storeInjectorInDeployment(Injector injector, ServletContext appDeployment) {
+		appDeployment.setAttribute(Injector.class.getName(), injector);
 	}
 }

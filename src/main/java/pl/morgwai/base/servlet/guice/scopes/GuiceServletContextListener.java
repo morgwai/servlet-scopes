@@ -161,7 +161,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	/**
 	 * The {@link Configurator} instance used by {@link #addEndpoint(Class, String)} to create
 	 * {@code Endpoint} instances.
-	 * Initialized with the result of {@link #createEndpointConfigurator(ServletContext)}.
+	 * Initialized with the result of {@link #createEndpointConfigurator(Injector)}.
 	 * <p>
 	 * Note that this instance will be shared among all {@code Endpoints} created by
 	 * {@link #addEndpoint(Class, String)}, but {@code Endpoints} annotated with
@@ -177,9 +177,8 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 *     overridden if a more specialized implementation is needed.
 	 * @see pl.morgwai.base.servlet.guice.utils.PingingServerEndpointConfigurator
 	 */
-	protected GuiceServerEndpointConfigurator createEndpointConfigurator(
-			ServletContext appDeployment) {
-		return new GuiceServerEndpointConfigurator(appDeployment);
+	protected GuiceServerEndpointConfigurator createEndpointConfigurator(Injector injector) {
+		return new GuiceServerEndpointConfigurator(injector);
 	}
 
 	/**
@@ -344,7 +343,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 *   <li>Initializes {@link #injector} by passing {@link Module}s from the previous point and
 	 *       {@link #servletModule} to {@link #createInjector(LinkedList)}.</li>
 	 *   <li>Initializes {@link #endpointConfigurator} with
-	 *       {@link #createEndpointConfigurator(ServletContext)}.</li>
+	 *       {@link #createEndpointConfigurator(Injector)}.</li>
 	 *   <li>Installs {@link RequestContextFilter} and calls
 	 *       {@link #addServletsFiltersEndpoints()}.</li>
 	 * </ol>
@@ -388,7 +387,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			injector = createInjector(modules);
 
 			// 5
-			endpointConfigurator = createEndpointConfigurator(appDeployment);
+			endpointConfigurator = createEndpointConfigurator(injector);
 
 			// 6
 			addFilter(RequestContextFilter.class.getSimpleName(), RequestContextFilter.class)
@@ -411,9 +410,9 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 
 	/**
-	 * {@link GuiceServerEndpointConfigurator#deregisterDeployment(ServletContext) Deregisters this
-	 * deployment} and executes all {@link #addShutdownHook(ShutdownHook) registered}
-	 * {@link ShutdownHook}s.
+	 * {@link GuiceServerEndpointConfigurator#deregisterInjector(Injector) Deregisters}
+	 * {@link #injector} from {@link GuiceServerEndpointConfigurator} and executes all
+	 * {@link #addShutdownHook(ShutdownHook) registered} {@link ShutdownHook}s.
 	 * If a {@link ShutdownHook} being executed throws an {@link InterruptedException}, the
 	 * {@link Thread#currentThread() current Thread} will be
 	 * {@link Thread#interrupt() marked as interrupted} and the execution of the remaining ones will
@@ -422,7 +421,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	@Override
 	public final void contextDestroyed(ServletContextEvent destruction) {
 		log.info(deploymentName + " is shutting down");
-		GuiceServerEndpointConfigurator.deregisterDeployment(appDeployment);
+		GuiceServerEndpointConfigurator.deregisterInjector(injector);
 		final var currentThread = Thread.currentThread();
 		for (var shutdownHook: shutdownHooks) {
 			try {
