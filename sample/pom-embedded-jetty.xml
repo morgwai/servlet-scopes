@@ -7,7 +7,7 @@
 	<groupId>pl.morgwai.samples</groupId>
 	<artifactId>servlet-scopes-sample</artifactId>
 	<version>1.0-SNAPSHOT</version>
-	<packaging>war</packaging>
+	<packaging>jar</packaging>
 
 	<name>Sample apps for servlet-scopes library</name>
 
@@ -15,7 +15,7 @@
 		<maven.compiler.release>11</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<guice.version>6.0.0</guice.version><!--jakarta:<guice.version>7.0.0</guice.version>-->
-		<servlet.scopes.version>17.0-SNAPSHOT</servlet.scopes.version>
+		<servlet.scopes.version>17.0</servlet.scopes.version>
 	</properties>
 
 	<dependencies>
@@ -48,13 +48,11 @@
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-servlet</artifactId>
 					<version>[10.0.7,10.999.0]</version>
-					<scope>provided</scope>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty.websocket</groupId>
 					<artifactId>websocket-javax-server</artifactId>
 					<version>[10.0.7,10.999.0]</version>
-					<scope>provided</scope>
 				</dependency>
 			</dependencies>
 		</profile>
@@ -74,15 +72,40 @@
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-servlet</artifactId>
 					<version>[11.0.7,11.999.0]</version>
-					<scope>provided</scope>
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty.websocket</groupId>
 					<artifactId>websocket-jakarta-server</artifactId>
 					<version>[11.0.7,11.999.0]</version>
-					<scope>provided</scope>
 				</dependency>
 			</dependencies>
 		</profile>
 	</profiles>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<archive>
+								<manifest>
+									<mainClass>pl.morgwai.base.servlet.guice.tests.jetty.JettyServer</mainClass>
+								</manifest>
+							</archive>
+							<descriptorRefs>
+								<descriptorRef>jar-with-dependencies</descriptorRef>
+							</descriptorRefs>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 </project>

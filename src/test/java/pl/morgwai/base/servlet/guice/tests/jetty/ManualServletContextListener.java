@@ -32,7 +32,6 @@ import static pl.morgwai.base.utils.concurrent.Awaitable.awaitMultiple;
  * as {@link pl.morgwai.base.servlet.guice.tests.jetty.ServletContextListener} from this package
  * (that extends {@link pl.morgwai.base.servlet.guice.utils.PingingServletContextListener}).
  */
-@WebListener
 public class ManualServletContextListener implements ServletContextListener {
 
 
