@@ -10,6 +10,7 @@ import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
 		.REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY;
+import static pl.morgwai.base.servlet.guice.scopes.WebsocketModule.CTX_TRACKER_KEY;
 
 
 
@@ -30,7 +31,7 @@ public class PingingServerEndpointConfigurator extends GuiceServerEndpointConfig
 	protected PingingEndpointConfigurator newGuiceEndpointConfigurator(Injector injector) {
 		return new PingingEndpointConfigurator(
 			injector,
-			injector.getInstance(WebsocketModule.CTX_TRACKER_KEY),
+			injector.getInstance(CTX_TRACKER_KEY),
 			injector.getInstance(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY),
 			injector.getInstance(Key.get(WebsocketPingerService.class, PingingClientEndpoint.class))
 		) {

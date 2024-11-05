@@ -11,6 +11,8 @@ import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static pl.morgwai.base.servlet.utils.WebsocketPingerService.DEFAULT_HASH_FUNCTION;
+import static pl.morgwai.base.servlet.utils.WebsocketPingerService.DEFAULT_INTERVAL_SECONDS;
 
 
 
@@ -50,7 +52,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 * and {@link #injector}.</p>
 	 */
 	protected long getPingIntervalMillis() {
-		return SECONDS.toMillis(WebsocketPingerService.DEFAULT_INTERVAL_SECONDS);
+		return SECONDS.toMillis(DEFAULT_INTERVAL_SECONDS);
 	}
 
 
@@ -79,7 +81,7 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 * and {@link #injector}.</p>
 	 */
 	protected String getHashFunctionName() {
-		return WebsocketPingerService.DEFAULT_HASH_FUNCTION;
+		return DEFAULT_HASH_FUNCTION;
 	}
 
 

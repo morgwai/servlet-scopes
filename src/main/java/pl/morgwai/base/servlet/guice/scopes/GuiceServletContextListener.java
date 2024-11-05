@@ -2,7 +2,6 @@
 package pl.morgwai.base.servlet.guice.scopes;
 
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.*;
 import javax.servlet.http.HttpServlet;
@@ -16,6 +15,7 @@ import com.google.inject.Module;
 import com.google.inject.*;
 import pl.morgwai.base.guice.scopes.ContextBinder;
 
+import static java.util.logging.Level.SEVERE;
 import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
 		.REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM;
 
@@ -400,7 +400,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 			log.info(deploymentName + " deployed successfully");
 		} catch (Throwable e) {
 			final var message = deploymentName + " failed to deploy";
-			log.log(Level.SEVERE, message, e);
+			log.log(SEVERE, message, e);
 			e.printStackTrace();
 			if (e instanceof Error) throw (Error) e;
 			throw new RuntimeException(message, e);

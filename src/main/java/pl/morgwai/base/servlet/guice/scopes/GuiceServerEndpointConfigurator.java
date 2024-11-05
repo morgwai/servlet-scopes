@@ -6,7 +6,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
@@ -17,8 +16,10 @@ import javax.websocket.server.ServerEndpointConfig.Configurator;
 import com.google.inject.*;
 
 import static com.google.inject.name.Names.named;
+import static java.util.logging.Level.SEVERE;
 import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
 		.REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY;
+import static pl.morgwai.base.servlet.guice.scopes.WebsocketModule.CTX_TRACKER_KEY;
 
 
 
@@ -195,7 +196,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	protected GuiceEndpointConfigurator newGuiceEndpointConfigurator(Injector injector) {
 		return new GuiceEndpointConfigurator(
 			injector,
-			injector.getInstance(WebsocketModule.CTX_TRACKER_KEY),
+			injector.getInstance(CTX_TRACKER_KEY),
 			injector.getInstance(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY)
 		) {
 			@Override
@@ -233,7 +234,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 		try {
 			return backingConfigurator.getProxiedEndpointInstance(endpointClass);
 		} catch (Exception e) {
-			log.log(Level.SEVERE, "Endpoint instantiation failed", e);
+			log.log(SEVERE, "Endpoint instantiation failed", e);
 			if (e instanceof IllegalArgumentException) e.printStackTrace(); // signal an obvious bug
 			throw new InstantiationException(e.toString());
 		}
