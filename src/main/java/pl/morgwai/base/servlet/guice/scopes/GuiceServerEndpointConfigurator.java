@@ -79,10 +79,10 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	 * {@link com.google.inject.name.Named Binding name} for a {@link String} containing the root
 	 * path of a given server app.
 	 */
-	public static final String APP_DEPLOYMENT_PATH_BINDING_NAME = "appDeploymentPath";
+	public static final String APP_DEPLOYMENT_PATH_NAME = "appDeploymentPath";
 	/** {@code Key} for a {@link String} containing the root path of a given server app. */
 	public static final Key<String> APP_DEPLOYMENT_PATH_KEY =
-			Key.get(String.class, named(APP_DEPLOYMENT_PATH_BINDING_NAME));
+			Key.get(String.class, named(APP_DEPLOYMENT_PATH_NAME));
 
 	/**
 	 * Maps {@link ServletContext#getContextPath() app deployment paths} to their

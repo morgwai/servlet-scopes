@@ -80,7 +80,7 @@ public class GuiceEndpointConfigurator {
 	 * contain a value for {@link #requireTopLevelMethodAnnotations}.
 	 * @see GuiceServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
 	 */
-	public static final String REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM =
+	public static final String REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_PARAM =
 			GuiceEndpointConfigurator.class.getName() + REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_NAME;
 
 

@@ -17,7 +17,7 @@ import pl.morgwai.base.guice.scopes.ContextBinder;
 
 import static java.util.logging.Level.SEVERE;
 import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
-		.REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM;
+		.REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_PARAM;
 
 
 
@@ -336,7 +336,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	 *   <li>Initializes {@link #appDeployment} with a reference from {@code initialization} event,
 	 *       then initializes {@link #deploymentName} and {@link #endpointContainer}.</li>
 	 *   <li>Obtains
-	 *       {@link GuiceEndpointConfigurator#REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM} from
+	 *       {@link GuiceEndpointConfigurator#REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_PARAM} from
 	 *       {@link #appDeployment}, calls {@link #getClientEndpointClasses()} and
 	 *       {@link #createWebsocketModule(boolean, Set)} to initialize {@link #servletModule}.</li>
 	 *   <li>Calls {@link #configureInjections()}.</li>
@@ -365,8 +365,7 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 
 			// 2
 			final var requireTopLevelMethodAnnotations = Boolean.parseBoolean(
-				appDeployment.getInitParameter(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_INIT_PARAM)
-			);
+					appDeployment.getInitParameter(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_PARAM));
 			servletModule = new ServletWebsocketModule(
 				appDeployment,
 				createWebsocketModule(

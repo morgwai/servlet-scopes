@@ -30,8 +30,8 @@ public class HttpSessionContext extends InjectionContext implements HttpSessionA
 	/** See {@link #CUSTOM_SERIALIZATION_PARAM}. */
 	public static final String CUSTOM_SERIALIZATION_PARAM_SUFFIX = ".customSerialization";
 	/**
-	 * Name of the {@link ServletContext#setInitParameter(String, String) deployment init-param}
-	 * indicating that the servlet container uses serialization mechanism other than the
+	 * Name of the {@link ServletContext#getInitParameter(String) deployment init-param} indicating
+	 * that the servlet container uses serialization mechanism other than the
 	 * {@link java.io.Serializable standard Java Serialization} to persist/replicate
 	 * {@link HttpSession}s.
 	 * The value is a concatenation of
