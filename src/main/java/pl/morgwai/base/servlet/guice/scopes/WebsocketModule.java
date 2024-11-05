@@ -153,9 +153,10 @@ public class WebsocketModule extends ContextScopesModule {
 	public void configure(Binder binder) {
 		super.configure(binder);
 		binder.bind(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY)
-				.toInstance(requireTopLevelMethodAnnotations);
+			.toInstance(requireTopLevelMethodAnnotations);
 		if (standaloneServerDeploymentPath != null) {
-			binder.bind(APP_DEPLOYMENT_PATH_KEY).toInstance(standaloneServerDeploymentPath);
+			binder.bind(APP_DEPLOYMENT_PATH_KEY)
+				.toInstance(standaloneServerDeploymentPath);
 			binder.requestStaticInjection(GuiceServerEndpointConfigurator.class);
 					// calls GuiceServerEndpointConfigurator.registerInjector(...)
 		}

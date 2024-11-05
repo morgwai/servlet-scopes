@@ -99,7 +99,8 @@ public class PingingWebsocketModule extends WebsocketModule {
 	@Override
 	public void configure(Binder binder) {
 		super.configure(binder);
-		binder.bind(WebsocketPingerService.class).toInstance(pingerService);
+		binder.bind(WebsocketPingerService.class)
+			.toInstance(pingerService);
 		binder.bind(WebsocketPingerService.class)
 			.annotatedWith(PingingClientEndpoint.class)
 			.toInstance(pingerService);

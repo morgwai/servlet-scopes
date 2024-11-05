@@ -108,8 +108,10 @@ public class ServletWebsocketModule implements Module {
 	@Override
 	public void configure(Binder binder) {
 		binder.install(websocketModule);
-		binder.bind(ServletContext.class).toInstance(appDeployment);
-		binder.bind(APP_DEPLOYMENT_PATH_KEY).toInstance(appDeployment.getContextPath());
+		binder.bind(ServletContext.class)
+			.toInstance(appDeployment);
+		binder.bind(APP_DEPLOYMENT_PATH_KEY)
+			.toInstance(appDeployment.getContextPath());
 		binder.requestStaticInjection(ServletWebsocketModule.class);
 				// calls storeInjectorInDeployment(...)
 		binder.requestStaticInjection(GuiceServerEndpointConfigurator.class);
