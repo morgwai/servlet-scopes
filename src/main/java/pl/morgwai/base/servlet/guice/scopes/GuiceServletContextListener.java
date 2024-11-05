@@ -62,8 +62,10 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 	protected ServletContext appDeployment;
 	/**
 	 * Name of the deployment for logging purposes.
-	 * Obtained via {@link ServletContext#getServletContextName()} if present, otherwise constructed
-	 * using {@link ServletContext#getContextPath()}.
+	 * Constructed using {@link ServletContext#getServletContextName()} and
+	 * {@link ServletContext#getContextPath()} : {@code "app name" at "/deployment/path"}. If
+	 * {@link ServletContext#getServletContextName() getServletContextName()} is empty, then
+	 * {@code app at "/deployment/path"}.
 	 */
 	protected String deploymentName;
 
@@ -353,11 +355,10 @@ public abstract class GuiceServletContextListener implements ServletContextListe
 		try {
 			// 1
 			appDeployment = initialization.getServletContext();
-			final String nameFromDescriptor = appDeployment.getServletContextName();
-			deploymentName = (nameFromDescriptor != null && !nameFromDescriptor.isBlank())
-					? nameFromDescriptor
-					: appDeployment.getContextPath().isEmpty()
-							? "root-app" : "app at \"" + appDeployment.getContextPath() + '"';
+			final var nameFromDescriptor = appDeployment.getServletContextName();
+			final var appName = (nameFromDescriptor == null || nameFromDescriptor.isBlank())
+					? "app" : '"' + nameFromDescriptor + '"';
+			deploymentName = appName + " at \"" + appDeployment.getContextPath() + '"';
 			log.info(deploymentName + " is being deployed");
 			endpointContainer = (ServerContainer)
 					appDeployment.getAttribute(ServerContainer.class.getName());
