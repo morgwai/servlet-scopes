@@ -11,9 +11,8 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 /**
  * Context of an {@link HttpServletRequest}.
  * Each {@link HttpServletRequest} processing
- * {@link ServletRequestContext#executeWithinSelf(java.util.concurrent.Callable) runs within} a
- * <b>separate</b> {@code ServletRequestContext} instance. Specifically
- * {@link javax.servlet.Filter}s {@link
+ * {@link ServletRequestContext#executeWithinSelf(Runnable) runs within} a <b>separate</b>
+ * {@code ServletRequestContext} instance. Specifically {@link javax.servlet.Filter}s {@link
  * javax.servlet.FilterRegistration#addMappingForServletNames(java.util.EnumSet, boolean, String...)
  * registered} after the {@link RequestContextFilter} (&nbsp;{@code true} passed as
  * {@code isMatchAfter} param), {@link
@@ -23,7 +22,8 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * javax.servlet.http.HttpServletResponse) Servlet.doXXX(...) methods}.
  * <p>
  * Note: this context is transferred automatically to the new thread when
- * {@link javax.servlet.AsyncContext#dispatch(String) dispatching from AsyncContext}.</p>
+ * {@link javax.servlet.AsyncContext#dispatch(String) dispatching from AsyncContext} and is
+ * generally active for all {@link javax.servlet.DispatcherType}s.</p>
  * @see ContainerCallContext super class for more info
  */
 public class ServletRequestContext extends ContainerCallContext {

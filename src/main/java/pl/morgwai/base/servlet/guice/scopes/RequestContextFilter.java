@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import pl.morgwai.base.function.ThrowingTask;
 import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
@@ -80,14 +81,8 @@ public class RequestContextFilter implements Filter {
 			chain.doFilter(request, response);
 		} else {  // (re)-activate the Context of the request
 			try {
-				ctxToActivate.executeWithinSelf(() -> {
-					chain.doFilter(request, response);
-					return null;  // Void
-				});
-			} catch (IOException | ServletException | RuntimeException e) {
-				throw e;
-			} catch (Exception neverHappens) {
-				// result of wrapping with a Callable
+				ctxToActivate.executeWithinSelf((ThrowingTask<IOException, ServletException>)
+						() -> chain.doFilter(request, response));
 			} finally {
 				if (savedCtx != null) request.setAttribute(CTX_ATTRIBUTE, savedCtx);
 			}

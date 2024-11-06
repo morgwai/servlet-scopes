@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.google.inject.Inject;
-import pl.morgwai.base.guice.scopes.ContextTrackingExecutorDecorator;
+import pl.morgwai.base.guice.scopes.ContextTrackingExecutor;
 
 
 
@@ -50,7 +50,7 @@ public class AsyncServlet extends TestServlet {
 
 
 
-	@Inject ContextTrackingExecutorDecorator executor;
+	@Inject ContextTrackingExecutor executor;
 
 
 

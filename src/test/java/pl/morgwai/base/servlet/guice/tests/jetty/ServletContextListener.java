@@ -7,7 +7,7 @@ import javax.servlet.annotation.WebListener;
 import javax.websocket.DeploymentException;
 
 import com.google.inject.Module;
-import pl.morgwai.base.guice.scopes.ContextTrackingExecutorDecorator;
+import pl.morgwai.base.guice.scopes.ContextTrackingExecutor;
 import pl.morgwai.base.servlet.guice.tests.servercommon.*;
 import pl.morgwai.base.servlet.guice.utils.PingingServletContextListener;
 import pl.morgwai.base.utils.concurrent.NamingThreadFactory;
@@ -37,7 +37,7 @@ public class ServletContextListener extends PingingServletContextListener {
 			containerCallScope,
 			websocketConnectionScope,
 			httpSessionScope,
-			new ContextTrackingExecutorDecorator(executor, ctxBinder)
+			ContextTrackingExecutor.of(executor, ctxBinder)
 		));
 		return modules;
 	}

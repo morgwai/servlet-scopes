@@ -10,8 +10,8 @@ import pl.morgwai.base.guice.scopes.InjectionContext;
 /**
  * Context of a websocket connection ({@link javax.websocket.Session}).
  * All {@link WebsocketEventContext websocket events} related to the same {@link Session connection}
- * are {@link WebsocketEventContext#executeWithinSelf(java.util.concurrent.Callable) handled within}
- * <b>the same</b> {@code WebsocketConnectionContext} instance.
+ * are {@link WebsocketEventContext#executeWithinSelf(Runnable) handled within} <b>the same</b>
+ * {@code WebsocketConnectionContext} instance.
  * <p>
  * Instances are stored in {@link Session#getUserProperties() user properites} under
  * {@link Class#getName() fully-qualified name} of this class.</p>

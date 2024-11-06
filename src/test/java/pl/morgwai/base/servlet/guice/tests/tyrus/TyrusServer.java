@@ -10,7 +10,7 @@ import javax.websocket.server.ServerEndpointConfig;
 import com.google.inject.Module;
 import com.google.inject.*;
 import org.glassfish.tyrus.core.cluster.ClusterContext;
-import pl.morgwai.base.guice.scopes.ContextTrackingExecutorDecorator;
+import pl.morgwai.base.guice.scopes.ContextTrackingExecutor;
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.guice.tests.servercommon.*;
 import pl.morgwai.base.servlet.guice.utils.*;
@@ -59,7 +59,7 @@ public class TyrusServer implements Server {
 			websocketModule.containerCallScope,
 			websocketModule.websocketConnectionScope,
 			null,  // no HTTP session support
-			new ContextTrackingExecutorDecorator(executor, websocketModule.ctxBinder)
+			ContextTrackingExecutor.of(executor, websocketModule.ctxBinder)
 		));
 		injector = Guice.createInjector(modules);
 

@@ -36,7 +36,7 @@ import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
  * </ul>
  * @see pl.morgwai.base.servlet.guice.utils.PingingWebsocketModule
  */
-public class WebsocketModule extends ContextScopesModule {
+public class WebsocketModule extends ScopeModule {
 
 
 
@@ -111,9 +111,9 @@ public class WebsocketModule extends ContextScopesModule {
 
 
 	/**
-	 * Calls {@link ContextScopesModule#configure(Binder) super} and binds
-	 * {@link #clientEndpointClasses} annotated with {@link GuiceClientEndpoint} to
-	 * {@link Provider}s based on {@link GuiceEndpointConfigurator}.
+	 * Calls {@link ScopeModule#configure(Binder) super} and binds {@link #clientEndpointClasses}
+	 * annotated with {@link GuiceClientEndpoint} to {@link Provider}s based on
+	 * {@link GuiceEndpointConfigurator}.
 	 * Additionally binds {@link GuiceEndpointConfigurator#REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_KEY}
 	 * to {@link #requireTopLevelMethodAnnotations}.
 	 */

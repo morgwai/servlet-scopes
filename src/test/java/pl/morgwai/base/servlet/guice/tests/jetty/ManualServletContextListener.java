@@ -11,7 +11,7 @@ import javax.websocket.server.ServerEndpointConfig;
 
 import com.google.inject.Module;
 import com.google.inject.*;
-import pl.morgwai.base.guice.scopes.ContextTrackingExecutorDecorator;
+import pl.morgwai.base.guice.scopes.ContextTrackingExecutor;
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.guice.tests.servercommon.*;
 import pl.morgwai.base.servlet.guice.utils.PingingServerEndpointConfigurator;
@@ -86,7 +86,7 @@ public class ManualServletContextListener implements ServletContextListener {
 				servletModule.containerCallScope,
 				servletModule.websocketConnectionScope,
 				servletModule.httpSessionScope,
-				new ContextTrackingExecutorDecorator(executor, servletModule.ctxBinder)
+				ContextTrackingExecutor.of(executor, servletModule.ctxBinder)
 			));
 			injector = Guice.createInjector(modules);
 

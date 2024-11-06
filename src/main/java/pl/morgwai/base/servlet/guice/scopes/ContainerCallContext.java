@@ -19,8 +19,8 @@ import pl.morgwai.base.guice.scopes.TrackableContext;
  * or to one of websocket {@code Endpoint}'s
  * {@link javax.websocket.Endpoint#onOpen(javax.websocket.Session, javax.websocket.EndpointConfig)
  * event}-{@link javax.websocket.OnMessage handling} methods
- * {@link TrackableContext#executeWithinSelf(java.util.concurrent.Callable) runs within} a
- * <b>separate</b> instance of the appropriate {@code ContainerCallContext} subclass.
+ * {@link TrackableContext#executeWithinSelf(Runnable) runs within} a <b>separate</b> instance of
+ * the appropriate {@code ContainerCallContext} subclass.
  * <p>
  * Having a common base class for {@link ServletRequestContext} and {@link WebsocketEventContext}
  * allows to provide {@link WebsocketModule#containerCallScope container-call scoped} objects both

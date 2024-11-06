@@ -76,18 +76,8 @@ class EndpointProxyHandler implements InvocationHandler {
 			return wrappedEndpoint.invoke(proxy, method, args);
 		}
 
-		// execute method within Contexts
-		return new WebsocketEventContext(connectionCtx, httpSession, ctxTracker).executeWithinSelf(
-			() -> {
-				try {
-					return wrappedEndpoint.invoke(proxy, method, args);
-				} catch (Error | Exception e) {
-					throw e;
-				} catch (Throwable neverHappens) {
-					throw new Exception(neverHappens);  // result of mis-designed invoke() signature
-				}
-			}
-		);
+		return new WebsocketEventContext(connectionCtx, httpSession, ctxTracker)
+				.executeWithinSelf(() -> wrappedEndpoint.invoke(proxy, method, args));
 	}
 
 	void logManualCallWarning(String source) {

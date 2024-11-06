@@ -13,12 +13,11 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * an error occurrence.
  * Each container-invoked call to some {@code Endpoint} event-handling method or to a registered
  * {@link MessageHandler} method
- * {@link WebsocketEventContext#executeWithinSelf(java.util.concurrent.Callable) runs within} a
- * <b>separate</b> {@code WebsocketEventContext} instance. Specifically, all methods annotated with
- * one of the websocket {@code Annotations} (&nbsp;{@link OnOpen @OnOpen},
- * {@link OnMessage @OnMessage}, {@link OnError @OnError}, {@link OnClose @OnClose}&nbsp;), or
- * overriding one of {@link Endpoint} methods
- * (&nbsp;{@link Endpoint#onOpen(Session, EndpointConfig) onOpen(...)},
+ * {@link WebsocketEventContext#executeWithinSelf(Runnable) runs within} a <b>separate</b>
+ * {@code WebsocketEventContext} instance. Specifically, all methods annotated with one of the
+ * websocket {@code Annotations} (&nbsp;{@link OnOpen @OnOpen}, {@link OnMessage @OnMessage},
+ * {@link OnError @OnError}, {@link OnClose @OnClose}&nbsp;), or overriding one of {@link Endpoint}
+ * methods (&nbsp;{@link Endpoint#onOpen(Session, EndpointConfig) onOpen(...)},
  * {@link Endpoint#onClose(Session, CloseReason) onClose(...)},
  * {@link Endpoint#onError(Session, Throwable) onError(...)}&nbsp;) or overriding one of
  * {@link MessageHandler} methods
