@@ -4,7 +4,7 @@ package pl.morgwai.base.servlet.guice.tests.jetty;
 import java.util.*;
 import javax.servlet.ServletContextListener;
 import javax.servlet.*;
-import javax.servlet.annotation.WebListener;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.websocket.server.ServerContainer;
 import javax.websocket.server.ServerEndpointConfig;
@@ -36,9 +36,25 @@ public class ManualServletContextListener implements ServletContextListener {
 
 
 
+	ServletContext appDeployment;
 	WebsocketPingerService pingerService;
 	TaskTrackingThreadPoolExecutor executor;
 	Injector injector;
+
+
+
+	ServletRegistration.Dynamic addServlet(
+		String name,
+		Class<? extends HttpServlet> servletClass,
+		String... urlPatterns
+	) throws ServletException {
+		final var servlet = appDeployment.createServlet(servletClass);
+		injector.injectMembers(servlet);
+		final var registration = appDeployment.addServlet(name, servlet);
+		registration.addMapping(urlPatterns);
+		registration.setAsyncSupported(true);
+		return registration;
+	}
 
 
 
@@ -53,7 +69,7 @@ public class ManualServletContextListener implements ServletContextListener {
 				MILLISECONDS,
 				1
 			);
-			final ServletContext appDeployment = initialization.getServletContext();
+			appDeployment = initialization.getServletContext();
 			ServletWebsocketModule servletModule = new ServletWebsocketModule(
 				appDeployment,
 				new PingingWebsocketModule(pingerService, false)
@@ -75,47 +91,53 @@ public class ManualServletContextListener implements ServletContextListener {
 			injector = Guice.createInjector(modules);
 
 			final var requestCtxFilter = appDeployment.createFilter(RequestContextFilter.class);
-			injector.injectMembers(requestCtxFilter);
 			final var requestCtxFilterRegistration = appDeployment.addFilter(
 					RequestContextFilter.class.getSimpleName(), requestCtxFilter);
 			requestCtxFilterRegistration.setAsyncSupported(true);
 			requestCtxFilterRegistration.addMappingForUrlPatterns(
-				EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC),
+				EnumSet.allOf(DispatcherType.class),
 				false,
 				"/*"
 			);
 
 			final var endpointConfigurator = new PingingServerEndpointConfigurator(injector);
 
-			final var indexPageServlet = appDeployment.createServlet(ResourceServlet.class);
-			injector.injectMembers(indexPageServlet);
-			final var indexPageRegistration =
-					appDeployment.addServlet("IndexPageServlet", indexPageServlet);
-			indexPageRegistration.setAsyncSupported(true);
-			indexPageRegistration.addMapping("", "/index.html");
-			indexPageRegistration.setInitParameter(
-					ResourceServlet.RESOURCE_PATH_PARAM, "/index.html");
+			addServlet(
+				"IndexPageServlet",
+				ResourceServlet.class,
+				"", "/index.html"  // "" is for the raw app url (like http://localhost:8080/test )
+			).setInitParameter(
+				ResourceServlet.RESOURCE_PATH_PARAM,
+				"/index.html"
+			);
 
-			final var forwardingServlet = appDeployment.createServlet(ForwardingServlet.class);
-			injector.injectMembers(forwardingServlet);
-			final var forwardingServletRegistration = appDeployment.addServlet(
-					ForwardingServlet.class.getSimpleName(), forwardingServlet);
-			forwardingServletRegistration.setAsyncSupported(true);
-			forwardingServletRegistration.addMapping("/" + ForwardingServlet.class.getSimpleName());
+			addServlet(
+				ForwardingServlet.class.getSimpleName(),
+				ForwardingServlet.class,
+				"/" + ForwardingServlet.class.getSimpleName()
+			);
+			addServlet(
+				AsyncServlet.class.getSimpleName(),
+				AsyncServlet.class,
+				"/" + AsyncServlet.class.getSimpleName()
+			);
+			addServlet(
+				TargetedServlet.class.getSimpleName(),
+				TargetedServlet.class,
+				"/" + TargetedServlet.class.getSimpleName()
+			);
 
-			final var asyncServlet = appDeployment.createServlet(AsyncServlet.class);
-			injector.injectMembers(asyncServlet);
-			final var asyncServletRegistration = appDeployment.addServlet(
-					AsyncServlet.class.getSimpleName(), asyncServlet);
-			asyncServletRegistration.setAsyncSupported(true);
-			asyncServletRegistration.addMapping("/" + AsyncServlet.class.getSimpleName());
-
-			final var targetedServlet = appDeployment.createServlet(TargetedServlet.class);
-			injector.injectMembers(targetedServlet);
-			final var targetedServletRegistration = appDeployment.addServlet(
-					TargetedServlet.class.getSimpleName(), targetedServlet);
-			targetedServletRegistration.setAsyncSupported(true);
-			targetedServletRegistration.addMapping("/" + TargetedServlet.class.getSimpleName());
+			addServlet(
+				CrossDeploymentForwardingServlet.class.getSimpleName(),
+				CrossDeploymentForwardingServlet.class,
+				"/" + CrossDeploymentForwardingServlet.class.getSimpleName()
+			);
+			addServlet(
+				ErrorTestingServlet.class.getSimpleName(),
+				ErrorTestingServlet.class,
+				"/" + ErrorTestingServlet.class.getSimpleName(),
+				ErrorTestingServlet.ERROR_HANDLER_PATH
+			);
 
 			final var ensureSessionFilterRegistration = appDeployment.addFilter(
 				"ensureSessionFilter",

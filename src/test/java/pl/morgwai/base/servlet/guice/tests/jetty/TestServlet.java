@@ -14,12 +14,12 @@ import pl.morgwai.base.servlet.guice.tests.servercommon.Service;
 
 
 
-/** Base class for all other {@code Servlets} testing different ways of dispatching. */
+/** Base class for most other {@code Servlets} testing different ways of dispatching. */
 public abstract class TestServlet extends HttpServlet {
 
 
 
-	public static final String RESPONDING_SERVLET = "respondingServlet";
+	public static final String REPLYING_SERVLET = "replyingServlet";
 
 	@Inject @Named(Service.CONTAINER_CALL)
 	Provider<Service> requestScopedProvider;
@@ -30,10 +30,10 @@ public abstract class TestServlet extends HttpServlet {
 
 
 	/**
-	 * Verifies if objects obtained from {@link #requestScopedProvider} and sessionScopedProvider
-	 * are the same as the ones stored initially in
-	 * {@link HttpServletRequest#getAttribute(String) request attributes} by
-	 * {@link ForwardingServlet}.
+	 * Verifies if objects obtained from {@link #requestScopedProvider} and
+	 * {@link #sessionScopedProvider} are the same as the ones stored in
+	 * {@link Service#CONTAINER_CALL request} {@link Service#HTTP_SESSION attributes} by the
+	 * {@code Servlet} that initially received {@code request}.
 	 */
 	void verifyScoping(HttpServletRequest request, String threadDesignation)
 			throws ServletException {
@@ -54,14 +54,17 @@ public abstract class TestServlet extends HttpServlet {
 		}
 	}
 
+	public static final String INITIAL_THREAD_DESIGNATION = "the initial container Thread";
+
 
 
 	/**
-	 * Sends the final response as {@link Properties}.
+	 * Calls {@link #verifyScoping(HttpServletRequest, String)} and sends the final reply as
+	 * {@link Properties}.
 	 * The following {@link Properties#setProperty(String, String) properties will be set}:
 	 * <ul>
-	 *   <li>{@link #RESPONDING_SERVLET} - {@link Class#getSimpleName() simple name of the Class}
-	 *       of the {@code Servlet} that actually produced the response</li>
+	 *   <li>{@link #REPLYING_SERVLET} - {@link Class#getSimpleName() simple name of the Class}
+	 *       of the {@code Servlet} that actually produced the reply</li>
 	 *   <li>{@link Service#CONTAINER_CALL} - hash of the
 	 *       {@link ServletWebsocketModule#containerCallScope
 	 *       containerCallScope}d instance of {@link Service}</li>
@@ -70,14 +73,14 @@ public abstract class TestServlet extends HttpServlet {
 	 *       httpSessionScope}d instance of {@link Service}</li>
 	 * </ul>
 	 */
-	void doAsyncHandling(HttpServletRequest request, HttpServletResponse response)
+	void verifyScopingAndSendReply(HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
-		verifyScoping(request, "the 2nd container thread");
+		verifyScoping(request, "the final reply-sending container Thread");
 		try (
 			final var responseStream = response.getOutputStream();
 		) {
 			final var responseContent = new Properties(5);
-			responseContent.setProperty(RESPONDING_SERVLET, getClass().getSimpleName());
+			responseContent.setProperty(REPLYING_SERVLET, getClass().getSimpleName());
 			responseContent.setProperty(
 				Service.CONTAINER_CALL,
 				String.valueOf(requestScopedProvider.get().hashCode())
@@ -86,7 +89,6 @@ public abstract class TestServlet extends HttpServlet {
 				Service.HTTP_SESSION,
 				String.valueOf(sessionScopedProvider.get().hashCode())
 			);
-			response.setStatus(HttpServletResponse.SC_OK);
 			responseContent.store(responseStream, null);
 		}
 	}

@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * Receives async {@link AsyncServlet#TARGET_PATH_PARAM targeted} requests from {@link AsyncServlet}
- * and {@link #doAsyncHandling(HttpServletRequest, HttpServletResponse) handles} them.
+ * and {@link #verifyScopingAndSendReply(HttpServletRequest, HttpServletResponse) handles} them.
  */
 public class TargetedServlet extends TestServlet {
 
@@ -24,6 +24,6 @@ public class TargetedServlet extends TestServlet {
 			throw new ServletException(TestServlet.class.getSimpleName()
 					+ "should only receive async requests");
 		}
-		doAsyncHandling(request, response);
+		verifyScopingAndSendReply(request, response);
 	}
 }

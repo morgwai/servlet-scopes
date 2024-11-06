@@ -71,6 +71,18 @@ public class ServletContextListener extends PingingServletContextListener {
 			"/" + TargetedServlet.class.getSimpleName()
 		);
 
+		addServlet(
+			CrossDeploymentForwardingServlet.class.getSimpleName(),
+			CrossDeploymentForwardingServlet.class,
+			"/" + CrossDeploymentForwardingServlet.class.getSimpleName()
+		);
+		addServlet(
+			ErrorTestingServlet.class.getSimpleName(),
+			ErrorTestingServlet.class,
+			"/" + ErrorTestingServlet.class.getSimpleName(),
+			ErrorTestingServlet.ERROR_HANDLER_PATH
+		);
+
 		addEnsureSessionFilter(Server.WEBSOCKET_PATH + '*');
 
 		addEndpoint(ProgrammaticEndpoint.class, ProgrammaticEndpoint.PATH);

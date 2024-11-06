@@ -17,7 +17,7 @@ import pl.morgwai.base.guice.scopes.ContextTrackingExecutorDecorator;
  * {@code ContextTrackingExecutor} and from there {@link AsyncContext#dispatch() dispatches} back to
  * the container in a way specified by {@link #MODE_PARAM} and {@link #TARGET_PATH_PARAM}. If a
  * request comes back to this {@code Servlet} {@link DispatcherType#ASYNC asynchronously}, it is
- * {@link #doAsyncHandling(HttpServletRequest, HttpServletResponse) handled}.
+ * {@link #verifyScopingAndSendReply(HttpServletRequest, HttpServletResponse) handled}.
  */
 public class AsyncServlet extends TestServlet {
 
@@ -53,11 +53,11 @@ public class AsyncServlet extends TestServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
 		if (request.getDispatcherType() == DispatcherType.ASYNC) {
-			doAsyncHandling(request, response);
+			verifyScopingAndSendReply(request, response);
 			return;
 		}
 
-		verifyScoping(request, "the original container thread");
+		verifyScoping(request, INITIAL_THREAD_DESIGNATION);
 		final var asyncCtx = MODE_WRAPPED.equals(request.getParameter(MODE_PARAM))
 				? request.startAsync(request, response)
 				: request.startAsync();

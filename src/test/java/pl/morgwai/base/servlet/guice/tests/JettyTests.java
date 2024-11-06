@@ -27,6 +27,8 @@ public class JettyTests extends MultiAppWebsocketTests {
 
 
 	HttpClient httpClient;
+	String testAppUrl;
+	String secondAppUrl;
 	String forwardingServletUrl;
 	String forwardingServletSecondAppUrl;
 
@@ -46,11 +48,12 @@ public class JettyTests extends MultiAppWebsocketTests {
 	@Override
 	protected MultiAppServer createServer(String testName) throws Exception {
 		final var server = new JettyServer(0, testName);
-		final var port = server.getPort();
-		forwardingServletUrl = "http://localhost:" + port + Server.TEST_APP_PATH + '/'
-				+ ForwardingServlet.class.getSimpleName();
-		forwardingServletSecondAppUrl = "http://localhost:" + port + MultiAppServer.SECOND_APP_PATH
-				+ '/' + ForwardingServlet.class.getSimpleName();
+		final var serverAddress = "http://localhost:" + server.getPort();
+		testAppUrl = serverAddress + Server.TEST_APP_PATH;
+		secondAppUrl = serverAddress + MultiAppServer.SECOND_APP_PATH;
+		forwardingServletUrl = testAppUrl + '/' + ForwardingServlet.class.getSimpleName();
+		forwardingServletSecondAppUrl =
+				secondAppUrl + '/' + ForwardingServlet.class.getSimpleName();
 		return server;
 	}
 
@@ -66,43 +69,82 @@ public class JettyTests extends MultiAppWebsocketTests {
 	/**
 	 * Sends {@code request} to the {@link #server}, verifies and returns the response.
 	 * Specifically, verifies if the response code is 200, parses the body as {@link Properties} and
-	 * checks if property {@link TestServlet#RESPONDING_SERVLET} is equal to
+	 * checks if property {@link TestServlet#REPLYING_SERVLET} is equal to
 	 * {@code expectedRespondingServletClass}.
 	 * @return a Properties received from the {@link #server} (see
-	 *     {@link TestServlet#doAsyncHandling(HttpServletRequest, HttpServletResponse)}).
+	 *     {@link TestServlet#verifyScopingAndSendReply(HttpServletRequest, HttpServletResponse)}).
 	 */
-	Properties sendServletRequest(HttpRequest request, Class<?> expectedRespondingServletClass)
-			throws Exception {
+	Properties sendServletRequest(
+		HttpRequest request,
+		int expectedStatusCode,
+		Class<?> expectedRespondingServletClass
+	) throws Exception {
 		final var response = httpClient.send(request, BodyHandlers.ofInputStream());
 		if (log.isLoggable(Level.FINE)) {
 			log.fine("response from " + request.uri() + ", status: " + response.statusCode());
 		}
-		assertEquals("response code should be 'OK'",
-				200, response.statusCode());
+		assertEquals("response status code should be " + expectedStatusCode,
+				expectedStatusCode, response.statusCode());
 		final var responseContent = new Properties(5);
 		responseContent.load(response.body());
 		assertEquals(
 			"processing should be dispatched to the correct servlet",
 			expectedRespondingServletClass.getSimpleName(),
-			responseContent.getProperty(TestServlet.RESPONDING_SERVLET)
+			responseContent.getProperty(TestServlet.REPLYING_SERVLET)
 		);
 		return responseContent;
 	}
 
+
+
+	@Test
+	public void testCrossDeploymentForwarding() throws Exception {
+		final var path = testAppUrl + '/' + CrossDeploymentForwardingServlet.class.getSimpleName();
+		final var request = HttpRequest.newBuilder(URI.create(path))
+			.GET()
+			.timeout(Duration.ofSeconds(600))
+			.build();
+		sendServletRequest(request, 200, CrossDeploymentForwardingServlet.class);
+	}
+
+
+
+	public void testErrorDispatching(String path) throws Exception {
+		final var request = HttpRequest.newBuilder(URI.create(testAppUrl + path))
+			.GET()
+			.timeout(Duration.ofSeconds(2))
+			.build();
+		sendServletRequest(request, 404, ErrorTestingServlet.class);
+	}
+
+	@Test
+	public void testErrorDispatchingFromUserMiss() throws Exception {
+		testErrorDispatching("/nonExistent");
+	}
+
+	@Test
+	public void testErrorDispatchingFromAppServletMiss() throws Exception {
+		testErrorDispatching("/" + ErrorTestingServlet.class.getSimpleName());
+	}
+
+
+
 	/**
-	 * {@link #sendServletRequest(HttpRequest, Class) Sends 2 GET requests} to {@code url} and
+	 * {@link #sendServletRequest(HttpRequest, int, Class) Sends 2 GET requests} to {@code url} and
 	 * verifies scoping.
 	 * Specifically checks if {@link Service#HTTP_SESSION} property is the same in both responses
 	 * and if {@link Service#CONTAINER_CALL} is different.
 	 * @return a {@code List} containing both responses as returned by
-	 *     {@link #sendServletRequest(HttpRequest, Class)}.
+	 *     {@link #sendServletRequest(HttpRequest, int, Class)}.
 	 */
-	List<Properties> testAsyncCtxDispatch(String url, Class<?> expectedRespondingServletClass)
+	List<Properties> testAsyncCtxDispatch(String url, Class<?> expectedReplyingServletClass)
 			throws Exception {
-		final var request = HttpRequest.newBuilder(URI.create(url)).GET()
-				.timeout(Duration.ofSeconds(2)).build();
-		final var firstReply = sendServletRequest(request, expectedRespondingServletClass);
-		final var secondReply = sendServletRequest(request, expectedRespondingServletClass);
+		final var request = HttpRequest.newBuilder(URI.create(url))
+			.GET()
+			.timeout(Duration.ofSeconds(2))
+			.build();
+		final var firstReply = sendServletRequest(request, 200, expectedReplyingServletClass);
+		final var secondReply = sendServletRequest(request, 200, expectedReplyingServletClass);
 		assertEquals(
 			"session scoped object hash should remain the same",
 			firstReply.getProperty(HTTP_SESSION),

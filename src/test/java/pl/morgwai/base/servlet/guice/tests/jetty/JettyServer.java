@@ -5,6 +5,7 @@ import java.util.Arrays;
 
 import org.eclipse.jetty.server.NetworkConnector;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.servlet.ErrorPageErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.websocket.javax.server.config.JavaxWebSocketServletContainerInitializer;
@@ -30,6 +31,9 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 		testAppHandler.setDisplayName(name + "TestApp");
 		testAppHandler.setContextPath(Server.TEST_APP_PATH);
 		testAppHandler.addEventListener(new ServletContextListener());
+		final var errorMapper = new ErrorPageErrorHandler();
+		errorMapper.addErrorPage(404, ErrorTestingServlet.ERROR_HANDLER_PATH);
+		testAppHandler.setErrorHandler(errorMapper);
 		JavaxWebSocketServletContainerInitializer.configure(
 			testAppHandler,
 			(servletContainer, websocketContainer) -> {
@@ -50,6 +54,9 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 		secondAppHandler.setDisplayName(name + "SecondApp");
 		secondAppHandler.setContextPath(MultiAppServer.SECOND_APP_PATH);
 		secondAppHandler.addEventListener(new ManualServletContextListener());
+		final var secondErrorMapper = new ErrorPageErrorHandler();
+		secondErrorMapper.addErrorPage(404, ErrorTestingServlet.ERROR_HANDLER_PATH);
+		secondAppHandler.setErrorHandler(secondErrorMapper);
 		JavaxWebSocketServletContainerInitializer.configure(
 			secondAppHandler,
 			(servletContainer, websocketContainer) -> {
