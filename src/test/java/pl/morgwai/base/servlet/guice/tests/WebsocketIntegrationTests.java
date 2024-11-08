@@ -9,6 +9,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.logging.*;
 import javax.websocket.*;
 import org.junit.*;
+import org.junit.rules.TestName;
 
 import com.google.inject.*;
 import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
@@ -47,19 +48,21 @@ public abstract class WebsocketIntegrationTests {
 
 
 
-	protected abstract Server createServer() throws Exception;
+	protected abstract Server createServer(String testName) throws Exception;
 	protected abstract boolean isHttpSessionAvailable();
 
 
 
 	@Before
 	public void setup() throws Exception {
-		server = createServer();
+		server = createServer(testName.getMethodName());
 		appWebsocketUrl = server.getTestAppWebsocketUrl();
 
 		wsHttpClient.setCookieStore(cookieManager.getCookieStore());
 		clientWebsocketContainer = JavaxWebSocketClientContainerProvider.getContainer(wsHttpClient);
 	}
+
+	@Rule public TestName testName = new TestName();
 
 
 

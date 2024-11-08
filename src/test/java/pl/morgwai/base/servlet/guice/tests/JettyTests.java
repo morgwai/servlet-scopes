@@ -44,8 +44,8 @@ public class JettyTests extends MultiAppWebsocketTests {
 
 
 	@Override
-	protected MultiAppServer createServer() throws Exception {
-		final var server = new JettyServer(0);
+	protected MultiAppServer createServer(String testName) throws Exception {
+		final var server = new JettyServer(0, testName);
 		final var port = server.getPort();
 		forwardingServletUrl = "http://localhost:" + port + Server.TEST_APP_PATH + '/'
 				+ ForwardingServlet.class.getSimpleName();

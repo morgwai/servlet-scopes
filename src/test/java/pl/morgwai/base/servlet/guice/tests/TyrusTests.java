@@ -13,7 +13,7 @@ public class TyrusTests extends WebsocketIntegrationTests {
 
 
 	@Override
-	protected Server createServer() throws Exception {
+	protected Server createServer(String testName) throws Exception {
 		return new TyrusServer(-1, Server.TEST_APP_PATH);
 	}
 

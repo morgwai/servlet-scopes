@@ -23,11 +23,11 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 
 
 
-	public JettyServer(int port) throws Exception {
+	public JettyServer(int port, String name) throws Exception {
 		super(port);
 
 		final var testAppHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
-		testAppHandler.setDisplayName("testApp");
+		testAppHandler.setDisplayName(name + "TestApp");
 		testAppHandler.setContextPath(Server.TEST_APP_PATH);
 		testAppHandler.addEventListener(new ServletContextListener());
 		JavaxWebSocketServletContainerInitializer.configure(
@@ -47,7 +47,7 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 		);
 
 		final var secondAppHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
-		secondAppHandler.setDisplayName("secondApp");
+		secondAppHandler.setDisplayName(name + "SecondApp");
 		secondAppHandler.setContextPath(MultiAppServer.SECOND_APP_PATH);
 		secondAppHandler.addEventListener(new ManualServletContextListener());
 		JavaxWebSocketServletContainerInitializer.configure(
@@ -111,7 +111,7 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 				port = Integer.parseInt(System.getenv(PORT_ENVVAR));
 			} catch (Exception ignored) {}
 		}
-		final var server = new JettyServer(port);
+		final var server = new JettyServer(port, "");
 		server.setStopAtShutdown(true);
 		server.join();
 		System.out.println("exiting, bye!");

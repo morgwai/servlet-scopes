@@ -36,7 +36,7 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 
 
 	@Override
-	protected abstract MultiAppServer createServer() throws Exception;
+	protected abstract MultiAppServer createServer(String testName) throws Exception;
 
 
 
