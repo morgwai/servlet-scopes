@@ -15,6 +15,7 @@ Few trivial servlets and websockets to test basic functionality of `servlet-scop
 1. start stand-alone Jetty: `cd src/main/jetty/ && java -server -jar ${JETTY_HOME}/start.jar ; cd -`
 
 ### Build and run using an embedded Jetty
+1. generate alternative `pom.xml` file: `grep -v 'EMBEDDED-REMOVE' pom.xml >pom-embedded-jetty.xml`
 1. build the project: `./mvnw -f pom-embedded-jetty.xml package`
 1. start embedded Jetty: `java -server -jar target/servlet-scopes-sample-1.0-SNAPSHOT-jar-with-dependencies.jar`
 

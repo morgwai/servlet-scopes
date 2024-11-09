@@ -7,7 +7,10 @@
 	<groupId>pl.morgwai.samples</groupId>
 	<artifactId>servlet-scopes-sample</artifactId>
 	<version>1.0-SNAPSHOT</version>
-	<packaging>war</packaging>
+	<packaging>war</packaging> <!-- EMBEDDED-REMOVE -->
+	<!-- EMBEDDED-REMOVE
+	<packaging>jar</packaging>
+	EMBEDDED-REMOVE -->
 
 	<name>Sample apps for servlet-scopes library</name>
 
@@ -48,13 +51,13 @@
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-servlet</artifactId>
 					<version>[10.0.7,10.999.0]</version>
-					<scope>provided</scope>
+					<scope>provided</scope> <!-- EMBEDDED-REMOVE -->
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty.websocket</groupId>
 					<artifactId>websocket-javax-server</artifactId>
 					<version>[10.0.7,10.999.0]</version>
-					<scope>provided</scope>
+					<scope>provided</scope> <!-- EMBEDDED-REMOVE -->
 				</dependency>
 			</dependencies>
 		</profile>
@@ -74,15 +77,44 @@
 					<groupId>org.eclipse.jetty</groupId>
 					<artifactId>jetty-servlet</artifactId>
 					<version>[11.0.7,11.999.0]</version>
-					<scope>provided</scope>
+					<scope>provided</scope> <!-- EMBEDDED-REMOVE -->
 				</dependency>
 				<dependency>
 					<groupId>org.eclipse.jetty.websocket</groupId>
 					<artifactId>websocket-jakarta-server</artifactId>
 					<version>[11.0.7,11.999.0]</version>
-					<scope>provided</scope>
+					<scope>provided</scope> <!-- EMBEDDED-REMOVE -->
 				</dependency>
 			</dependencies>
 		</profile>
 	</profiles>
+
+	<!-- EMBEDDED-REMOVE
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<archive>
+								<manifest>
+									<mainClass>pl.morgwai.base.servlet.guice.tests.jetty.JettyServer</mainClass>
+								</manifest>
+							</archive>
+							<descriptorRefs>
+								<descriptorRef>jar-with-dependencies</descriptorRef>
+							</descriptorRefs>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+	EMBEDDED-REMOVE -->
 </project>
