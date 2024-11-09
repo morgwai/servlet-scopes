@@ -11,7 +11,7 @@ import pl.morgwai.base.servlet.guice.tests.servercommon.Service;
 
 
 /**
- * All async-wanna-be test requests initially arrive to this {@code Servlet} and are
+ * Most async-wanna-be test requests initially arrive to this {@code Servlet} and are
  * {@link javax.servlet.RequestDispatcher#forward(ServletRequest, ServletResponse) forwarded} to
  * {@link AsyncServlet}. If a request comes back to this {@code Servlet}
  * {@link DispatcherType#ASYNC asynchronously}, a

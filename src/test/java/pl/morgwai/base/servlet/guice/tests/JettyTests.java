@@ -18,6 +18,7 @@ import pl.morgwai.base.servlet.guice.tests.servercommon.*;
 
 import static org.junit.Assert.*;
 import static pl.morgwai.base.servlet.guice.tests.jetty.AsyncServlet.*;
+import static pl.morgwai.base.servlet.guice.tests.jetty.CrossDeploymentIncludingServlet.*;
 import static pl.morgwai.base.servlet.guice.tests.servercommon.Service.*;
 
 
@@ -98,13 +99,25 @@ public class JettyTests extends MultiAppWebsocketTests {
 
 
 	@Test
-	public void testCrossDeploymentForwarding() throws Exception {
-		final var path = testAppUrl + '/' + CrossDeploymentForwardingServlet.class.getSimpleName();
+	public void testCrossDeploymentIncluding() throws Exception {
+		final var path = testAppUrl + '/' + CrossDeploymentIncludingServlet.class.getSimpleName();
 		final var request = HttpRequest.newBuilder(URI.create(path))
 			.GET()
-			.timeout(Duration.ofSeconds(600))
+			.timeout(Duration.ofSeconds(2))
 			.build();
-		sendServletRequest(request, 200, CrossDeploymentForwardingServlet.class);
+		final var reply = sendServletRequest(request, 200, CrossDeploymentIncludingServlet.class);
+		assertEquals("there should be 5 properties in the reply",
+				5, reply.size());
+		assertNotEquals(
+			"request-scoped instances of initial and included deployment should be different",
+			reply.getProperty(CONTAINER_CALL),
+			reply.getProperty(INCLUDED_DEPLOYMENT_PREFIX + CONTAINER_CALL)
+		);
+		assertNotEquals(
+			"session-scoped instances of initial and included deployment should be different",
+			reply.getProperty(HTTP_SESSION),
+			reply.getProperty(INCLUDED_DEPLOYMENT_PREFIX + HTTP_SESSION)
+		);
 	}
 
 

@@ -46,49 +46,51 @@ public class RequestContextFilter implements Filter {
 
 	@Override
 	public void doFilter(
-		ServletRequest request,
+		ServletRequest rawRequest,
 		ServletResponse response,
 		FilterChain chain
 	) throws IOException, ServletException {
-		final var ctx = getContext((HttpServletRequest) request);
-		if (ctx == null) {  // already running within the Context of a given request
-			chain.doFilter(request, response);
-			return;
-		}
-
-		try {
-			ctx.executeWithinSelf(() -> {
-				chain.doFilter(request, response);
-				return null;  // Void
-			});
-		} catch (IOException | ServletException | RuntimeException e) {
-			throw e;
-		} catch (Exception neverHappens) {
-			// result of wrapping with a Callable
-		}
-	}
-
-	/**
-	 * Retrieves or creates a {@link ServletRequestContext} that should be entered to handle
-	 * {@code request}.
-	 * If {@link Thread#currentThread() the current Thread} is already running within the
-	 * {@code Context} of {@code request}, {@code null} is returned.
-	 */
-	ServletRequestContext getContext(HttpServletRequest request) throws ServletException {
-		final ServletRequestContext ctx;
+		final var request = (HttpServletRequest) rawRequest;
+		final ServletRequestContext ctxToActivate;
+		Object savedCtx = null;  // for requests INCLUDE/FORWARD-ed from other deployments
 		switch (request.getDispatcherType()) {
 			case INCLUDE:
 			case FORWARD:
-				if (ctxTracker.getCurrentContext() != null) return null; // standard FORWARD/INCLUDE
-				// no break: FORWARD / INCLUDE from another deployment: same processing as REQUEST
-			case REQUEST:
-				ctx = new ServletRequestContext(request, ctxTracker);
-				request.setAttribute(CTX_ATTRIBUTE, ctx);
-				return ctx;
-			default:  // ASYNC or ERROR
-				ctx = (ServletRequestContext) request.getAttribute(CTX_ATTRIBUTE);
-				if (ctx == null) throw new ServletException(formatCtxNotFoundMessage(request));
-				return ctx;
+				if (ctxTracker.getCurrentContext() != null) {
+					// normal INCLUDE/FORWARD from the same deployment handled from within the
+					// original ctx, so it's still active
+					ctxToActivate = null;
+					break;
+				}
+
+				// INCLUDE/FORWARD from another deployment: save the previous CTX_ATTRIBUTE (if any)
+				// and continue to create a new one for this deployment
+				savedCtx = request.getAttribute(CTX_ATTRIBUTE);
+			case REQUEST: // create, store in CTX_ATTRIBUTE, activate
+				ctxToActivate = new ServletRequestContext(request, ctxTracker);
+				request.setAttribute(CTX_ATTRIBUTE, ctxToActivate);
+				break;
+			default:  // ASYNC/ERROR: reactivate from CTX_ATTRIBUTE
+				ctxToActivate = (ServletRequestContext) request.getAttribute(CTX_ATTRIBUTE);
+				if (ctxToActivate == null) {  // misconfigured app
+					throw new ServletException(formatCtxNotFoundMessage(request));
+				}
+		}
+		if (ctxToActivate == null) {  // already running within the Context of the request
+			chain.doFilter(request, response);
+		} else {  // (re)-activate the Context of the request
+			try {
+				ctxToActivate.executeWithinSelf(() -> {
+					chain.doFilter(request, response);
+					return null;  // Void
+				});
+			} catch (IOException | ServletException | RuntimeException e) {
+				throw e;
+			} catch (Exception neverHappens) {
+				// result of wrapping with a Callable
+			} finally {
+				if (savedCtx != null) request.setAttribute(CTX_ATTRIBUTE, savedCtx);
+			}
 		}
 	}
 
