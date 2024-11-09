@@ -3,6 +3,9 @@ package pl.morgwai.base.servlet.guice.tests.jetty;
 
 import java.io.IOException;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
 
@@ -37,20 +40,12 @@ public abstract class TestServlet extends HttpServlet {
 	 */
 	void verifyScoping(HttpServletRequest request, String threadDesignation)
 			throws ServletException {
-		try {
-			if (
-				request.getAttribute(Service.CONTAINER_CALL) != requestScopedProvider.get()
-				|| request.getAttribute(Service.HTTP_SESSION) != sessionScopedProvider.get()
-			) {
-				throw new ServletException(getClass().getSimpleName() + ": scoping failure on "
-						+ threadDesignation + " (" + Thread.currentThread().getName() + ')');
-			}
-		} catch (RuntimeException e) {
-			throw new ServletException(
-				getClass().getSimpleName() + ": scoping failure on " + threadDesignation
-						+ " (" + Thread.currentThread().getName() + ')',
-				e
-			);
+		if (
+			request.getAttribute(Service.CONTAINER_CALL) != requestScopedProvider.get()
+			|| request.getAttribute(Service.HTTP_SESSION) != sessionScopedProvider.get()
+		) {
+			throw new ServletException(getClass().getSimpleName() + ": scoping failure on "
+					+ threadDesignation + " (" + Thread.currentThread().getName() + ')');
 		}
 	}
 
@@ -73,23 +68,41 @@ public abstract class TestServlet extends HttpServlet {
 	 *       httpSessionScope}d instance of {@link Service}</li>
 	 * </ul>
 	 */
+	void sendReply(HttpServletResponse response) throws IOException {
+		final var responseStream = response.getOutputStream();
+		final var responseContent = new Properties(5);
+		responseContent.setProperty(REPLYING_SERVLET, getClass().getSimpleName());
+		responseContent.setProperty(
+			Service.CONTAINER_CALL,
+			String.valueOf(requestScopedProvider.get().hashCode())
+		);
+		responseContent.setProperty(
+			Service.HTTP_SESSION,
+			String.valueOf(sessionScopedProvider.get().hashCode())
+		);
+		responseContent.store(responseStream, null);
+	}
+
+
+
 	void verifyScopingAndSendReply(HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
-		verifyScoping(request, "the final reply-sending container Thread");
-		try (
-			final var responseStream = response.getOutputStream();
-		) {
-			final var responseContent = new Properties(5);
-			responseContent.setProperty(REPLYING_SERVLET, getClass().getSimpleName());
-			responseContent.setProperty(
-				Service.CONTAINER_CALL,
-				String.valueOf(requestScopedProvider.get().hashCode())
-			);
-			responseContent.setProperty(
-				Service.HTTP_SESSION,
-				String.valueOf(sessionScopedProvider.get().hashCode())
-			);
-			responseContent.store(responseStream, null);
+		verifyScoping(request, "reply-sending container Thread");
+		sendReply(response);
+	}
+
+
+
+	@Override
+	protected void service(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		try {
+			super.service(request, response);
+		} catch (Throwable e) {
+			log.log(Level.SEVERE, "Exception", e);
+			throw e;
 		}
 	}
+
+	static final Logger log = Logger.getLogger(TestServlet.class.getName());
 }

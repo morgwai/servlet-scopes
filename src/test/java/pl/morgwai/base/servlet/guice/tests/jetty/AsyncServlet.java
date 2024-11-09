@@ -2,6 +2,9 @@
 package pl.morgwai.base.servlet.guice.tests.jetty;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -45,6 +48,8 @@ public class AsyncServlet extends TestServlet {
 	 */
 	public static final String TARGET_PATH_PARAM = "targetPath";
 
+
+
 	@Inject ContextTrackingExecutorDecorator executor;
 
 
@@ -61,7 +66,7 @@ public class AsyncServlet extends TestServlet {
 		final var asyncCtx = MODE_WRAPPED.equals(request.getParameter(MODE_PARAM))
 				? request.startAsync(request, response)
 				: request.startAsync();
-		asyncCtx.setTimeout(0L);
+		asyncCtx.setTimeout(1800L * 1000L);
 		executor.execute(() -> {
 			try {
 				verifyScoping(request, "the executor thread");
@@ -71,14 +76,18 @@ public class AsyncServlet extends TestServlet {
 				} else {
 					asyncCtx.dispatch();
 				}
-			} catch (ServletException e) {
-				e.printStackTrace();
+			} catch (Throwable e) {
+				log.log(Level.SEVERE, "Exception", e);
 				try {
-					response.sendError(
-							HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.toString());
+					response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.toString());
 				} catch (IOException ignored) {}
 				asyncCtx.complete();
+				if (e instanceof Error) throw (Error) e;
 			}
 		});
 	}
+
+
+
+	static final Logger log = Logger.getLogger(AsyncServlet.class.getName());
 }

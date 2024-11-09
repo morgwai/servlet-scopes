@@ -21,8 +21,7 @@ public class TargetedServlet extends TestServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
 		if (request.getDispatcherType() != DispatcherType.ASYNC) {
-			throw new ServletException(TestServlet.class.getSimpleName()
-					+ "should only receive async requests");
+			throw new AssertionError("unexpected DispatcherType: " + request.getDispatcherType());
 		}
 		verifyScopingAndSendReply(request, response);
 	}
