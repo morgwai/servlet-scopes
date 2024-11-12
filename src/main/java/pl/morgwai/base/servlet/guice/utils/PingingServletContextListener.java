@@ -16,7 +16,11 @@ import static pl.morgwai.base.servlet.utils.WebsocketPingerService.DEFAULT_INTER
 
 
 
-/** {@link GuiceServletContextListener} that uses {@link PingingServerEndpointConfigurator}. */
+/**
+ * {@link GuiceServletContextListener} that uses {@link PingingWebsocketModule} and
+ * {@link PingingServerEndpointConfigurator}.
+ * Creates and configures  the app-wide {@link WebsocketPingerService}.
+ */
 public abstract class PingingServletContextListener extends GuiceServletContextListener {
 
 

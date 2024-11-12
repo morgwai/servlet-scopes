@@ -18,8 +18,8 @@ import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
 /**
- * {@link GuiceEndpointConfigurator} that automatically registers and deregisters {@code Endpoints}
- * to its associated {@link WebsocketPingerService}.
+ * {@link GuiceEndpointConfigurator} that automatically registers and deregisters created
+ * {@code Endpoints} to its associated {@link WebsocketPingerService}.
  * Additionally if an {@code Endpoint} created using this {@code Configurator} implements
  * {@link RttObserver}, then it will be receiving RTT reports on each pong.
  * <p>

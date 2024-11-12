@@ -10,9 +10,8 @@ import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
 /**
- * {@link WebsocketModule} that additionally binds {@link #clientEndpointClasses} annotated
- * with @{@link PingingClientEndpoint} to {@link Provider}s based on
- * {@link PingingEndpointConfigurator}.
+ * {@link WebsocketModule} that additionally allows to automatically register `Endpoint` instances
+ * to a {@link WebsocketPingerService} using {@link PingingEndpointConfigurator}.
  */
 public class PingingWebsocketModule extends WebsocketModule {
 

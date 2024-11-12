@@ -11,7 +11,7 @@ import static pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurat
 
 /**
  * {@link Module} for standalone websocket server apps.
- * Configures {@link GuiceServerEndpointConfigurator}.
+ * Initializes {@link GuiceServerEndpointConfigurator}.
  * <p>
  * Usually a single instance is created at the startup and passed to
  * {@link Guice#createInjector(Module...)} together with a {@link WebsocketModule} and other

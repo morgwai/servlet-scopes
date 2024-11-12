@@ -13,7 +13,8 @@ import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
 
 
 /**
- * Contains websocket Guice {@link Scope}s and a {@link ContextBinder}.
+ * Defines {@link #containerCallScope} and {@link #websocketConnectionScope}, configures
+ * {@link GuiceEndpointConfigurator}.
  * Usually a single instance is created at the startup and its member {@link Scope}s passed to
  * other {@link com.google.inject.Module}s to scope their bindings: see
  * <a href="https://github.com/morgwai/guice-context-scopes#developing-portable-modules">"Developing

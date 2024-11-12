@@ -29,7 +29,8 @@ import static com.google.inject.name.Names.named;
 /**
  * Obtains {@code Endpoint} instances from {@link Injector#getInstance(Class) Guice} and ensures
  * their methods
- * {@link WebsocketEventContext#executeWithinSelf(Runnable) run within websocket Contexts}.
+ * {@link WebsocketEventContext#executeWithinSelf(Runnable) run within websocket Contexts} by
+ * wrapping them with context-aware proxies.
  * This ensures that all dependencies are injected and {@link Scope}s from {@link WebsocketModule}
  * and {@link ServletWebsocketModule} ({@link WebsocketModule#containerCallScope},
  * {@link WebsocketModule#websocketConnectionScope} and

@@ -14,7 +14,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Annotation for client {@code Endpoints} that should be injected using a
- * {@link com.google.inject.Provider} based on {@link PingingEndpointConfigurator}.
+ * {@link PingingEndpointConfigurator}.
  * @see PingingWebsocketModule
  * @see pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator#getProxyForEndpoint(Object,
  *     boolean, boolean) explenation of params

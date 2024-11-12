@@ -23,9 +23,9 @@ import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
 
 /**
  * Base class for app {@link ServletContextListener}s, creates and configures the app-wide
- * {@link Injector} and {@link ServletWebsocketModule}, performs
- * {@link GuiceServerEndpointConfigurator} initialization.
- * Also provides helper methods for programmatically adding {@link Servlet}s, {@link Filter}s and
+ * {@link Injector} and {@link ServletWebsocketModule}, initializes
+ * {@link GuiceServerEndpointConfigurator}.
+ * Provides helper methods for programmatically adding {@link Servlet}s, {@link Filter}s and
  * websocket {@code Endpoints}.
  * <p>
  * Usually a single subclass of this class should be created in a given app and either annotated
@@ -34,7 +34,9 @@ import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
  * <p>
  * Note that it is not mandatory for app {@link ServletContextListener}s to extend this class: all
  * the setup is done using public APIs and can be done manually as well.
- * See the code of {@code ManualServletContextListener} class in the sample app for an example.</p>
+ * See <a href="https://github.com/morgwai/servlet-scopes/blob/master/src/test/java/pl/morgwai/base/
+servlet/guice/scopes/tests/jetty/ManualServletContextListener.java">the code of
+ * ManualServletContextListener class</a> in the sample app for an example.</p>
  * @see pl.morgwai.base.servlet.guice.utils.PingingServletContextListener
  */
 public abstract class GuiceServletContextListener implements ServletContextListener {
