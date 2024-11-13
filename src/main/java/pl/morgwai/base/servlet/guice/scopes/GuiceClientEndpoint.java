@@ -16,8 +16,14 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * Annotation for client {@code Endpoints} that should be injected using a
  * {@link com.google.inject.Provider} based on {@link GuiceEndpointConfigurator}.
  * @see WebsocketModule
+ * @see GuiceEndpointConfigurator#getProxyForEndpoint(Object, boolean, boolean) explenation of
+ *     params
  */
 @Retention(RUNTIME)
 @Target({ FIELD, PARAMETER })
 @BindingAnnotation
-public @interface GuiceClientEndpoint {}
+public @interface GuiceClientEndpoint {
+
+	boolean nestConnectionContext() default true;
+	boolean nestHttpSessionContext() default true;
+}

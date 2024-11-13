@@ -44,7 +44,7 @@ public abstract class EndpointDynamicProxyTests extends EndpointProxyTests {
 	) throws NoSuchFieldException, IllegalAccessException {
 		endpointProxy.getClass().getDeclaredField(INVOCATION_HANDLER_FIELD_NAME).set(
 			endpointProxy,
-			new EndpointProxyHandler(handler, ctxTracker)
+			new EndpointProxyHandler(handler, ctxTracker, null, null)
 		);
 	}
 

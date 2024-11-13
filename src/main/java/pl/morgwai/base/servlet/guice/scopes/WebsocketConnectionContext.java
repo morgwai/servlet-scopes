@@ -36,12 +36,20 @@ public class WebsocketConnectionContext extends InjectionContext {
 
 
 
-	WebsocketConnectionContext(WebsocketConnectionProxy connectionProxy) {
+	WebsocketConnectionContext(
+		WebsocketConnectionProxy connectionProxy,
+		WebsocketConnectionContext parentCtx
+	) {
+		super(parentCtx);
 		this.connectionProxy = connectionProxy;
 		connectionProxy.setConnectionCtx(this);
 	}
 
+	WebsocketConnectionContext(WebsocketConnectionProxy connectionProxy) {
+		this(connectionProxy, null);
+	}
 
 
-	private static final long serialVersionUID = -3426641069769956104L;
+
+	private static final long serialVersionUID = -5223603305758290198L;
 }

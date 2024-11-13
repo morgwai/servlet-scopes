@@ -24,7 +24,7 @@ import static pl.morgwai.base.servlet.guice.scopes.WebsocketModule.CTX_TRACKER_K
 
 
 /**
- * {@link GuiceEndpointConfigurator#getProxiedEndpointInstance(Class)
+ * {@link GuiceEndpointConfigurator#getProxiedEndpointInstance(Class, boolean, boolean)
  * Obtains server Endpoint instances} from a {@link GuiceEndpointConfigurator}.
  * To use this {@code Configurator}, first either a {@link ServletWebsocketModule} or a
  * {@link StandaloneWebsocketServerModule} must be passed to
@@ -224,15 +224,15 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 
 
 	/**
-	 * {@link GuiceEndpointConfigurator#getProxiedEndpointInstance(Class) Obtains} an instance of
-	 * {@code endpointClass} wrapped with a
+	 * {@link GuiceEndpointConfigurator#getProxiedEndpointInstance(Class, boolean, boolean) Obtains}
+	 * an instance of {@code endpointClass} wrapped with a
 	 * {@link GuiceEndpointConfigurator#getProxyClass(Class) dynamic context-aware proxy}.
 	 */
 	@Override
 	public <EndpointT> EndpointT getEndpointInstance(Class<EndpointT> endpointClass)
 			throws InstantiationException {
 		try {
-			return backingConfigurator.getProxiedEndpointInstance(endpointClass);
+			return backingConfigurator.getProxiedEndpointInstance(endpointClass, false, false);
 		} catch (Exception e) {
 			log.log(SEVERE, "Endpoint instantiation failed", e);
 			if (e instanceof IllegalArgumentException) e.printStackTrace(); // signal an obvious bug

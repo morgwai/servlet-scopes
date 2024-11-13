@@ -25,22 +25,28 @@ public class ClientEndpointProxy extends Endpoint {
 
 	protected final Endpoint wrappedEndpoint;
 	final ContextTracker<ContainerCallContext> ctxTracker;
+	final WebsocketConnectionContext parentCtx;
 	final HttpSession httpSession;
 
 
 
 	public ClientEndpointProxy(
-		Endpoint toWrap,
+		Endpoint endpointToWrap,
 		ContextTracker<ContainerCallContext> ctxTracker,
+		WebsocketConnectionContext parentCtx,
 		HttpSession httpSession
 	) {
-		this.wrappedEndpoint = toWrap;
+		this.wrappedEndpoint = endpointToWrap;
 		this.ctxTracker = ctxTracker;
+		this.parentCtx = parentCtx;
 		this.httpSession = httpSession;
 	}
 
-	public ClientEndpointProxy(Endpoint toWrap, ContextTracker<ContainerCallContext> ctxTracker) {
-		this(toWrap, ctxTracker, null);
+	public ClientEndpointProxy(
+		Endpoint endpointToWrap,
+		ContextTracker<ContainerCallContext> ctxTracker
+	) {
+		this(endpointToWrap, ctxTracker, null, null);
 	}
 
 

@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import javax.servlet.http.HttpSession;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 
@@ -19,6 +20,7 @@ import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.matcher.ElementMatchers;
 import pl.morgwai.base.guice.scopes.ContextTracker;
+import pl.morgwai.base.guice.scopes.InjectionContext;
 
 import static com.google.inject.name.Names.named;
 
@@ -38,8 +40,8 @@ import static com.google.inject.name.Names.named;
  * {@code Endpoints} may be obtained in 1 of the below ways:</p>
  * <ul>
  *   <li>by obtaining {@link GuiceEndpointConfigurator} from the created {@link Injector} and
- *       calling either {@link #getProxiedEndpointInstance(Class)} or
- *       {@link #getProxyForEndpoint(Object)}</li>
+ *       calling either {@link #getProxiedEndpointInstance(Class, boolean, boolean)} or
+ *       {@link #getProxyForEndpoint(Object, boolean, boolean)}</li>
  *   <li>if some {@code endpointClass} was passed to {@link WebsocketModule}'s
  *       {@link WebsocketModule#WebsocketModule(boolean, java.util.Set)}  constructor}, then it will
  *       be injected to fields and params annotated with @{@link GuiceClientEndpoint}</li>
@@ -99,34 +101,68 @@ public class GuiceEndpointConfigurator {
 
 
 	/**
-	 * Calls {@link #getProxyForEndpoint(Object) getProxyForEndpoint}<code>(
-	 * {@link #injector}.{@link Injector#getInstance(Key) getInstance}(endpointClass))</code>.
+	 * Calls {@link #getProxyForEndpoint(Object, boolean, boolean) getProxyForEndpoint}<code>({@link
+	 * #injector}.{@link Injector#getInstance(Key) getInstance}(endpointClass), nestConnectionCtx,
+	 * nestHttpSessionCtx)</code>.
 	 */
-	public <EndpointT> EndpointT getProxiedEndpointInstance(Class<EndpointT> endpointClass)
-			throws InvocationTargetException {
-		return getProxyForEndpoint(injector.getInstance(endpointClass));
+	public <EndpointT> EndpointT getProxiedEndpointInstance(
+		Class<EndpointT> endpointClass,
+		boolean nestConnectionCtx,
+		boolean nestHttpSessionCtx
+	) throws InvocationTargetException {
+		return getProxyForEndpoint(
+			injector.getInstance(endpointClass),
+			nestConnectionCtx,
+			nestHttpSessionCtx
+		);
 	}
 
 
 
 	/**
-	 * Creates a {@link #getProxyClass(Class) dynamic context-aware proxy} for {@code endpoint}.
-	 * @return an instance of the dynamic proxy subclass of {@code endpoint}'s class that wraps
-	 *     {@code endpoint}.
+	 * Creates a {@link #getProxyClass(Class) dynamic context-aware proxy} for
+	 * {@code endpointToWrap}.
+	 * @param nestConnectionCtx if this method was called within the
+	 *     {@link WebsocketConnectionContext} of some other enclosing {@code Endpoint}, this param
+	 *     controls whether the {@link WebsocketConnectionContext} of {@code endpointToWrap} should
+	 *     be {@link InjectionContext#InjectionContext(InjectionContext) nested} within such
+	 *     enclosing {@link WebsocketConnectionContext}.
+	 * @param nestHttpSessionCtx if this method was called within the {@link HttpSessionContext} of
+	 *     some {@link javax.servlet.Servlet} or some other enclosing {@code Endpoint}, this param
+	 *     controls whether the {@link HttpSessionContext} of {@code endpointToWrap} should be
+	 *     {@link InjectionContext#InjectionContext(InjectionContext) nested} within such enclosing
+	 *     {@link HttpSessionContext}.
+	 * @return an instance of the dynamic proxy subclass of {@code endpointToWrap}'s class wrapping
+	 *     {@code endpointToWrap}.
 	 */
-	public <EndpointT> EndpointT getProxyForEndpoint(EndpointT endpoint)
-			throws InvocationTargetException {
+	public <EndpointT> EndpointT getProxyForEndpoint(
+		EndpointT endpointToWrap,
+		boolean nestConnectionCtx,
+		boolean nestHttpSessionCtx
+	) throws InvocationTargetException {
 		@SuppressWarnings("unchecked")
-		final var endpointClass = (Class<EndpointT>) endpoint.getClass();
+		final var endpointClass = (Class<EndpointT>) endpointToWrap.getClass();
 		final var proxyClass = getProxyClass(endpointClass);
 		try {
 			final EndpointT endpointProxy = createEndpointProxyInstance(proxyClass);
-			final var endpointProxyHandler = new EndpointProxyHandler(
-				getAdditionalDecorator(endpoint),
-				ctxTracker
+			WebsocketConnectionContext parentConnectionCtx = null;
+			HttpSession parentHttpSession = null;
+			final var parentCallCtx = ctxTracker.getCurrentContext();
+			if (parentCallCtx != null) {
+				if (nestHttpSessionCtx) parentHttpSession = parentCallCtx.getHttpSession();
+				if (nestConnectionCtx && parentCallCtx instanceof WebsocketEventContext) {
+					parentConnectionCtx = ((WebsocketEventContext) parentCallCtx).connectionContext;
+				}
+			}
+			proxyClass.getDeclaredField(INVOCATION_HANDLER_FIELD_NAME).set(
+				endpointProxy,
+				new EndpointProxyHandler(
+					getAdditionalDecorator(endpointToWrap),
+					ctxTracker,
+					parentConnectionCtx,
+					parentHttpSession
+				)
 			);
-			proxyClass.getDeclaredField(INVOCATION_HANDLER_FIELD_NAME)
-					.set(endpointProxy, endpointProxyHandler);
 			return endpointProxy;
 		} catch (NoSuchFieldException | IllegalAccessException | InstantiationException e) {
 			throw new IllegalArgumentException(e);
@@ -168,10 +204,10 @@ public class GuiceEndpointConfigurator {
 	 * {@link WebsocketEventContext}, {@link WebsocketConnectionContext} and if an
 	 * {@link javax.servlet.http.HttpSession} is present, then also {@link HttpSessionContext}.
 	 * <p>
-	 * This method is usually called by {@link #getProxyForEndpoint(Object)}. Nevertheless, once
-	 * built, a proxy class is cached for subsequent requests for the same {@code endpointClass},
-	 * thus this method may be also called directly during an app's initialization to pre-build the
-	 * dynamic proxy classes.</p>
+	 * This method is usually called by {@link #getProxyForEndpoint(Object, boolean, boolean)}.
+	 * Nevertheless, once built, a proxy class is cached for subsequent requests for the same
+	 * {@code endpointClass}, thus this method may be also called directly during an app's
+	 * initialization to pre-build the dynamic proxy classes.</p>
 	 */
 	public <EndpointT> Class<? extends EndpointT> getProxyClass(Class<EndpointT> endpointClass) {
 		@SuppressWarnings("unchecked")

@@ -128,19 +128,76 @@ public class WebsocketModule extends ScopeModule {
 	}
 
 	<EndpointT> void bindClientEndpoint(Binder binder, Class<EndpointT> clientEndpointClass) {
-		binder.bind(clientEndpointClass).annotatedWith(GuiceClientEndpoint.class).toProvider(
-			new Provider<>() {
-				@Inject GuiceEndpointConfigurator endpointConfigurator;
+		binder.bind(clientEndpointClass).annotatedWith(NO_NESTING)
+			.toProvider(new ClientEndpointProvider<>(clientEndpointClass, false, false));
+		binder.bind(clientEndpointClass).annotatedWith(NEST_CONNECTION_CTX)
+			.toProvider(new ClientEndpointProvider<>(clientEndpointClass, true, false));
+		binder.bind(clientEndpointClass).annotatedWith(NEST_HTTP_SESSION_CTX)
+			.toProvider(new ClientEndpointProvider<>(clientEndpointClass, false, true));
+		binder.bind(clientEndpointClass).annotatedWith(NEST_BOTH)
+			.toProvider(new ClientEndpointProvider<>(clientEndpointClass, true, true));
+	}
 
-				@Override public EndpointT get() {
-					try {
-						return endpointConfigurator.getProxiedEndpointInstance(clientEndpointClass);
-					} catch (Exception e) {
-						throw new ProvisionException(e.getMessage(), e);
-					}
-				}
+	@GuiceClientEndpoint(nestConnectionContext = false, nestHttpSessionContext = false)
+	static final GuiceClientEndpoint NO_NESTING;
+	@GuiceClientEndpoint(nestHttpSessionContext = false)
+	static final GuiceClientEndpoint NEST_CONNECTION_CTX;
+	@GuiceClientEndpoint(nestConnectionContext = false)
+	static final GuiceClientEndpoint NEST_HTTP_SESSION_CTX;
+	@GuiceClientEndpoint
+	static final GuiceClientEndpoint NEST_BOTH;
+
+	static {
+		try {
+			NO_NESTING = WebsocketModule.class.getDeclaredField("NO_NESTING")
+					.getAnnotation(GuiceClientEndpoint.class);
+			NEST_CONNECTION_CTX = WebsocketModule.class.getDeclaredField("NEST_CONNECTION_CTX")
+					.getAnnotation(GuiceClientEndpoint.class);
+			NEST_HTTP_SESSION_CTX = WebsocketModule.class.getDeclaredField("NEST_HTTP_SESSION_CTX")
+					.getAnnotation(GuiceClientEndpoint.class);
+			NEST_BOTH = WebsocketModule.class.getDeclaredField("NEST_BOTH")
+					.getAnnotation(GuiceClientEndpoint.class);
+		} catch (NoSuchFieldException neverHappens) {
+			throw new AssertionError("unreachable code", neverHappens);
+		}
+	}
+
+
+
+	protected static class ClientEndpointProvider<EndpointT> implements Provider<EndpointT> {
+
+		protected GuiceEndpointConfigurator getConfigurator() { return configurator; }
+		@Inject GuiceEndpointConfigurator configurator;
+
+		final Class<EndpointT> clientEndpointClass;
+		final boolean nestConnectionCtx;
+		final boolean nestHttpSessionCtx;
+
+
+
+		protected ClientEndpointProvider(
+			Class<EndpointT> clientEndpointClass,
+			boolean nestConnectionCtx,
+			boolean nestHttpSessionCtx
+		) {
+			this.clientEndpointClass = clientEndpointClass;
+			this.nestConnectionCtx = nestConnectionCtx;
+			this.nestHttpSessionCtx = nestHttpSessionCtx;
+		}
+
+
+
+		@Override public EndpointT get() {
+			try {
+				return getConfigurator().getProxiedEndpointInstance(
+					clientEndpointClass,
+					nestConnectionCtx,
+					nestHttpSessionCtx
+				);
+			} catch (Exception e) {
+				throw new ProvisionException(e.getMessage(), e);
 			}
-		);
+		}
 	}
 
 

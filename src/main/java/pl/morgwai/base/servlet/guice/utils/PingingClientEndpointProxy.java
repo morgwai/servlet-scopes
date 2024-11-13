@@ -7,6 +7,7 @@ import javax.websocket.*;
 import pl.morgwai.base.guice.scopes.ContextTracker;
 import pl.morgwai.base.servlet.guice.scopes.ClientEndpointProxy;
 import pl.morgwai.base.servlet.guice.scopes.ContainerCallContext;
+import pl.morgwai.base.servlet.guice.scopes.WebsocketConnectionContext;
 import pl.morgwai.base.servlet.utils.WebsocketPingerService;
 
 
@@ -25,22 +26,22 @@ public class PingingClientEndpointProxy extends ClientEndpointProxy {
 
 
 	public PingingClientEndpointProxy(
-		Endpoint toWrap,
-		ContextTracker<ContainerCallContext> ctxTracker,
 		WebsocketPingerService pingerService,
+		Endpoint endpointToWrap,
+		ContextTracker<ContainerCallContext> ctxTracker,
+		WebsocketConnectionContext parentCtx,
 		HttpSession httpSession
 	) {
-		super(toWrap, ctxTracker, httpSession);
+		super(endpointToWrap, ctxTracker, parentCtx, httpSession);
 		this.pingerService = pingerService;
 	}
 
 	public PingingClientEndpointProxy(
-		Endpoint toWrap,
-		ContextTracker<ContainerCallContext> ctxTracker,
-		WebsocketPingerService pingerService
+		WebsocketPingerService pingerService,
+		Endpoint endpointToWrap,
+		ContextTracker<ContainerCallContext> ctxTracker
 	) {
-		super(toWrap, ctxTracker);
-		this.pingerService = pingerService;
+		this(pingerService, endpointToWrap, ctxTracker, null, null);
 	}
 
 

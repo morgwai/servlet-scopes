@@ -49,7 +49,7 @@ public class PingingClientEndpointProxyTests extends EndpointProxyTests {
 			WebsocketPingerService pingerService,
 			HttpSession httpSession
 		) {
-			super(toWrap, ctxTracker, pingerService, httpSession);
+			super(pingerService, toWrap, ctxTracker, null, httpSession);
 			this.wrappedEndpoint = toWrap;
 		}
 

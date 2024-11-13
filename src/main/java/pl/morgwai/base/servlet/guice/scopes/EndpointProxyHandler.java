@@ -22,23 +22,29 @@ class EndpointProxyHandler implements InvocationHandler {
 
 	final InvocationHandler wrappedEndpoint;
 	final ContextTracker<ContainerCallContext> ctxTracker;
+	final WebsocketConnectionContext parentCtx;
+
+	HttpSession httpSession;
 
 
 
 	EndpointProxyHandler(
 		InvocationHandler endpointToWrap,
-		ContextTracker<ContainerCallContext> ctxTracker
+		ContextTracker<ContainerCallContext> ctxTracker,
+		WebsocketConnectionContext parentCtx,
+		HttpSession httpSession
 	) {
 		this.wrappedEndpoint = endpointToWrap;
 		this.ctxTracker = ctxTracker;
+		this.parentCtx = parentCtx;
+		this.httpSession = httpSession;
 	}
 
 
 
-	// the below 3 are created/retrieved in initialize(...) below
+	// the below 2 (and optionally httpSession) are created/retrieved in initialize(...) below
 	WebsocketConnectionProxy connectionProxy;
 	WebsocketConnectionContext connectionCtx;
-	HttpSession httpSession;
 
 
 
@@ -49,9 +55,13 @@ class EndpointProxyHandler implements InvocationHandler {
 	 */
 	void initialize(Session connection) {
 		final var userProperties = connection.getUserProperties();
-		httpSession = (HttpSession) userProperties.get(HttpSession.class.getName());
+		if (httpSession == null) {
+			httpSession = (HttpSession) userProperties.get(HttpSession.class.getName());
+		} else {
+			userProperties.put(HttpSession.class.getName(), httpSession);
+		}
 		connectionProxy = WebsocketConnectionProxy.newProxy(connection, ctxTracker);
-		connectionCtx = new WebsocketConnectionContext(connectionProxy);
+		connectionCtx = new WebsocketConnectionContext(connectionProxy, parentCtx);
 	}
 
 

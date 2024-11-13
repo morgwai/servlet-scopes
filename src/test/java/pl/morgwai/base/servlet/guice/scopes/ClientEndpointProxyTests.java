@@ -23,7 +23,7 @@ public class ClientEndpointProxyTests extends EndpointProxyTests {
 			ContextTracker<ContainerCallContext> ctxTracker,
 			HttpSession httpSession
 		) {
-			super(toWrap, ctxTracker, httpSession);
+			super(toWrap, ctxTracker, null, httpSession);
 			this.wrappedEndpoint = toWrap;
 		}
 
