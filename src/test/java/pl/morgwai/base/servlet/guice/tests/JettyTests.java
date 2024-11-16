@@ -8,8 +8,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.*;
 import java.util.logging.Level;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.DispatcherType;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -18,7 +17,7 @@ import pl.morgwai.base.servlet.guice.tests.servercommon.*;
 
 import static org.junit.Assert.*;
 import static pl.morgwai.base.servlet.guice.tests.jetty.AsyncServlet.*;
-import static pl.morgwai.base.servlet.guice.tests.jetty.CrossDeploymentIncludingServlet.*;
+import static pl.morgwai.base.servlet.guice.tests.jetty.CrossDeploymentDispatchingServlet.*;
 import static pl.morgwai.base.servlet.guice.tests.servercommon.Service.*;
 
 
@@ -68,18 +67,10 @@ public class JettyTests extends MultiAppWebsocketTests {
 
 
 	/**
-	 * Sends {@code request} to the {@link #server}, verifies and returns the response.
-	 * Specifically, verifies if the response code is 200, parses the body as {@link Properties} and
-	 * checks if property {@link TestServlet#REPLYING_SERVLET} is equal to
-	 * {@code expectedRespondingServletClass}.
-	 * @return a Properties received from the {@link #server} (see
-	 *     {@link TestServlet#verifyScopingAndSendReply(HttpServletRequest, HttpServletResponse)}).
+	 * Sends {@code request} to the {@link #server}, verifies if the status code was
+	 * {@code expectedStatusCode} and returns the reply as a {@link Properties}.
 	 */
-	Properties sendServletRequest(
-		HttpRequest request,
-		int expectedStatusCode,
-		Class<?> expectedRespondingServletClass
-	) throws Exception {
+	Properties sendServletRequest(HttpRequest request, int expectedStatusCode) throws Exception {
 		final var response = httpClient.send(request, BodyHandlers.ofInputStream());
 		if (log.isLoggable(Level.FINE)) {
 			log.fine("response from " + request.uri() + ", status: " + response.statusCode());
@@ -88,35 +79,65 @@ public class JettyTests extends MultiAppWebsocketTests {
 				expectedStatusCode, response.statusCode());
 		final var responseContent = new Properties(5);
 		responseContent.load(response.body());
-		assertEquals(
-			"processing should be dispatched to the correct servlet",
-			expectedRespondingServletClass.getSimpleName(),
-			responseContent.getProperty(TestServlet.REPLYING_SERVLET)
-		);
 		return responseContent;
 	}
 
 
 
-	@Test
-	public void testCrossDeploymentIncluding() throws Exception {
-		final var path = testAppUrl + '/' + CrossDeploymentIncludingServlet.class.getSimpleName();
-		final var request = HttpRequest.newBuilder(URI.create(path))
+	Properties testCrossDeploymentDispatching(DispatcherType dispatcherType) throws Exception {
+		final var url = testAppUrl + '/' + CrossDeploymentDispatchingServlet.class.getSimpleName()
+				+ '?' + DispatcherType.class.getSimpleName() + '=' + dispatcherType;
+		final var request = HttpRequest.newBuilder(URI.create(url))
 			.GET()
 			.timeout(Duration.ofSeconds(2))
 			.build();
-		final var reply = sendServletRequest(request, 200, CrossDeploymentIncludingServlet.class);
-		assertEquals("there should be 5 properties in the reply",
-				5, reply.size());
+		final var reply = sendServletRequest(request, 200);
+		assertEquals("there should be 9 properties in the reply",
+				9, reply.size());
 		assertNotEquals(
-			"request-scoped instances of initial and included deployment should be different",
-			reply.getProperty(CONTAINER_CALL),
-			reply.getProperty(INCLUDED_DEPLOYMENT_PREFIX + CONTAINER_CALL)
+			"request-scoped instances of the initial and second deployments should be different",
+			reply.getProperty(INITIAL_DEPLOYMENT_PREFIX + CONTAINER_CALL),
+			reply.getProperty(SECOND_DEPLOYMENT_PREFIX + CONTAINER_CALL)
 		);
 		assertNotEquals(
-			"session-scoped instances of initial and included deployment should be different",
-			reply.getProperty(HTTP_SESSION),
-			reply.getProperty(INCLUDED_DEPLOYMENT_PREFIX + HTTP_SESSION)
+			"session-scoped instances of the initial and second deployments should be different",
+			reply.getProperty(INITIAL_DEPLOYMENT_PREFIX + HTTP_SESSION),
+			reply.getProperty(SECOND_DEPLOYMENT_PREFIX + HTTP_SESSION)
+		);
+		return reply;
+	}
+
+	@Test
+	public void testCrossDeploymentIncluding() throws Exception {
+		final var reply = testCrossDeploymentDispatching(DispatcherType.INCLUDE);
+		assertEquals(
+			"request-scoped instances in the async Thread should be the same as in the initial "
+					+ "deployment",
+			reply.getProperty(INITIAL_DEPLOYMENT_PREFIX + CONTAINER_CALL),
+			reply.getProperty(ASYNC_PREFIX + CONTAINER_CALL)
+		);
+		assertEquals(
+			"session-scoped instances in the async Thread should be the same as in the initial "
+					+ "deployment",
+			reply.getProperty(INITIAL_DEPLOYMENT_PREFIX + HTTP_SESSION),
+			reply.getProperty(ASYNC_PREFIX + HTTP_SESSION)
+		);
+	}
+
+	@Test
+	public void testCrossDeploymentForwarding() throws Exception {
+		final var reply = testCrossDeploymentDispatching(DispatcherType.FORWARD);
+		assertEquals(
+			"request-scoped instances in the async Thread should be the same as in the second "
+					+ "deployment",
+			reply.getProperty(SECOND_DEPLOYMENT_PREFIX + CONTAINER_CALL),
+			reply.getProperty(ASYNC_PREFIX + CONTAINER_CALL)
+		);
+		assertEquals(
+			"session-scoped instances in the async Thread should be the same as in the second "
+					+ "deployment",
+			reply.getProperty(SECOND_DEPLOYMENT_PREFIX + HTTP_SESSION),
+			reply.getProperty(ASYNC_PREFIX + HTTP_SESSION)
 		);
 	}
 
@@ -127,7 +148,12 @@ public class JettyTests extends MultiAppWebsocketTests {
 			.GET()
 			.timeout(Duration.ofSeconds(2))
 			.build();
-		sendServletRequest(request, 404, ErrorTestingServlet.class);
+		final var reply = sendServletRequest(request, 404);
+		assertEquals(
+			"processing of the second request should be dispatched to the correct servlet",
+			ErrorTestingServlet.class.getSimpleName(),
+			reply.getProperty(TestServlet.REPLYING_SERVLET)
+		);
 	}
 
 	@Test
@@ -143,12 +169,12 @@ public class JettyTests extends MultiAppWebsocketTests {
 
 
 	/**
-	 * {@link #sendServletRequest(HttpRequest, int, Class) Sends 2 GET requests} to {@code url} and
+	 * {@link #sendServletRequest(HttpRequest, int) Sends 2 GET requests} to {@code url} and
 	 * verifies scoping.
 	 * Specifically checks if {@link Service#HTTP_SESSION} property is the same in both responses
 	 * and if {@link Service#CONTAINER_CALL} is different.
 	 * @return a {@code List} containing both responses as returned by
-	 *     {@link #sendServletRequest(HttpRequest, int, Class)}.
+	 *     {@link #sendServletRequest(HttpRequest, int)}.
 	 */
 	List<Properties> testAsyncCtxDispatch(String url, Class<?> expectedReplyingServletClass)
 			throws Exception {
@@ -156,8 +182,18 @@ public class JettyTests extends MultiAppWebsocketTests {
 			.GET()
 			.timeout(Duration.ofSeconds(2))
 			.build();
-		final var firstReply = sendServletRequest(request, 200, expectedReplyingServletClass);
-		final var secondReply = sendServletRequest(request, 200, expectedReplyingServletClass);
+		final var firstReply = sendServletRequest(request, 200);
+		final var secondReply = sendServletRequest(request, 200);
+		assertEquals(
+			"processing of the first request should be dispatched to the correct servlet",
+			expectedReplyingServletClass.getSimpleName(),
+			firstReply.getProperty(TestServlet.REPLYING_SERVLET)
+		);
+		assertEquals(
+			"processing of the second request should be dispatched to the correct servlet",
+			expectedReplyingServletClass.getSimpleName(),
+			secondReply.getProperty(TestServlet.REPLYING_SERVLET)
+		);
 		assertEquals(
 			"session scoped object hash should remain the same",
 			firstReply.getProperty(HTTP_SESSION),

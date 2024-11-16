@@ -72,9 +72,9 @@ public class ServletContextListener extends PingingServletContextListener {
 		);
 
 		addServlet(
-			CrossDeploymentIncludingServlet.class.getSimpleName(),
-			CrossDeploymentIncludingServlet.class,
-			"/" + CrossDeploymentIncludingServlet.class.getSimpleName()
+			CrossDeploymentDispatchingServlet.class.getSimpleName(),
+			CrossDeploymentDispatchingServlet.class,
+			"/" + CrossDeploymentDispatchingServlet.class.getSimpleName()
 		);
 		addServlet(
 			ErrorTestingServlet.class.getSimpleName(),

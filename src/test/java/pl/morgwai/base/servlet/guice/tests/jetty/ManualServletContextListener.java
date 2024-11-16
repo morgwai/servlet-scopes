@@ -128,9 +128,9 @@ public class ManualServletContextListener implements ServletContextListener {
 			);
 
 			addServlet(
-				CrossDeploymentIncludingServlet.class.getSimpleName(),
-				CrossDeploymentIncludingServlet.class,
-				"/" + CrossDeploymentIncludingServlet.class.getSimpleName()
+				CrossDeploymentDispatchingServlet.class.getSimpleName(),
+				CrossDeploymentDispatchingServlet.class,
+				"/" + CrossDeploymentDispatchingServlet.class.getSimpleName()
 			);
 			addServlet(
 				ErrorTestingServlet.class.getSimpleName(),

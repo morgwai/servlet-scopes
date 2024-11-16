@@ -2,6 +2,8 @@
 package pl.morgwai.base.servlet.guice.scopes;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 
@@ -13,10 +15,13 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
 
 
 /**
- * Creates new {@link ServletRequestContext}s for newly incoming {@link HttpServletRequest}s,
- * transfers existing {@link ServletRequestContext Context}s to their new handling {@code Thread}s
- * for dispatched {@code Request}s ({@link javax.servlet.AsyncContext#dispatch() asynchronously},
- * {@link RequestDispatcher forwarded, included} or {@link DispatcherType#ERROR to error handlers}).
+ * Creates new {@link ServletRequestContext}s for {@link DispatcherType#REQUEST newly incoming}
+ * {@link HttpServletRequest}s, transfers existing {@link ServletRequestContext Context}s to their
+ * new handling {@code Thread}s for dispatched {@code Request}s
+ * ({@link AsyncContext#dispatch() asynchronously},
+ * {@link RequestDispatcher#forward(ServletRequest, ServletResponse) forwarded},
+ * {@link RequestDispatcher#include(ServletRequest, ServletResponse) included} or
+ * {@link DispatcherType#ERROR to error handlers}).
  * <p>
  * This {@code Filter} should usually be installed at the beginning of the
  * chain for all URL patterns and for {@link java.util.EnumSet#allOf(Class) all DispatcherTypes}:
@@ -53,43 +58,55 @@ public class RequestContextFilter implements Filter {
 	) throws IOException, ServletException {
 		final var request = (HttpServletRequest) rawRequest;
 		final ServletRequestContext ctxToActivate;
-		Object savedCtx = null;  // for requests INCLUDE/FORWARD-ed from other deployments
 		switch (request.getDispatcherType()) {
 			case INCLUDE:
 			case FORWARD:
 				if (ctxTracker.getCurrentContext() != null) {
-					// normal INCLUDE/FORWARD from the same deployment handled from within the
-					// original ctx, so it's still active
+					// dispatch from the same deployment, sent from within the Ctx, so it's active
 					ctxToActivate = null;
 					break;
 				}
 
-				// INCLUDE/FORWARD from another deployment: save the previous CTX_ATTRIBUTE (if any)
-				// and continue to create a new one for this deployment
-				savedCtx = request.getAttribute(CTX_ATTRIBUTE);
-			case REQUEST: // create, store in CTX_ATTRIBUTE, activate
+				// dispatch from another deployment: continue to create a Ctx for this deployment
+			case REQUEST:  // create a new Ctx, store it in the attribute, activate it
 				ctxToActivate = new ServletRequestContext(request, ctxTracker);
-				request.setAttribute(CTX_ATTRIBUTE, ctxToActivate);
+				getStoredCtxsMapFromAttribute(request).put(ctxTracker, ctxToActivate);
 				break;
-			default:  // ASYNC/ERROR: reactivate from CTX_ATTRIBUTE
-				ctxToActivate = (ServletRequestContext) request.getAttribute(CTX_ATTRIBUTE);
+			default:  // ASYNC/ERROR: reactivate the Ctx stored in the attribute
+				ctxToActivate = getStoredCtxsMapFromAttribute(request).get(ctxTracker);
 				if (ctxToActivate == null) {  // misconfigured app
 					throw new ServletException(formatCtxNotFoundMessage(request));
 				}
 		}
-		if (ctxToActivate == null) {  // already running within the Context of the request
+		if (ctxToActivate == null) {  // already running within the Ctx of this request
 			chain.doFilter(request, response);
-		} else {  // (re)-activate the Context of the request
-			try {
-				ctxToActivate.executeWithinSelf((ThrowingTask<IOException, ServletException>)
-						() -> chain.doFilter(request, response));
-			} finally {
-				if (savedCtx != null) request.setAttribute(CTX_ATTRIBUTE, savedCtx);
-			}
+		} else {  // (re)-activate the Ctx of this request
+			ctxToActivate.executeWithinSelf((ThrowingTask<IOException, ServletException>)
+					() -> chain.doFilter(request, response));
 		}
 	}
 
-	static final String CTX_ATTRIBUTE = ServletRequestContext.class.getName();
+	/**
+	 * Obtains from {@code request}'s {@link HttpServletRequest#getAttribute(String) attribute} a
+	 * {@code Map} of {@link ServletRequestContext}s stored by each app deployment that processed
+	 * {@code request}.
+	 * If the attribute is empty, initializes it with a new {@code Map}.
+	 * <p>
+	 * App deployments identify their {@link ServletRequestContext}s using identities of their
+	 * respective {@link #ctxTracker}s.</p>
+	 */
+	Map<ContextTracker<ContainerCallContext>, ServletRequestContext> getStoredCtxsMapFromAttribute(
+		HttpServletRequest request
+	) {
+		@SuppressWarnings("unchecked")
+		var storedCtxs = (Map<ContextTracker<ContainerCallContext>, ServletRequestContext>)
+				request.getAttribute(ServletRequestContext.class.getName());
+		if (storedCtxs == null) {
+			storedCtxs = new HashMap<>(3);
+			request.setAttribute(ServletRequestContext.class.getName(), storedCtxs);
+		}
+		return storedCtxs;
+	}
 
 	String formatCtxNotFoundMessage(HttpServletRequest request) {
 		final var dispatcherType = request.getDispatcherType();

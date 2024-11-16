@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
 
@@ -37,6 +36,7 @@ public abstract class TestServlet extends HttpServlet {
 	 * {@link #sessionScopedProvider} are the same as the ones stored in
 	 * {@link Service#CONTAINER_CALL request} {@link Service#HTTP_SESSION attributes} by the
 	 * {@code Servlet} that initially received {@code request}.
+	 * @throws ServletException if the verification fails.
 	 */
 	void verifyScoping(HttpServletRequest request, String threadDesignation)
 			throws ServletException {
@@ -54,45 +54,65 @@ public abstract class TestServlet extends HttpServlet {
 
 
 	/**
-	 * Calls {@link #verifyScoping(HttpServletRequest, String)} and sends the final reply as
-	 * {@link Properties}.
-	 * The following {@link Properties#setProperty(String, String) properties will be set}:
+	 * Sends {@link Properties} containing scoped {@code Object} {@link Object#hashCode() hashes}.
+	 * The following properties {@link Properties#setProperty(String, String) are set}:
 	 * <ul>
-	 *   <li>{@link #REPLYING_SERVLET} - {@link Class#getSimpleName() simple name of the Class}
-	 *       of the {@code Servlet} that actually produced the reply</li>
-	 *   <li>{@link Service#CONTAINER_CALL} - hash of the
+	 *   <li>{@code prefix} + {@link #REPLYING_SERVLET} -> {@link Class#getSimpleName() simple name
+	 *       of the Class} of the {@code Servlet} that actually produced the reply</li>
+	 *   <li>{@code prefix} + {@link Service#CONTAINER_CALL} -> hash of the
 	 *       {@link ServletWebsocketModule#containerCallScope
 	 *       containerCallScope}d instance of {@link Service}</li>
-	 *   <li>{@link Service#HTTP_SESSION} - hash of the
+	 *   <li>{@code prefix} + {@link Service#HTTP_SESSION} -> hash of the
 	 *       {@link ServletWebsocketModule#httpSessionScope
 	 *       httpSessionScope}d instance of {@link Service}</li>
 	 * </ul>
 	 */
-	void sendReply(HttpServletResponse response) throws IOException {
+	void sendScopedObjectHashes(
+		HttpServletRequest request,
+		HttpServletResponse response,
+		String prefix
+	) throws IOException {
 		final var responseStream = response.getOutputStream();
-		final var responseContent = new Properties(5);
-		responseContent.setProperty(REPLYING_SERVLET, getClass().getSimpleName());
+		final var responseContent = new Properties(3);
 		responseContent.setProperty(
-			Service.CONTAINER_CALL,
-			String.valueOf(requestScopedProvider.get().hashCode())
+			prefix + REPLYING_SERVLET,
+			getClass().getSimpleName()
 		);
 		responseContent.setProperty(
-			Service.HTTP_SESSION,
-			String.valueOf(sessionScopedProvider.get().hashCode())
+			prefix + Service.CONTAINER_CALL,
+			String.valueOf(request.getAttribute(Service.CONTAINER_CALL).hashCode())
+		);
+		responseContent.setProperty(
+			prefix + Service.HTTP_SESSION,
+			String.valueOf(request.getAttribute(Service.HTTP_SESSION).hashCode())
 		);
 		responseContent.store(responseStream, null);
 	}
 
-
-
-	void verifyScopingAndSendReply(HttpServletRequest request, HttpServletResponse response)
-			throws IOException, ServletException {
-		verifyScoping(request, "reply-sending container Thread");
-		sendReply(response);
+	/**
+	 * Calls {@link #sendScopedObjectHashes(HttpServletRequest, HttpServletResponse, String)
+	 * sendScopedObjectHashes(request, response, "")}.
+	 */
+	void sendScopedObjectHashes(HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		sendScopedObjectHashes(request, response, "");
 	}
 
 
 
+	/**
+	 * Calls {@link #verifyScoping(HttpServletRequest, String)} and
+	 * {@link #sendScopedObjectHashes(HttpServletRequest, HttpServletResponse)}.
+	 */
+	void verifyScopingAndSendReply(HttpServletRequest request, HttpServletResponse response)
+			throws IOException, ServletException {
+		verifyScoping(request, "reply-sending container Thread");
+		sendScopedObjectHashes(request, response);
+	}
+
+
+
+	/** Logs any {@code Exception} thrown during the processing. */
 	@Override
 	protected void service(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
