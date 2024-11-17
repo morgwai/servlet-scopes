@@ -32,7 +32,7 @@ public class ForwardingServlet extends TestServlet {
 		// store scoped objects for verifyScoping(...)
 		request.setAttribute(Service.CONTAINER_CALL, requestScopedProvider.get());
 		request.setAttribute(Service.HTTP_SESSION, sessionScopedProvider.get());
-		verifyScoping(request, INITIAL_THREAD_DESIGNATION);
+		verifyScoping(INITIAL_THREAD_DESIGNATION, request);
 		request.getRequestDispatcher("/" + AsyncServlet.class.getSimpleName())
 				.forward(request, response);
 	}

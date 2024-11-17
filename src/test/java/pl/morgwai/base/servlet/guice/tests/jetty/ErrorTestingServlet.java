@@ -29,7 +29,7 @@ public class ErrorTestingServlet extends TestServlet {
 				request.setAttribute(APP_DISPATCHED_ATTRIBUTE, true);
 				request.setAttribute(Service.CONTAINER_CALL, requestScopedProvider.get());
 				request.setAttribute(Service.HTTP_SESSION, sessionScopedProvider.get());
-				verifyScoping(request, INITIAL_THREAD_DESIGNATION);
+				verifyScoping(INITIAL_THREAD_DESIGNATION, request);
 				request.getRequestDispatcher("/nonExistent").forward(request, response);
 				return;
 			case ERROR:

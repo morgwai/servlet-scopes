@@ -62,14 +62,14 @@ public class AsyncServlet extends TestServlet {
 			return;
 		}
 
-		verifyScoping(request, INITIAL_THREAD_DESIGNATION);
+		verifyScoping(INITIAL_THREAD_DESIGNATION, request);
 		final var asyncCtx = MODE_WRAPPED.equals(request.getParameter(MODE_PARAM))
 				? request.startAsync(request, response)
 				: request.startAsync();
 		asyncCtx.setTimeout(1800L * 1000L);
 		executor.execute(() -> {
 			try {
-				verifyScoping(request, "the executor thread");
+				verifyScoping("the executor thread", request);
 				final var targetPath = request.getParameter(TARGET_PATH_PARAM);
 				if (targetPath != null) {
 					asyncCtx.dispatch(targetPath);

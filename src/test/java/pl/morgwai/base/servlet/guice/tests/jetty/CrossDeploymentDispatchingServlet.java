@@ -19,7 +19,7 @@ import pl.morgwai.base.servlet.guice.tests.servercommon.Service;
  * the second deployment in case of
  * {@link RequestDispatcher#forward(ServletRequest, ServletResponse) forward} or back in the initial
  * deployment in case of {@link RequestDispatcher#include(ServletRequest, ServletResponse) include}.
- * During each stage {@link #verifyScoping(HttpServletRequest, String) verifies scoping} and
+ * During each stage {@link #verifyScoping(String, HttpServletRequest) verifies scoping} and
  * {@link #sendScopedObjectHashes(HttpServletRequest, HttpServletResponse, String)
  * sends scoped Object hashes} as {@link java.util.Properties} with names prefixed with one of
  * {@link #INITIAL_DEPLOYMENT_PREFIX}, {@link #SECOND_DEPLOYMENT_PREFIX} or
@@ -94,7 +94,7 @@ public class CrossDeploymentDispatchingServlet extends TestServlet {
 				return;
 			}
 			case ASYNC: {
-				verifyScoping(request, "async container Thread");
+				verifyScoping("async container Thread", request);
 				sendScopedObjectHashes(request, response, ASYNC_PREFIX);
 				return;
 			}
@@ -112,6 +112,6 @@ public class CrossDeploymentDispatchingServlet extends TestServlet {
 	) throws ServletException {
 		request.setAttribute(Service.CONTAINER_CALL, requestScopedInstance);
 		request.setAttribute(Service.HTTP_SESSION, sessionScopedInstance);
-		verifyScoping(request, threadDesignation);
+		verifyScoping(threadDesignation, request);
 	}
 }

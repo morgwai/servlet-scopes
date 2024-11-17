@@ -38,7 +38,7 @@ public abstract class TestServlet extends HttpServlet {
 	 * {@code Servlet} that initially received {@code request}.
 	 * @throws ServletException if the verification fails.
 	 */
-	void verifyScoping(HttpServletRequest request, String threadDesignation)
+	void verifyScoping(String threadDesignation, HttpServletRequest request)
 			throws ServletException {
 		if (
 			request.getAttribute(Service.CONTAINER_CALL) != requestScopedProvider.get()
@@ -101,12 +101,12 @@ public abstract class TestServlet extends HttpServlet {
 
 
 	/**
-	 * Calls {@link #verifyScoping(HttpServletRequest, String)} and
+	 * Calls {@link #verifyScoping(String, HttpServletRequest)} and
 	 * {@link #sendScopedObjectHashes(HttpServletRequest, HttpServletResponse)}.
 	 */
 	void verifyScopingAndSendReply(HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
-		verifyScoping(request, "reply-sending container Thread");
+		verifyScoping("reply-sending container Thread", request);
 		sendScopedObjectHashes(request, response);
 	}
 
