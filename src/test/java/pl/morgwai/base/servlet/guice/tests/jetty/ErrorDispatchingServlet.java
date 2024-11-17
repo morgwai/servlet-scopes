@@ -11,11 +11,12 @@ import pl.morgwai.base.servlet.guice.tests.servercommon.Service;
 
 
 /** Tests handling of dispatching to non-existent path. */
-public class ErrorTestingServlet extends TestServlet {
+public class ErrorDispatchingServlet extends TestServlet {
 
 
 
 	public static final String ERROR_HANDLER_PATH = "/error";
+	public static final String NON_EXISTENT_PATH = "/nonExistent";
 	static final String APP_DISPATCHED_ATTRIBUTE = "appDispatched";
 
 
@@ -30,7 +31,7 @@ public class ErrorTestingServlet extends TestServlet {
 				request.setAttribute(Service.CONTAINER_CALL, requestScopedProvider.get());
 				request.setAttribute(Service.HTTP_SESSION, sessionScopedProvider.get());
 				verifyScoping(INITIAL_THREAD_DESIGNATION, request);
-				request.getRequestDispatcher("/nonExistent").forward(request, response);
+				request.getRequestDispatcher(NON_EXISTENT_PATH).forward(request, response);
 				return;
 			case ERROR:
 				if (request.getAttribute(APP_DISPATCHED_ATTRIBUTE) == null) {  // from user miss

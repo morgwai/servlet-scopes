@@ -77,10 +77,10 @@ public class ServletContextListener extends PingingServletContextListener {
 			"/" + CrossDeploymentDispatchingServlet.class.getSimpleName()
 		);
 		addServlet(
-			ErrorTestingServlet.class.getSimpleName(),
-			ErrorTestingServlet.class,
-			"/" + ErrorTestingServlet.class.getSimpleName(),
-			ErrorTestingServlet.ERROR_HANDLER_PATH
+			ErrorDispatchingServlet.class.getSimpleName(),
+			ErrorDispatchingServlet.class,
+			"/" + ErrorDispatchingServlet.class.getSimpleName(),
+			ErrorDispatchingServlet.ERROR_HANDLER_PATH
 		);
 
 		addEnsureSessionFilter(Server.WEBSOCKET_PATH + '*');

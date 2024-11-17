@@ -151,19 +151,19 @@ public class JettyTests extends MultiAppWebsocketTests {
 		final var reply = sendServletRequest(request, 404);
 		assertEquals(
 			"processing of the second request should be dispatched to the correct servlet",
-			ErrorTestingServlet.class.getSimpleName(),
+			ErrorDispatchingServlet.class.getSimpleName(),
 			reply.getProperty(TestServlet.REPLYING_SERVLET)
 		);
 	}
 
 	@Test
 	public void testErrorDispatchingFromUserMiss() throws Exception {
-		testErrorDispatching("/nonExistent");
+		testErrorDispatching(ErrorDispatchingServlet.NON_EXISTENT_PATH);
 	}
 
 	@Test
 	public void testErrorDispatchingFromAppServletMiss() throws Exception {
-		testErrorDispatching("/" + ErrorTestingServlet.class.getSimpleName());
+		testErrorDispatching("/" + ErrorDispatchingServlet.class.getSimpleName());
 	}
 
 
