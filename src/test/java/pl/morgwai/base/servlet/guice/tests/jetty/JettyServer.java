@@ -8,7 +8,7 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.ErrorPageErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.component.LifeCycle;
-import org.eclipse.jetty.websocket.javax.server.config.JavaxWebSocketServletContainerInitializer;
+import org.eclipse.jetty.websocket.jakarta.server.config.JakartaWebSocketServletContainerInitializer;
 import pl.morgwai.base.servlet.guice.tests.servercommon.*;
 
 
@@ -34,7 +34,7 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 		final var errorMapper = new ErrorPageErrorHandler();
 		errorMapper.addErrorPage(404, ErrorDispatchingServlet.ERROR_HANDLER_PATH);
 		testAppHandler.setErrorHandler(errorMapper);
-		JavaxWebSocketServletContainerInitializer.configure(
+		JakartaWebSocketServletContainerInitializer.configure(
 			testAppHandler,
 			(servletContainer, websocketContainer) -> {
 				websocketContainer.setDefaultMaxTextMessageBufferSize(1023);
@@ -57,7 +57,7 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 		final var secondErrorMapper = new ErrorPageErrorHandler();
 		secondErrorMapper.addErrorPage(404, ErrorDispatchingServlet.ERROR_HANDLER_PATH);
 		secondAppHandler.setErrorHandler(secondErrorMapper);
-		JavaxWebSocketServletContainerInitializer.configure(
+		JakartaWebSocketServletContainerInitializer.configure(
 			secondAppHandler,
 			(servletContainer, websocketContainer) -> {
 				websocketContainer.setDefaultMaxTextMessageBufferSize(1023);

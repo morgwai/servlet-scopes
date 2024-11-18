@@ -7,9 +7,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import javax.servlet.http.HttpSession;
-import javax.websocket.*;
-import javax.websocket.server.ServerEndpoint;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.*;
+import jakarta.websocket.server.ServerEndpoint;
 
 import com.google.inject.*;
 import com.google.inject.name.Named;
@@ -79,9 +79,9 @@ public class GuiceEndpointConfigurator {
 			Key.get(Boolean.class, named(REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_NAME));
 	/**
 	 * Name of the
-	 * {@link javax.servlet.ServletContext#getInitParameter(String) deployment init-param} that may
+	 * {@link jakarta.servlet.ServletContext#getInitParameter(String) deployment init-param} that may
 	 * contain a value for {@link #requireTopLevelMethodAnnotations}.
-	 * @see GuiceServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
+	 * @see GuiceServletContextListener#contextInitialized(jakarta.servlet.ServletContextEvent)
 	 */
 	public static final String REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_PARAM =
 			GuiceEndpointConfigurator.class.getName() + REQUIRE_TOP_LEVEL_METHOD_ANNOTATIONS_NAME;
@@ -129,7 +129,7 @@ public class GuiceEndpointConfigurator {
 	 *     be {@link InjectionContext#InjectionContext(InjectionContext) nested} within such
 	 *     enclosing {@link WebsocketConnectionContext}.
 	 * @param nestHttpSessionCtx if this method was called within the {@link HttpSessionContext} of
-	 *     some {@link javax.servlet.Servlet} or some other enclosing {@code Endpoint}, this param
+	 *     some {@link jakarta.servlet.Servlet} or some other enclosing {@code Endpoint}, this param
 	 *     controls whether the {@link HttpSessionContext} of {@code endpointToWrap} should be
 	 *     {@link InjectionContext#InjectionContext(InjectionContext) nested} within such enclosing
 	 *     {@link HttpSessionContext}.
@@ -184,9 +184,9 @@ public class GuiceEndpointConfigurator {
 	 *     by {@link GuiceServerEndpointConfigurator}s it must be
 	 *     {@link GuiceServerEndpointConfigurator#newGuiceEndpointConfigurator(Injector) overridden}
 	 *     to return an instance {@link
-	 *     javax.websocket.server.ServerEndpointConfig.Configurator#getEndpointInstance(Class)
+	 *     jakarta.websocket.server.ServerEndpointConfig.Configurator#getEndpointInstance(Class)
 	 *     obtained} from container's default
-	 *     {@link javax.websocket.server.ServerEndpointConfig.Configurator}.
+	 *     {@link jakarta.websocket.server.ServerEndpointConfig.Configurator}.
 	 */
 	protected  <ProxyT> ProxyT createEndpointProxyInstance(Class<ProxyT> proxyClass)
 			throws InstantiationException, InvocationTargetException {
@@ -203,7 +203,7 @@ public class GuiceEndpointConfigurator {
 	 * Returns a dynamically created class of a context-aware proxy for {@code endpointClass}.
 	 * The proxy ensures that {@code endpoint} lifecycle methods are executed within
 	 * {@link WebsocketEventContext}, {@link WebsocketConnectionContext} and if an
-	 * {@link javax.servlet.http.HttpSession} is present, then also {@link HttpSessionContext}.
+	 * {@link jakarta.servlet.http.HttpSession} is present, then also {@link HttpSessionContext}.
 	 * <p>
 	 * This method is usually called by {@link #getProxyForEndpoint(Object, boolean, boolean)}.
 	 * Nevertheless, once built, a proxy class is cached for subsequent requests for the same

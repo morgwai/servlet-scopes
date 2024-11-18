@@ -3,8 +3,8 @@ package pl.morgwai.base.servlet.guice.scopes;
 
 import java.lang.annotation.Annotation;
 import java.util.HashSet;
-import javax.websocket.*;
-import javax.websocket.server.ServerEndpoint;
+import jakarta.websocket.*;
+import jakarta.websocket.server.ServerEndpoint;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

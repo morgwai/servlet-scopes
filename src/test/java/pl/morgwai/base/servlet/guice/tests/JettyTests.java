@@ -8,7 +8,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.*;
 import java.util.logging.Level;
-import javax.servlet.DispatcherType;
+import jakarta.servlet.DispatcherType;
 import org.junit.Before;
 import org.junit.Test;
 
