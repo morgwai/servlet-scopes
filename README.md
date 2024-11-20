@@ -276,6 +276,8 @@ public class MyWebsocketServer {
 ### Dependency management
 Dependencies of this jar on [guice](https://search.maven.org/artifact/com.google.inject/guice) is declared as optional, so that apps can use any version with compatible API.
 
+Standalone websocket apps must include `servlet-api` in their dependencies ([javax](https://central.sonatype.com/artifact/javax.servlet/javax.servlet-api) or [jakarta](https://central.sonatype.com/artifact/jakarta.servlet/jakarta.servlet-api) respectively).
+
 There are 2 builds available:
 - build with `shadedbytebuddy` classifier includes relocated dependency on [byte-buddy](https://search.maven.org/artifact/net.bytebuddy/byte-buddy). Most apps should use this build. To do so, add `<classifier>shadedbytebuddy</classifier>` to your dependency declaration.
 - "default" build does not include any shaded dependencies and dependency on `byte-buddy` is marked as `optional`. This is useful for apps that also depend on `byte-buddy` and need to save space (`byte-buddy` is over 3MB in size). Note that the version provided by the app needs to be compatible with the version that `servlet-scopes` depends on (in regard to features used by `servlet-scopes`). If this is not the case, then `shadedbytebuddy` build should be used.
