@@ -215,8 +215,7 @@ public class WebsocketConnectionProxy implements Session {
 		final MessageHandler wrappedHandler;
 
 		@Override public boolean equals(Object other) {
-			if (other == null) return false;
-			if ( !MessageHandlerDecorator.class.isAssignableFrom(other.getClass())) return false;
+			if ( !(other instanceof MessageHandlerDecorator)) return false;
 			return wrappedHandler.equals(((MessageHandlerDecorator) other).wrappedHandler);
 		}
 
@@ -267,17 +266,20 @@ public class WebsocketConnectionProxy implements Session {
 
 
 
+	/**
+	 * {@code WebsocketConnectionProxies} are equal iff they wrap the same connection, regardless
+	 * if they are of different subclasses.
+	 */
 	@Override
-	public boolean equals(Object other) {
-		if (other == null) return false;
-		if ( !WebsocketConnectionProxy.class.isAssignableFrom(other.getClass())) return false;
+	public final boolean equals(Object other) {
+		if ( !(other instanceof WebsocketConnectionProxy)) return false;
 		return wrappedConnection.equals(((WebsocketConnectionProxy) other).wrappedConnection);
 	}
 
 
 
 	@Override
-	public int hashCode() {
+	public final int hashCode() {
 		return wrappedConnection.hashCode();
 	}
 
