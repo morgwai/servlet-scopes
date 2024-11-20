@@ -33,7 +33,7 @@ public class WebsocketConnectionProxy implements Session {
 	public interface Factory {
 
 		WebsocketConnectionProxy newProxy(
-			Session connection,
+			Session connectionToWrap,
 			ContextTracker<ContainerCallContext> ctxTracker
 		);
 
@@ -44,7 +44,8 @@ public class WebsocketConnectionProxy implements Session {
 
 
 	static Map<Class<? extends Session>, Factory> proxyFactories =
-			ServiceLoader.load(Factory.class).stream()
+			ServiceLoader.load(Factory.class)
+				.stream()
 				.collect(toUnmodifiableMap(
 					(provider) -> provider.get().getSupportedConnectionType(),
 					ServiceLoader.Provider::get
@@ -63,53 +64,48 @@ public class WebsocketConnectionProxy implements Session {
 
 
 	/**
-	 * Creates a new {@code Proxy} for {@code connection} using {@link ServiceLoader SPI}-provided
-	 * factory if available.
+	 * Creates a new {@code Proxy} for {@code connectionToWrap} using
+	 * {@link ServiceLoader SPI}-provided {@link Factory} if available.
 	 * If there's no factory specific for the given {@link Session} implementation, then
 	 * {@link #WebsocketConnectionProxy(Session, ContextTracker)} is used.
 	 */
 	static WebsocketConnectionProxy newProxy(
-		Session connection,
+		Session connectionToWrap,
 		ContextTracker<ContainerCallContext> ctxTracker
 	) {
-		final var proxyFactory = proxyFactories.get(connection.getClass());
-		if (proxyFactory != null) return proxyFactory.newProxy(connection, ctxTracker);
-		return new WebsocketConnectionProxy(connection, ctxTracker);
+		final var proxyFactory = proxyFactories.get(connectionToWrap.getClass());
+		if (proxyFactory != null) return proxyFactory.newProxy(connectionToWrap, ctxTracker);
+		return new WebsocketConnectionProxy(connectionToWrap, ctxTracker);
 	}
 
 
 
-	/** Constructs a new generic {@code Proxy} for {@code connection}. */
 	protected WebsocketConnectionProxy(
-		Session connection,
+		Session connectionToWrap,
 		ContextTracker<ContainerCallContext> ctxTracker
 	) {
-		this.wrappedConnection = connection;
-		this.ctxTracker = ctxTracker;
-		this.httpSession = (HttpSession)
-				wrappedConnection.getUserProperties().get(HttpSession.class.getName());
+		this(
+			connectionToWrap,
+			ctxTracker,
+			(HttpSession) connectionToWrap.getUserProperties().get(HttpSession.class.getName())
+		);
 	}
 
 
 
 	/**
-	 * Constructs a new {@code Proxy} for a <i>remote</i> {@code connection}.
-	 * In case of remote {@link Session}s no attempt to retrieve their {@link HttpSession}s is made.
+	 * Both for local connections and for those from other cluster nodes obtained by
+	 * {@link #getOpenSessions()} in which case {@code httpSession} argument is {@code null}.
 	 */
 	private WebsocketConnectionProxy(
-		Session connection,
+		Session connectionToWrap,
 		ContextTracker<ContainerCallContext> ctxTracker,
-		Void remote
+		HttpSession httpSession
 	) {
-		this.wrappedConnection = connection;
+		this.wrappedConnection = connectionToWrap;
 		this.ctxTracker = ctxTracker;
-		this.httpSession = null;
+		this.httpSession = httpSession;
 	}
-
-	/**
-	 * For readability when using {@link #WebsocketConnectionProxy(Session, ContextTracker, Void)}.
-	 */
-	private static final Void REMOTE = null;
 
 
 
@@ -140,7 +136,7 @@ public class WebsocketConnectionProxy implements Session {
 			if (peerConnectionCtx.getConnection() == null) {
 				// peerConnection from another cluster node that supports userProperties clustering
 				peerConnectionCtx.connectionProxy =
-						new WebsocketConnectionProxy(peerConnection, ctxTracker, REMOTE);
+						new WebsocketConnectionProxy(peerConnection, ctxTracker, null);
 			}
 			proxies.add(peerConnectionCtx.getConnection());
 		}
@@ -223,8 +219,8 @@ public class WebsocketConnectionProxy implements Session {
 			return wrappedHandler.hashCode();
 		}
 
-		MessageHandlerDecorator(MessageHandler toWrap) {
-			this.wrappedHandler = toWrap;
+		MessageHandlerDecorator(MessageHandler handlerToWrap) {
+			this.wrappedHandler = handlerToWrap;
 		}
 	}
 
@@ -240,9 +236,9 @@ public class WebsocketConnectionProxy implements Session {
 					() -> wrappedHandler.onMessage(message));
 		}
 
-		WholeMessageHandlerDecorator(MessageHandler.Whole<T> toWrap) {
-			super(toWrap);
-			this.wrappedHandler = toWrap;
+		WholeMessageHandlerDecorator(MessageHandler.Whole<T> handlerToWrap) {
+			super(handlerToWrap);
+			this.wrappedHandler = handlerToWrap;
 		}
 	}
 
@@ -258,9 +254,9 @@ public class WebsocketConnectionProxy implements Session {
 					() -> wrappedHandler.onMessage(message, last));
 		}
 
-		PartialMessageHandlerDecorator(MessageHandler.Partial<T> toWrap) {
-			super(toWrap);
-			this.wrappedHandler = toWrap;
+		PartialMessageHandlerDecorator(MessageHandler.Partial<T> handlerToWrap) {
+			super(handlerToWrap);
+			this.wrappedHandler = handlerToWrap;
 		}
 	}
 
