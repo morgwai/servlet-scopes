@@ -65,7 +65,7 @@ public abstract class MultiAppWebsocketTests extends WebsocketIntegrationTests {
 	}
 
 	@Test
-	public void testAnnotatedExtendingEndpointOnSecondApp() throws Exception {
+	public void testAnnotatedExtendingProgrammaticEndpointOnSecondApp() throws Exception {
 		test2SessionsWithServerEndpoint(
 			secondAppWebsocketUrl + AnnotatedExtendingProgrammaticEndpoint.PATH,
 			true
