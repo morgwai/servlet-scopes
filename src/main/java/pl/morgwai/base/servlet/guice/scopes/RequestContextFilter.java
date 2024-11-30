@@ -27,6 +27,12 @@ import pl.morgwai.base.guice.scopes.ContextTracker;
  * chain for all URL patterns and for {@link java.util.EnumSet#allOf(Class) all DispatcherTypes}:
  * {@link FilterRegistration#addMappingForUrlPatterns(java.util.EnumSet, boolean, String...)
  * addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), false, "/*")}.</p>
+ * <p>
+ * Note: if an {@link HttpServletRequest} is
+ * "{@link ServletContext#getContext(String) cross-deployment}
+ * {@link ServletContext#getRequestDispatcher(String) dispatched}" more than once to some
+ * given target {@link ServletContext deployment}, it will have a separate
+ * {@link ServletRequestContext} each time in that target deployment.</p>
  */
 public class RequestContextFilter implements Filter {
 
@@ -61,8 +67,8 @@ public class RequestContextFilter implements Filter {
 		switch (request.getDispatcherType()) {
 			case INCLUDE:
 			case FORWARD:
-				if (ctxTracker.getCurrentContext() != null) {
-					// dispatch from the same deployment, sent from within the Ctx, so it's active
+				if (ctxTracker.getCurrentContext() != null) {  // dispatch from the same deployment
+					// dispatching is performed from within the Ctx, so it's still active
 					ctxToActivate = null;
 					break;
 				}
@@ -92,8 +98,7 @@ public class RequestContextFilter implements Filter {
 	 * {@code request}.
 	 * If the attribute is empty, initializes it with a new {@code Map}.
 	 * <p>
-	 * App deployments identify their {@link ServletRequestContext}s using identities of their
-	 * respective {@link #ctxTracker}s.</p>
+	 * {@link ServletRequestContext}s are indexed using their respective {@link #ctxTracker}s.</p>
 	 */
 	Map<ContextTracker<ContainerCallContext>, ServletRequestContext> getStoredCtxsMapFromAttribute(
 		HttpServletRequest request
