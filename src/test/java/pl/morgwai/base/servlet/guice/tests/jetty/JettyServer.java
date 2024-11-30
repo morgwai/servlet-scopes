@@ -27,15 +27,15 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 	public JettyServer(int port, String name) throws Exception {
 		super(port);
 
-		final var testAppHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
-		testAppHandler.setDisplayName(name + "TestApp");
-		testAppHandler.setContextPath(Server.TEST_APP_PATH);
-		testAppHandler.addEventListener(new ServletContextListener());
+		final var testDeployment = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		testDeployment.setDisplayName(name + "TestApp");
+		testDeployment.setContextPath(Server.TEST_APP_PATH);
+		testDeployment.addEventListener(new ServletContextListener());
 		final var errorMapper = new ErrorPageErrorHandler();
 		errorMapper.addErrorPage(404, ErrorDispatchingServlet.ERROR_HANDLER_PATH);
-		testAppHandler.setErrorHandler(errorMapper);
+		testDeployment.setErrorHandler(errorMapper);
 		JavaxWebSocketServletContainerInitializer.configure(
-			testAppHandler,
+			testDeployment,
 			(servletContainer, websocketContainer) -> {
 				websocketContainer.setDefaultMaxTextMessageBufferSize(1023);
 				websocketContainer.addEndpoint(AnnotatedEndpoint.class);
@@ -50,15 +50,15 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 			}
 		);
 
-		final var secondAppHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
-		secondAppHandler.setDisplayName(name + "SecondApp");
-		secondAppHandler.setContextPath(MultiAppServer.SECOND_APP_PATH);
-		secondAppHandler.addEventListener(new ManualServletContextListener());
+		final var secondDeployment = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		secondDeployment.setDisplayName(name + "SecondApp");
+		secondDeployment.setContextPath(MultiAppServer.SECOND_APP_PATH);
+		secondDeployment.addEventListener(new ManualServletContextListener());
 		final var secondErrorMapper = new ErrorPageErrorHandler();
 		secondErrorMapper.addErrorPage(404, ErrorDispatchingServlet.ERROR_HANDLER_PATH);
-		secondAppHandler.setErrorHandler(secondErrorMapper);
+		secondDeployment.setErrorHandler(secondErrorMapper);
 		JavaxWebSocketServletContainerInitializer.configure(
-			secondAppHandler,
+			secondDeployment,
 			(servletContainer, websocketContainer) -> {
 				websocketContainer.setDefaultMaxTextMessageBufferSize(1023);
 				websocketContainer.addEndpoint(AnnotatedEndpoint.class);
@@ -70,22 +70,23 @@ public class JettyServer extends org.eclipse.jetty.server.Server
 			}
 		);
 
-		final var deployments = new ContextHandlerCollection();
-		deployments.addHandler(testAppHandler);
-		deployments.addHandler(secondAppHandler);
-		setHandler(deployments);
+		final var deploymentHandlers = new ContextHandlerCollection();
+		deploymentHandlers.addHandler(testDeployment);
+		deploymentHandlers.addHandler(secondDeployment);
+		setHandler(deploymentHandlers);
 
 		addEventListener(new LifeCycle.Listener() {
 			@Override public void lifeCycleStopped(LifeCycle event) {
 				destroy();
 			}
-		});		start();
+		});
+		start();
 		try {
 			this.port = Arrays.stream(getConnectors())
 				.filter(NetworkConnector.class::isInstance)
-				.findFirst()
 				.map(NetworkConnector.class::cast)
 				.map(NetworkConnector::getLocalPort)
+				.findFirst()
 				.orElseThrow();
 		} catch (Throwable e) {
 			stop();
