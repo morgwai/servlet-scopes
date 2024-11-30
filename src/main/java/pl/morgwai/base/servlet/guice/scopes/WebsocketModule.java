@@ -150,14 +150,18 @@ public class WebsocketModule extends ScopeModule {
 
 	static {
 		try {
-			NO_NESTING = WebsocketModule.class.getDeclaredField("NO_NESTING")
-					.getAnnotation(GuiceClientEndpoint.class);
-			NEST_CONNECTION_CTX = WebsocketModule.class.getDeclaredField("NEST_CONNECTION_CTX")
-					.getAnnotation(GuiceClientEndpoint.class);
-			NEST_HTTP_SESSION_CTX = WebsocketModule.class.getDeclaredField("NEST_HTTP_SESSION_CTX")
-					.getAnnotation(GuiceClientEndpoint.class);
-			NEST_BOTH = WebsocketModule.class.getDeclaredField("NEST_BOTH")
-					.getAnnotation(GuiceClientEndpoint.class);
+			NO_NESTING = WebsocketModule.class
+				.getDeclaredField("NO_NESTING")
+				.getAnnotation(GuiceClientEndpoint.class);
+			NEST_CONNECTION_CTX = WebsocketModule.class
+				.getDeclaredField("NEST_CONNECTION_CTX")
+				.getAnnotation(GuiceClientEndpoint.class);
+			NEST_HTTP_SESSION_CTX = WebsocketModule.class
+				.getDeclaredField("NEST_HTTP_SESSION_CTX")
+				.getAnnotation(GuiceClientEndpoint.class);
+			NEST_BOTH = WebsocketModule.class
+				.getDeclaredField("NEST_BOTH")
+				.getAnnotation(GuiceClientEndpoint.class);
 		} catch (NoSuchFieldException neverHappens) {
 			throw new AssertionError("unreachable code", neverHappens);
 		}
