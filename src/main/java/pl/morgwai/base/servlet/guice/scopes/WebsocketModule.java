@@ -59,7 +59,7 @@ public class WebsocketModule extends ScopeModule {
 	public final Scope websocketConnectionScope = newInducedContextScope(
 		"WebsocketModule.websocketConnectionScope",
 		WebsocketConnectionContext.class,
-		containerCallScope.tracker,
+		containerCallScope,
 		WebsocketModule::getWebsocketConnectionContext
 	);
 
@@ -218,9 +218,9 @@ public class WebsocketModule extends ScopeModule {
 	> InducedContextScope<BaseContextT, InducedContextT> packageExposedNewInducedContextScope(
 		String name,
 		Class<InducedContextT> inducedCtxClass,
-		ContextTracker<BaseContextT> baseCtxTracker,
+		ContextScope<BaseContextT> baseCtxScope,
 		Function<BaseContextT, InducedContextT> inducedCtxRetriever
 	) {
-		return newInducedContextScope(name, inducedCtxClass, baseCtxTracker, inducedCtxRetriever);
+		return newInducedContextScope(name, inducedCtxClass, baseCtxScope, inducedCtxRetriever);
 	}
 }

@@ -79,7 +79,7 @@ public class ServletWebsocketModule implements Module {
 		httpSessionScope = websocketModule.packageExposedNewInducedContextScope(
 			"ServletWebsocketModule.httpSessionScope",
 			HttpSessionContext.class,
-			containerCallScope.tracker,
+			containerCallScope,
 			ContainerCallContext::getHttpSessionContext
 		);
 	}
