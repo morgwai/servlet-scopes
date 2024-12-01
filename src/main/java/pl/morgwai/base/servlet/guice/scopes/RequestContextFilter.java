@@ -100,9 +100,10 @@ public class RequestContextFilter implements Filter {
 	 * <p>
 	 * {@link ServletRequestContext}s are indexed using their respective {@link #ctxTracker}s.</p>
 	 */
-	Map<ContextTracker<ContainerCallContext>, ServletRequestContext> getStoredCtxsMapFromAttribute(
-		HttpServletRequest request
-	) {
+	private Map<
+		ContextTracker<ContainerCallContext>,
+		ServletRequestContext
+	> getStoredCtxsMapFromAttribute(HttpServletRequest request) {
 		@SuppressWarnings("unchecked")
 		var storedCtxs = (Map<ContextTracker<ContainerCallContext>, ServletRequestContext>)
 				request.getAttribute(ServletRequestContext.class.getName());
