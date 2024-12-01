@@ -68,7 +68,7 @@ class EndpointProxyHandler implements InvocationHandler {
 
 	/** Execute intercepted {@code method} within {@code Context}s. */
 	@Override
-	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+	public final Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		if (args != null) {
 			// replace Session arg with connectionProxy, call initialize() on onOpen() interception
 			for (int i = 0; i < args.length; i++) {
