@@ -22,7 +22,7 @@ class EndpointProxyHandler implements InvocationHandler {
 
 	final InvocationHandler wrappedEndpoint;
 	final ContextTracker<ContainerCallContext> ctxTracker;
-	final WebsocketConnectionContext parentCtx;
+	final WebsocketConnectionContext enclosingConnectionCtx;
 
 	HttpSession httpSession;
 
@@ -31,12 +31,12 @@ class EndpointProxyHandler implements InvocationHandler {
 	EndpointProxyHandler(
 		InvocationHandler endpointToWrap,
 		ContextTracker<ContainerCallContext> ctxTracker,
-		WebsocketConnectionContext parentCtx,
+		WebsocketConnectionContext enclosingConnectionCtx,
 		HttpSession httpSession
 	) {
 		this.wrappedEndpoint = endpointToWrap;
 		this.ctxTracker = ctxTracker;
-		this.parentCtx = parentCtx;
+		this.enclosingConnectionCtx = enclosingConnectionCtx;
 		this.httpSession = httpSession;
 	}
 
@@ -61,7 +61,7 @@ class EndpointProxyHandler implements InvocationHandler {
 			userProperties.put(HttpSession.class.getName(), httpSession);
 		}
 		connectionProxy = WebsocketConnectionProxy.newProxy(connection, ctxTracker);
-		connectionCtx = new WebsocketConnectionContext(connectionProxy, parentCtx);
+		connectionCtx = new WebsocketConnectionContext(connectionProxy, enclosingConnectionCtx);
 	}
 
 

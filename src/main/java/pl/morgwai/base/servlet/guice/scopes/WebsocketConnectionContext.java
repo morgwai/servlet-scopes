@@ -38,9 +38,9 @@ public class WebsocketConnectionContext extends InjectionContext {
 
 	WebsocketConnectionContext(
 		WebsocketConnectionProxy connectionProxy,
-		WebsocketConnectionContext parentCtx
+		WebsocketConnectionContext enclosingCtx
 	) {
-		super(parentCtx);
+		super(enclosingCtx);
 		this.connectionProxy = connectionProxy;
 		connectionProxy.setConnectionCtx(this);
 	}
