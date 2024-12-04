@@ -29,10 +29,10 @@ public class PingingClientEndpointProxy extends ClientEndpointProxy {
 		WebsocketPingerService pingerService,
 		Endpoint endpointToWrap,
 		ContextTracker<ContainerCallContext> ctxTracker,
-		WebsocketConnectionContext parentCtx,
+		WebsocketConnectionContext enclosingCtx,
 		HttpSession httpSession
 	) {
-		super(endpointToWrap, ctxTracker, parentCtx, httpSession);
+		super(endpointToWrap, ctxTracker, enclosingCtx, httpSession);
 		this.pingerService = pingerService;
 	}
 

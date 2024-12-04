@@ -146,13 +146,14 @@ public class GuiceEndpointConfigurator {
 		final var proxyClass = getProxyClass(endpointClass);
 		try {
 			final EndpointT endpointProxy = createEndpointProxyInstance(proxyClass);
-			WebsocketConnectionContext parentConnectionCtx = null;
-			HttpSession parentHttpSession = null;
-			final var parentCallCtx = ctxTracker.getCurrentContext();
-			if (parentCallCtx != null) {
-				if (nestHttpSessionCtx) parentHttpSession = parentCallCtx.getHttpSession();
-				if (nestConnectionCtx && parentCallCtx instanceof WebsocketEventContext) {
-					parentConnectionCtx = ((WebsocketEventContext) parentCallCtx).connectionContext;
+			WebsocketConnectionContext enclosingConnectionCtx = null;
+			HttpSession enclosingHttpSession = null;
+			final var enclosingCallCtx = ctxTracker.getCurrentContext();
+			if (enclosingCallCtx != null) {
+				if (nestHttpSessionCtx) enclosingHttpSession = enclosingCallCtx.getHttpSession();
+				if (nestConnectionCtx && enclosingCallCtx instanceof WebsocketEventContext) {
+					enclosingConnectionCtx =
+							((WebsocketEventContext) enclosingCallCtx).connectionContext;
 				}
 			}
 			proxyClass.getDeclaredField(INVOCATION_HANDLER_FIELD_NAME).set(
@@ -160,8 +161,8 @@ public class GuiceEndpointConfigurator {
 				new EndpointProxyHandler(
 					getAdditionalDecorator(endpointToWrap),
 					ctxTracker,
-					parentConnectionCtx,
-					parentHttpSession
+					enclosingConnectionCtx,
+					enclosingHttpSession
 				)
 			);
 			return endpointProxy;
