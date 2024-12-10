@@ -6,10 +6,10 @@ import java.lang.reflect.ParameterizedType;
 import java.net.URI;
 import java.security.Principal;
 import java.util.*;
-import javax.servlet.http.HttpSession;
-import javax.websocket.*;
-import javax.websocket.RemoteEndpoint.Async;
-import javax.websocket.RemoteEndpoint.Basic;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.*;
+import jakarta.websocket.RemoteEndpoint.Async;
+import jakarta.websocket.RemoteEndpoint.Basic;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
 

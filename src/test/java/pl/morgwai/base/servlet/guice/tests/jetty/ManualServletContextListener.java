@@ -2,12 +2,12 @@
 package pl.morgwai.base.servlet.guice.tests.jetty;
 
 import java.util.*;
-import javax.servlet.ServletContextListener;
-import javax.servlet.*;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.websocket.server.ServerContainer;
-import javax.websocket.server.ServerEndpointConfig;
+import jakarta.servlet.ServletContextListener;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.websocket.server.ServerContainer;
+import jakarta.websocket.server.ServerEndpointConfig;
 
 import com.google.inject.Module;
 import com.google.inject.*;

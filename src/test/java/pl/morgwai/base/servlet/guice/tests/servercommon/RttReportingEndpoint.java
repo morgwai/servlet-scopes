@@ -1,8 +1,8 @@
 // Copyright 2023 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.tests.servercommon;
 
-import javax.websocket.EndpointConfig;
-import javax.websocket.Session;
+import jakarta.websocket.EndpointConfig;
+import jakarta.websocket.Session;
 
 import pl.morgwai.base.servlet.guice.utils.RttObserver;
 

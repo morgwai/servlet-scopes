@@ -7,11 +7,11 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpSession;
-import javax.websocket.*;
-import javax.websocket.server.*;
-import javax.websocket.server.ServerEndpointConfig.Configurator;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.*;
+import jakarta.websocket.server.*;
+import jakarta.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.google.inject.*;
 
@@ -119,7 +119,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	 * Removes {@code injector} from the static structures of this class.
 	 * <p>
 	 * This method is called automatically by
-	 * {@link GuiceServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)},
+	 * {@link GuiceServletContextListener#contextDestroyed(jakarta.servlet.ServletContextEvent)},
 	 * apps that don't use it must call this method manually during their shutdowns to prevent
 	 * resource leaks.</p>
 	 */

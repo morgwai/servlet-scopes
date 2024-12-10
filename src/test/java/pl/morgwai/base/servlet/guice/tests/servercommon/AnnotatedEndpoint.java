@@ -1,8 +1,8 @@
 // Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.tests.servercommon;
 
-import javax.websocket.*;
-import javax.websocket.server.ServerEndpoint;
+import jakarta.websocket.*;
+import jakarta.websocket.server.ServerEndpoint;
 
 import com.google.inject.Inject;
 import pl.morgwai.base.servlet.guice.utils.PingingServerEndpointConfigurator;

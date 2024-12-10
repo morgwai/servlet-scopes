@@ -17,7 +17,7 @@
 	<properties>
 		<maven.compiler.release>11</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<guice.version>6.0.0</guice.version><!--jakarta:<guice.version>7.0.0</guice.version>-->
+		<guice.version>7.0.0</guice.version>
 		<servlet.scopes.version>17.1</servlet.scopes.version>
 	</properties>
 
@@ -38,7 +38,7 @@
 		<profile>
 			<id>javax</id>
 			<activation>
-				<activeByDefault>true</activeByDefault><!--jakarta:<activeByDefault>false</activeByDefault>-->
+				<activeByDefault>false</activeByDefault>
 			</activation>
 			<dependencies>
 				<dependency>
@@ -64,7 +64,7 @@
 		<profile>
 			<id>jakarta</id>
 			<activation>
-				<activeByDefault>false</activeByDefault><!--jakarta:<activeByDefault>true</activeByDefault>-->
+				<activeByDefault>true</activeByDefault>
 			</activation>
 			<dependencies>
 				<dependency>

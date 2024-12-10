@@ -4,9 +4,9 @@ package pl.morgwai.base.servlet.guice.scopes;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
-import javax.servlet.*;
-import javax.servlet.ServletRegistration.Dynamic;
-import javax.servlet.descriptor.JspConfigDescriptor;
+import jakarta.servlet.*;
+import jakarta.servlet.ServletRegistration.Dynamic;
+import jakarta.servlet.descriptor.JspConfigDescriptor;
 
 
 
