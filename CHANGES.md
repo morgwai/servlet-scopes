@@ -1,5 +1,8 @@
 # Summaries of visible changes between releases
 
+### 17.2
+- Update [servlet-utils](https://github.com/morgwai/servlet-utils) dependency to 6.3.
+
 ### 17.1
 - Update [servlet-utils](https://github.com/morgwai/servlet-utils) dependency to 6.2.
 - Update [guice-context-scopes](https://github.com/morgwai/guice-context-scopes) dependency to 12.0.
