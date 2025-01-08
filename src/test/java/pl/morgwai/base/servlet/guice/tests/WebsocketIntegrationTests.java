@@ -311,25 +311,31 @@ public abstract class WebsocketIntegrationTests {
 
 
 
+	/**
+	 * Creates a client {@link Session connection} to each of {@code urls}, awaits for
+	 * {@link BroadcastEndpoint#WELCOME_MESSAGE} on each of them, sends a message to the first
+	 * connection and awaits for it to be broadcast back to all created client connections.
+	 * {@code urls} should be pointing to deployed {@link BroadcastEndpoint}s, possibly on various
+	 * cluster nodes.
+	 */
 	protected void testBroadcast(String... urls)
-		throws DeploymentException, IOException, InterruptedException {
+			throws DeploymentException, IOException, InterruptedException {
 		final var broadcastMessage = "broadcast";
 		final var welcomesReceived = new CountDownLatch(urls.length);
-		final var broadcastSent = new CountDownLatch(1);
 		final var broadcastsReceived = new CountDownLatch(urls.length);
 		@SuppressWarnings("unchecked")
-		final List<String>[] messages = (List<String>[]) new List<?>[urls.length];
+		final List<String>[] receivedMessages = (List<String>[]) new List<?>[urls.length];
 		final PluggableClientEndpoint[] clientEndpoints = new PluggableClientEndpoint[urls.length];
 		final Session[] connections =  new Session[urls.length];
 
 		try {
 			for (int clientNumber = 0; clientNumber < urls.length; clientNumber++) {
 				// create clientEndpoints and open connections
-				messages[clientNumber] = new ArrayList<>(2);
+				receivedMessages[clientNumber] = new ArrayList<>(2);
 				final var localClientNumber = clientNumber;
 				clientEndpoints[clientNumber] = new PluggableClientEndpoint(
 					(message) -> {
-						messages[localClientNumber].add(message);
+						receivedMessages[localClientNumber].add(message);
 						if (message.equals(BroadcastEndpoint.WELCOME_MESSAGE)) {
 							welcomesReceived.countDown();
 						} else {
@@ -349,7 +355,6 @@ public abstract class WebsocketIntegrationTests {
 			assertTrue("welcome messages should be received by all clients",
 					welcomesReceived.await(2L, SECONDS));
 			connections[0].getAsyncRemote().sendText(broadcastMessage);
-			broadcastSent.countDown();
 			assertTrue("broadcast messages should be received by all clients",
 					broadcastsReceived.await(2L, SECONDS));
 		} finally {
@@ -372,16 +377,16 @@ public abstract class WebsocketIntegrationTests {
 		);
 		for (int clientNumber = 0; clientNumber < urls.length; clientNumber++) {
 			assertEquals("client " + (clientNumber + 1) + " should receive 2 messages",
-					2, messages[clientNumber].size());
+					2, receivedMessages[clientNumber].size());
 			assertEquals(
 				"the 1st message of client " + (clientNumber + 1) + " should be the welcome",
 				BroadcastEndpoint.WELCOME_MESSAGE,
-				messages[clientNumber].get(0)
+				receivedMessages[clientNumber].get(0)
 			);
 			assertEquals(
 				"the 2nd message of client " + (clientNumber + 1) + " should be the broadcast",
 				broadcastMessage,
-				messages[clientNumber].get(1)
+				receivedMessages[clientNumber].get(1)
 			);
 		}
 	}
