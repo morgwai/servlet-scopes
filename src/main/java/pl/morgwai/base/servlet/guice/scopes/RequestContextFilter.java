@@ -58,12 +58,12 @@ public class RequestContextFilter implements Filter {
 
 	@Override
 	public void doFilter(
-		ServletRequest rawRequest,
+		ServletRequest servletRequest,
 		ServletResponse response,
 		FilterChain chain
 	) throws IOException, ServletException {
-		final var request = (HttpServletRequest) rawRequest;
-		final ServletRequestContext ctxToActivate;
+		final var request = (HttpServletRequest) servletRequest;
+		final ServletRequestContext ctxToActivate;  // null => the Ctx of request is already active
 		switch (request.getDispatcherType()) {
 			case INCLUDE:
 			case FORWARD:
@@ -76,10 +76,10 @@ public class RequestContextFilter implements Filter {
 				// dispatch from another deployment: continue to create a Ctx for this deployment
 			case REQUEST:  // create a new Ctx, store it in the attribute, activate it
 				ctxToActivate = new ServletRequestContext(request, ctxTracker);
-				getStoredCtxsMapFromAttribute(request).put(ctxTracker, ctxToActivate);
+				getStoredCtxsMap(request).put(ctxTracker, ctxToActivate);
 				break;
 			default:  // ASYNC/ERROR: reactivate the Ctx stored in the attribute
-				ctxToActivate = getStoredCtxsMapFromAttribute(request).get(ctxTracker);
+				ctxToActivate = getStoredCtxsMap(request).get(ctxTracker);
 				if (ctxToActivate == null) {  // misconfigured app
 					throw new ServletException(formatCtxNotFoundMessage(request));
 				}
@@ -94,16 +94,15 @@ public class RequestContextFilter implements Filter {
 
 	/**
 	 * Obtains from {@code request}'s {@link HttpServletRequest#getAttribute(String) attribute} a
-	 * {@code Map} of {@link ServletRequestContext}s stored by each app deployment that processed
+	 * {@code Map} of {@link ServletRequestContext}s stored by each deployment that processed
 	 * {@code request}.
-	 * If the attribute is empty, initializes it with a new {@code Map}.
-	 * <p>
-	 * {@link ServletRequestContext}s are indexed using their respective {@link #ctxTracker}s.</p>
+	 * If the attribute is empty, initializes it with a new {@code Map}. {@code Context}s are
+	 * indexed using their respective {@link #ctxTracker}s.
 	 */
-	private Map<
+	static Map<
 		ContextTracker<ContainerCallContext>,
 		ServletRequestContext
-	> getStoredCtxsMapFromAttribute(HttpServletRequest request) {
+	> getStoredCtxsMap(HttpServletRequest request) {
 		@SuppressWarnings("unchecked")
 		var storedCtxs = (Map<ContextTracker<ContainerCallContext>, ServletRequestContext>)
 				request.getAttribute(ServletRequestContext.class.getName());
@@ -114,7 +113,7 @@ public class RequestContextFilter implements Filter {
 		return storedCtxs;
 	}
 
-	String formatCtxNotFoundMessage(HttpServletRequest request) {
+	static String formatCtxNotFoundMessage(HttpServletRequest request) {
 		final var dispatcherType = request.getDispatcherType();
 		return String.format(
 			CTX_NOT_FOUND_MESSAGE,
