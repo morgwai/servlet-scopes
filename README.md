@@ -7,7 +7,9 @@ Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Ver
 [javax flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/17.1-javax/jar)
 ([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/17.1-javax)) - supports Servlet `4.0.1` and Websocket `1.1` APIs<br/>
 [jakarta flavor](https://search.maven.org/artifact/pl.morgwai.base/servlet-scopes/17.1-jakarta/jar)
-([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/17.1-jakarta)) - supports Servlet `5.0.0` to at least `6.0.0` and Websocket `2.0.0` to at least `2.1.1` APIs
+([javadoc](https://javadoc.io/doc/pl.morgwai.base/servlet-scopes/17.1-jakarta)) - supports Servlet `5.0.0` to at least `6.0.0` and Websocket `2.0.0` to at least `2.1.1` APIs<br/>
+<br/>
+See [CHANGES](CHANGES.md) for the summary of changes between releases. If the major version of a subsequent release remains unchanged, it is supposed to be backwards compatible in terms of API and behaviour with previous ones with the same major version (meaning that it should be safe to just blindly update in dependent projects and things should not break under normal circumstances).
 
 
 
