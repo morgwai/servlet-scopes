@@ -2,6 +2,7 @@
 
 ### 17.2
 - Update [servlet-utils](https://github.com/morgwai/servlet-utils) dependency to 6.3.
+- Limit byte-buddy version to 1.15.x.
 
 ### 17.1
 - Update [servlet-utils](https://github.com/morgwai/servlet-utils) dependency to 6.2.
