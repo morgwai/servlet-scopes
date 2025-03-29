@@ -38,7 +38,7 @@ public class StandaloneWebsocketServerModule implements Module {
 	 * {@link #appDeploymentPath} and stores the resulting {@link Injector} in static structures of
 	 * {@link GuiceServerEndpointConfigurator}.
 	 * This allows {@link GuiceServerEndpointConfigurator} instances created by the container (for
-	 * {@code Endpoint}s annotated with @{@link javax.websocket.server.ServerEndpoint}) to get a
+	 * {@code Endpoint}s annotated with @{@link jakarta.websocket.server.ServerEndpoint}) to get a
 	 * reference to the {@link Injector}.
 	 */
 	@Override

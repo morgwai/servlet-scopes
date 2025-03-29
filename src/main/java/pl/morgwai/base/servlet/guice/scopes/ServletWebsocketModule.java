@@ -1,7 +1,7 @@
 // Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 
 import com.google.inject.Module;
 import com.google.inject.*;
@@ -16,7 +16,7 @@ import static pl.morgwai.base.servlet.guice.scopes.GuiceServerEndpointConfigurat
  * {@link Module} for mixed Servlet-websocket apps.
  * Embeds a {@link WebsocketModule} and defines {@link #httpSessionScope}.
  * <p>
- * Usually a single instance is created in {@link javax.servlet.ServletContextListener} and passed
+ * Usually a single instance is created in {@link jakarta.servlet.ServletContextListener} and passed
  * to {@link Guice#createInjector(Module...)} together with other {@link Module}s.</p>
  * @see pl.morgwai.base.servlet.guice.utils.PingingWebsocketModule
  */
@@ -30,14 +30,14 @@ public class ServletWebsocketModule implements Module {
 	 * {@link Scope} may be active both within {@link ServletRequestContext}s and
 	 * {@link WebsocketEventContext}s.
 	 * <p>
-	 * <b>NOTE:</b> it is not possible to create an {@link javax.servlet.http.HttpSession} from the
+	 * <b>NOTE:</b> it is not possible to create an {@link jakarta.servlet.http.HttpSession} from the
 	 * websocket {@code Endpoint} layer if it doesn't already exist. To safely use this
 	 * {@code Scope} in websocket {@code Endpoints}, other layers must ensure that a {@code Session}
-	 * exists (for example a {@link javax.servlet.Filter} targeting URL patterns of websockets can
+	 * exists (for example a {@link jakarta.servlet.Filter} targeting URL patterns of websockets can
 	 * be used: see {@link GuiceServletContextListener#addEnsureSessionFilter(String...)}).</p>
 	 * <p>
 	 * <b>NOTE:</b> similarly as with
-	 * {@link javax.servlet.http.HttpSession#setAttribute(String, Object) Session attributes},
+	 * {@link jakarta.servlet.http.HttpSession#setAttribute(String, Object) Session attributes},
 	 * session-scoped objects must be {@link java.io.Serializable} if they need to be transferred
 	 * between cluster nodes.</p>
 	 */
@@ -92,7 +92,7 @@ public class ServletWebsocketModule implements Module {
 	 * in {@link #appDeployment} and static structures of {@link GuiceServerEndpointConfigurator}
 	 * class.
 	 * This allows {@link GuiceServerEndpointConfigurator} instances created by the container (for
-	 * {@code Endpoint}s annotated with @{@link javax.websocket.server.ServerEndpoint}) to get a
+	 * {@code Endpoint}s annotated with @{@link jakarta.websocket.server.ServerEndpoint}) to get a
 	 * reference to the {@link Injector}.
 	 * <p>
 	 * The resulting {@link Injector} is stored in {@link #appDeployment}'s

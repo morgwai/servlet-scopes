@@ -32,7 +32,7 @@ import static pl.morgwai.base.servlet.guice.scopes.GuiceEndpointConfigurator
  *       {@link StandaloneWebsocketServerModule} and other {@link com.google.inject.Module}s.</li>
  *   <li>In case of websocket apps embedded in {@code Servlet} containers, the
  *       {@link WebsocketModule} instance should be embedded by a
- *       {@link ServletWebsocketModule#ServletWebsocketModule(javax.servlet.ServletContext,
+ *       {@link ServletWebsocketModule#ServletWebsocketModule(jakarta.servlet.ServletContext,
  *       WebsocketModule) ServletModule} instance.</li>
  * </ul>
  * @see pl.morgwai.base.servlet.guice.utils.PingingWebsocketModule
@@ -52,7 +52,7 @@ public class WebsocketModule extends ScopeModule {
 
 	/**
 	 * Scopes objects to the {@link WebsocketConnectionContext Context of a websocket connections
-	 * (javax.websocket.Session)}.
+	 * (jakarta.websocket.Session)}.
 	 * This {@code Scope} is induced by and active <b>only</b> within
 	 * {@link WebsocketEventContext}s.
 	 */
