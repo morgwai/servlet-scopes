@@ -9,7 +9,7 @@
 	<version>17.3-SNAPSHOT-javax</version><!--jakarta-->
 
 	<name>Servlet and Websocket Guice Scopes</name>
-	<description>containerCallScope (either a HttpServletRequest or a websocket endpoint event), websocketConnectionScope (javax.websocket.Session) and httpSessionScope</description>
+	<description>containerCallScope (either a HttpServletRequest or a websocket endpoint event), websocketConnectionScope (javax.websocket.Session) and httpSessionScope for use in servlet+websocket apps and standalone websocket apps (both client and server)</description>
 	<url>https://github.com/morgwai/servlet-scopes</url>
 
 	<licenses>
