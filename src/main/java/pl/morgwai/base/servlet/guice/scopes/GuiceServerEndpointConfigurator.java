@@ -173,7 +173,7 @@ public class GuiceServerEndpointConfigurator extends Configurator {
 	 */
 	void initialize(Injector injector) {
 		backingConfigurator = newGuiceEndpointConfigurator(injector);
-		// this.injector is used fot double-checked locking in modifyHandshake(...), so
+		// this.injector is used for double-checked locking in modifyHandshake(...), so
 		// the below assignment must be the last statement of this method
 		this.injector = injector;
 	}
