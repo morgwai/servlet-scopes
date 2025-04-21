@@ -68,8 +68,7 @@ public class RequestContextFilter implements Filter {
 			case INCLUDE:
 			case FORWARD:
 				if (ctxTracker.getCurrentContext() != null) {  // dispatch from the same deployment
-					// dispatching is performed from within the Ctx, so it's still active
-					ctxToActivate = null;
+					ctxToActivate = null;  // the Ctx is already active
 					break;
 				}
 
