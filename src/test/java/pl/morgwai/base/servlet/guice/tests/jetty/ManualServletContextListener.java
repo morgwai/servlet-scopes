@@ -140,6 +140,20 @@ public class ManualServletContextListener implements ServletContextListener {
 				"/" + ErrorDispatchingServlet.class.getSimpleName(),
 				ErrorDispatchingServlet.ERROR_HANDLER_PATH
 			);
+			addServlet(
+				CycledCrossDeploymentDispatchingServlets.FirstDeploymentServlet.class
+						.getSimpleName(),
+				CycledCrossDeploymentDispatchingServlets.FirstDeploymentServlet.class,
+				"/" + CycledCrossDeploymentDispatchingServlets.FirstDeploymentServlet.class
+						.getSimpleName()
+			);
+			addServlet(
+				CycledCrossDeploymentDispatchingServlets.SecondDeploymentServlet.class
+						.getSimpleName(),
+				CycledCrossDeploymentDispatchingServlets.SecondDeploymentServlet.class,
+				"/" + CycledCrossDeploymentDispatchingServlets.SecondDeploymentServlet.class
+						.getSimpleName()
+			);
 
 			final var ensureSessionFilterRegistration = appDeployment.addFilter(
 				"ensureSessionFilter",

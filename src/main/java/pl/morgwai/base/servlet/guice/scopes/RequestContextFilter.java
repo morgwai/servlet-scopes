@@ -68,11 +68,20 @@ public class RequestContextFilter implements Filter {
 			case INCLUDE:
 			case FORWARD:
 				if (ctxTracker.getCurrentContext() != null) {  // dispatch from the same deployment
+					// ...or cycled cross-deployment dispatch handled by the same Thread as initial
 					ctxToActivate = null;  // the Ctx is already active
 					break;
 				}
 
-				// dispatch from another deployment: continue to create a Ctx for this deployment
+				// cross-deployment dispatch
+				final var previousDispatchCtx = getStoredCtxsMap(request).get(ctxTracker);
+				if (previousDispatchCtx != null) {
+					// been to this deployment before (cycled cross-deployment dispatches)
+					ctxToActivate = previousDispatchCtx;
+					break;
+				}
+
+				// first time in this deployment: continue to create a Ctx for this deployment
 			case REQUEST:  // create a new Ctx, store it in the attribute, activate it
 				ctxToActivate = new ServletRequestContext(request, ctxTracker);
 				getStoredCtxsMap(request).put(ctxTracker, ctxToActivate);
