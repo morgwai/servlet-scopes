@@ -206,7 +206,7 @@ public class HttpSessionContextReplicationTests {
 
 	@BeforeClass
 	public static void setupLogging() {
-		addOrReplaceLoggingConfigProperties(Map.of(
+		addOrReplaceLogConfigProperties(Map.of(
 			"pl.morgwai.level", SEVERE.toString(),
 			LEVEL_SUFFIX, WARNING.toString(),
 			ConsoleHandler.class.getName() + LEVEL_SUFFIX, FINEST.toString()
