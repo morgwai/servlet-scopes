@@ -75,7 +75,7 @@ Base class for app `ServletContextListener`s, creates and configures the app-wid
 Binds closures (`Runnable`s, `Consumer`s, `Callable`s etc) to `Context`s that were active at the time of a given binding. This can be used to transfer `Context`s semi-automatically when manually switching `Thread`s, for example when passing callbacks to async functions.
 
 ### [ContextTrackingExecutor](https://javadoc.io/doc/pl.morgwai.base/guice-context-scopes/latest/pl/morgwai/base/guice/scopes/ContextTrackingExecutor.html)
-Interface and decorator for an `Executor` that automatically transfers active `Contexts` using its associated `ContextBinder` when executing tasks.
+An interface and a decorator for `Executor`s that automatically transfer active `Context`s when executing tasks.
 
 <br/>
 
