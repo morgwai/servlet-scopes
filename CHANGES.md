@@ -1,5 +1,8 @@
 # Summaries of visible changes between releases
 
+### 17.3
+- Support for cycled cross-deployment dispatching.
+
 ### 17.2
 - Update [servlet-utils](https://github.com/morgwai/servlet-utils) dependency to 6.3.
 - Limit byte-buddy version to 1.15.x.

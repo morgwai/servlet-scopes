@@ -304,6 +304,7 @@ There are 2 builds available:
 
 **NOTE:** some tests are flaky:
 * Tyrus sometimes decides in the 1st ms of handling a websocket connection that its timeout has exceeded (regardless of `connection.setMaxIdleTimeout(60s)`). Therefore all [TyrusTests](src/test/java/pl/morgwai/base/servlet/guice/tests/TyrusTests.java) are flaky.
+* [Tests for cycled cross-deployment dispatching](src/test/java/pl/morgwai/base/servlet/guice/tests/jetty/CycledCrossDeploymentDispatchingServlets.java) require that a given request after "returning" to the initial deployment is handled by a different `Thread` than initially (otherwise no meaningful verifications can be performed). Some tricks are employed to cause this, but generally this cannot be reliably controlled.
 
 
 

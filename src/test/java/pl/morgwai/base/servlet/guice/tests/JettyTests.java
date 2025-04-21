@@ -146,6 +146,37 @@ public class JettyTests extends MultiAppWebsocketTests {
 
 
 
+	void testCycledCrossDeploymentDispatching(DispatcherType dispatcherType) throws Exception {
+		final var url = testAppUrl + '/'
+				+ CycledCrossDeploymentDispatchingServlets.FirstDeploymentServlet.class
+						.getSimpleName()
+				+ '?' + DispatcherType.class.getSimpleName() + '=' + dispatcherType;
+		final var request = HttpRequest.newBuilder(URI.create(url))
+			.GET()
+			.timeout(Duration.ofSeconds(2))
+			.build();
+		final var reply = sendServletRequest(request, 200);
+		assertEquals("there should be 3 properties in the reply",
+				3, reply.size());
+		assertEquals(
+			"the reply should be sent by FirstDeploymentServlet",
+			CycledCrossDeploymentDispatchingServlets.FirstDeploymentServlet.class.getSimpleName(),
+			reply.getProperty(REPLYING_SERVLET)
+		);
+	}
+
+	@Test
+	public void testCycledCrossDeploymentForwarding() throws Exception {
+		testCycledCrossDeploymentDispatching(DispatcherType.FORWARD);
+	}
+
+	@Test
+	public void testCycledCrossDeploymentIncluding() throws Exception {
+		testCycledCrossDeploymentDispatching(DispatcherType.INCLUDE);
+	}
+
+
+
 	public void testErrorDispatching(String path) throws Exception {
 		final var request = HttpRequest.newBuilder(URI.create(testAppUrl + path))
 			.GET()
