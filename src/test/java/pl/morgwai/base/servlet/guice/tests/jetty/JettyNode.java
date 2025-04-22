@@ -21,6 +21,7 @@ import pl.morgwai.base.servlet.guice.scopes.HttpSessionContext;
 
 
 /**
+ * For {@link pl.morgwai.base.servlet.guice.tests.HttpSessionContextReplicationTests}.
  * Jetty server using {@link SessionDataStore HttpSession replication}, with a
  * {@link NodeInfoServlet Servlet}, that outputs some data
  * {@link HttpSession#setAttribute(String, Object) stored} and {@link HttpSessionContext scoped} to

@@ -13,6 +13,8 @@ import pl.morgwai.base.servlet.guice.tests.servercommon.Service;
 
 
 /**
+ * For {@link pl.morgwai.base.servlet.guice.tests.JettyTests#testCrossDeploymentForwarding()} and
+ * {@link pl.morgwai.base.servlet.guice.tests.JettyTests#testCrossDeploymentIncluding()}.
  * First receives a normal {@link HttpServletRequest}, {@link RequestDispatcher dispatches} it to
  * the same {@code Servlet} in another deployment, finally
  * {@link AsyncContext#dispatch() dispatches it asynchronously} again to the same {@code Servlet} in
@@ -43,15 +45,12 @@ public class CrossDeploymentDispatchingServlet extends TestServlet {
 			case REQUEST: {  // initial checks, dispatch, after INCLUDE also ASYNC
 				final var requestScopedInstance = requestScopedProvider.get();
 				final var sessionScopedInstance = sessionScopedProvider.get();
-				storeInstancesAndVerifyScoping(INITIAL_THREAD_DESIGNATION,
-						request, requestScopedInstance, sessionScopedInstance);
+				request.setAttribute(Service.CONTAINER_CALL, requestScopedInstance);
+				request.setAttribute(Service.HTTP_SESSION, sessionScopedInstance);
+				verifyScoping(INITIAL_THREAD_DESIGNATION, request);
 
-				final var otherDeploymentPath =
-						request.getContextPath().equals(Server.TEST_APP_PATH)
-							? MultiAppServer.SECOND_APP_PATH
-							: Server.TEST_APP_PATH;
 				final var dispatcher = request.getServletContext()
-					.getContext(otherDeploymentPath)
+					.getContext(MultiAppServer.SECOND_APP_PATH)
 					.getRequestDispatcher(request.getServletPath());
 				if (
 					DispatcherType.FORWARD.toString().equals(
@@ -62,8 +61,9 @@ public class CrossDeploymentDispatchingServlet extends TestServlet {
 					dispatcher.include(request, response);
 
 					// back from the other deployment
-					storeInstancesAndVerifyScoping("back to the initial container Thread",
-							request, requestScopedInstance, sessionScopedInstance);
+					request.setAttribute(Service.CONTAINER_CALL, requestScopedInstance);
+					request.setAttribute(Service.HTTP_SESSION, sessionScopedInstance);
+					verifyScoping("back to the initial container Thread", request);
 					final var asyncCtx = request.startAsync();
 					asyncCtx.setTimeout(1800L * 1000L);
 					asyncCtx.dispatch();
@@ -71,7 +71,7 @@ public class CrossDeploymentDispatchingServlet extends TestServlet {
 				return;
 			}
 			case FORWARD:
-			case INCLUDE: {
+			case INCLUDE: {  // runs in the 2nd deployment
 				final var requestScopedInstance = requestScopedProvider.get();
 				final var sessionScopedInstance = sessionScopedProvider.get();
 				if (
@@ -83,8 +83,9 @@ public class CrossDeploymentDispatchingServlet extends TestServlet {
 							+ Thread.currentThread().getName() + ')');
 				}
 				sendScopedObjectHashes(request, response, INITIAL_DEPLOYMENT_PREFIX);
-				storeInstancesAndVerifyScoping("the second deployment container Thread",
-						request, requestScopedInstance, sessionScopedInstance);
+				request.setAttribute(Service.CONTAINER_CALL, requestScopedInstance);
+				request.setAttribute(Service.HTTP_SESSION, sessionScopedInstance);
+				verifyScoping("the second deployment container Thread", request);
 				sendScopedObjectHashes(request, response, SECOND_DEPLOYMENT_PREFIX);
 				if (request.getDispatcherType() == DispatcherType.FORWARD) {
 					final var asyncCtx = request.startAsync(request, response);
@@ -94,24 +95,13 @@ public class CrossDeploymentDispatchingServlet extends TestServlet {
 				return;
 			}
 			case ASYNC: {
+				// runs in the 1st deployment after the return from the INCLUDE,
+				// runs in the 2nd deployment at the end of FORWARD
 				verifyScoping("async container Thread", request);
 				sendScopedObjectHashes(request, response, ASYNC_PREFIX);
 				return;
 			}
 			default: throw new AssertionError("unexpected DispatcherType: " + dispatcherType);
 		}
-	}
-
-
-
-	void storeInstancesAndVerifyScoping(
-		String threadDesignation,
-		HttpServletRequest request,
-		Service requestScopedInstance,
-		Service sessionScopedInstance
-	) throws ServletException {
-		request.setAttribute(Service.CONTAINER_CALL, requestScopedInstance);
-		request.setAttribute(Service.HTTP_SESSION, sessionScopedInstance);
-		verifyScoping(threadDesignation, request);
 	}
 }

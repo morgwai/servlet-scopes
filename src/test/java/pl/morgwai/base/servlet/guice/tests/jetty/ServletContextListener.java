@@ -17,6 +17,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 
 
+/** Configures {@link Server#TEST_APP_PATH the main test app} in all tests. */
 @WebListener
 public class ServletContextListener extends PingingServletContextListener {
 
