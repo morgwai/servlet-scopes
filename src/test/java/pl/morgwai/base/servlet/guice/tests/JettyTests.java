@@ -21,7 +21,10 @@ import static pl.morgwai.base.servlet.guice.tests.jetty.CrossDeploymentDispatchi
 import static pl.morgwai.base.servlet.guice.tests.servercommon.Service.*;
 
 
-
+/**
+ * In addition to {@link MultiAppWebsocketTests} also tests scoping in
+ * {@link javax.servlet.Servlet}s.
+ */
 public class JettyTests extends MultiAppWebsocketTests {
 
 

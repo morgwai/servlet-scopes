@@ -34,8 +34,8 @@ public abstract class TestServlet extends HttpServlet {
 	/**
 	 * Verifies if objects obtained from {@link #requestScopedProvider} and
 	 * {@link #sessionScopedProvider} are the same as the ones stored in
-	 * {@link Service#CONTAINER_CALL request} {@link Service#HTTP_SESSION attributes} by the
-	 * {@code Servlet} that initially received {@code request}.
+	 * {@link HttpServletRequest#getAttribute(String) request attributes} named
+	 * {@link Service#CONTAINER_CALL} {@link Service#HTTP_SESSION}.
 	 * @throws ServletException if the verification fails.
 	 */
 	void verifyScoping(String threadDesignation, HttpServletRequest request)

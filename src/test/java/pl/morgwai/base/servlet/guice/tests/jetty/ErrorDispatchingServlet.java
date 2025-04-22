@@ -10,7 +10,11 @@ import pl.morgwai.base.servlet.guice.tests.servercommon.Service;
 
 
 
-/** Tests handling of dispatching to non-existent path. */
+/**
+ * For {@link pl.morgwai.base.servlet.guice.tests.JettyTests#testErrorDispatchingFromUserMiss()} and
+ * {@link pl.morgwai.base.servlet.guice.tests.JettyTests#testErrorDispatchingFromAppServletMiss()}.
+ *  Tests handling of dispatching to non-existent path.
+ */
 public class ErrorDispatchingServlet extends TestServlet {
 
 

@@ -31,6 +31,8 @@ import static pl.morgwai.base.utils.concurrent.Awaitable.awaitMultiple;
  * A listener that does not extend {@link GuiceServletContextListener} and does exactly the same job
  * as {@link pl.morgwai.base.servlet.guice.tests.jetty.ServletContextListener} from this package
  * (that extends {@link pl.morgwai.base.servlet.guice.utils.PingingServletContextListener}).
+ * Configures {@link MultiAppServer#SECOND_APP_PATH the second deployment} in
+ * {@link pl.morgwai.base.servlet.guice.tests.MultiAppWebsocketTests}.
  */
 public class ManualServletContextListener implements ServletContextListener {
 
