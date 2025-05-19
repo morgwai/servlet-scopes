@@ -298,6 +298,15 @@ There are 2 builds available:
 
 
 
+## BUILDING FROM SOURCE
+
+`./mvnw install`
+
+**NOTE:** some tests are flaky:
+* Tyrus sometimes decides in the 1st ms of handling a websocket connection that its timeout has exceeded (regardless of `connection.setMaxIdleTimeout(60s)`). Therefore all [TyrusTests](src/test/java/pl/morgwai/base/servlet/guice/tests/TyrusTests.java) are flaky.
+
+
+
 ## FAQ
 
 **Why isn't this built on top of [official servlet scopes lib](https://github.com/google/guice/wiki/Servlets)?**
