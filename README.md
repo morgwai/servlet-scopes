@@ -309,11 +309,11 @@ There are 2 builds available:
 
 ## FAQ
 
-**Why isn't this built on top of [official servlet scopes lib](https://github.com/google/guice/wiki/Servlets)?**
+### Why isn't this built on top of [the official servlet scopes lib](https://github.com/google/guice/wiki/Servlets)?
 * the official Guice-servlet has some [serious issues](https://github.com/google/guice/blob/6.0.0/extensions/servlet/src/com/google/inject/servlet/ServletScopes.java#L158)
 * in order to extend the official Guice-servlet lib to support websockets, the code would need to pretend that everything is an `HttpServletRequest` (websocket events and websocket connections would need to be wrapped in some fake `HttpSevletRequest` wrappers), which seems awkward.
 * `guice-context-scopes` allows to remove objects from scopes.
 
-**Why do I have to install myself a filter that creates HTTP session for websocket requests? Can't `addEnsureSessionFilter("/*")` be called automatically?**
+### Why do I have to install myself a filter that creates HTTP session for websocket requests? Can't `addEnsureSessionFilter("/*")` be called automatically?
 
 Always enforcing a session creation is not acceptable in many cases, so this would limit applicability of this lib. Reasons may be technical (cookies disabled, non-browser clients that don't even follow redirections), legal (user explicitly refusing any data storage) and probably others. It's a sad trade-off between applicability and API safety.
