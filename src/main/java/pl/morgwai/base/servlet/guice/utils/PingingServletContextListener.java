@@ -2,6 +2,7 @@
 package pl.morgwai.base.servlet.guice.utils;
 
 import java.util.Set;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
 
@@ -92,13 +93,14 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 	/**
 	 * Creates a scheduler to be used by {@link #pingerService} for ping scheduling.
-	 * By default {@link WebsocketPingerService#newDefaultScheduler()}.
+	 * By default {@link Executors#newScheduledThreadPool(int)
+	 * Executors.newScheduledThreadPool}({@link Runtime#availableProcessors() availableProcessors}).
 	 * <p>
 	 * This method is called by {@link #createPingerService()}, it may use {@link #appDeployment}
 	 * and {@link #injector}.</p>
 	 */
 	protected ScheduledExecutorService createScheduler() {
-		return WebsocketPingerService.newDefaultScheduler();
+		return Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
 	}
 
 
