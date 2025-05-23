@@ -8,7 +8,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.*;
 import java.util.logging.Level;
-import javax.servlet.DispatcherType;
+import jakarta.servlet.DispatcherType;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -23,7 +23,7 @@ import static pl.morgwai.base.servlet.guice.tests.servercommon.Service.*;
 
 /**
  * In addition to {@link MultiAppWebsocketTests} also tests scoping in
- * {@link javax.servlet.Servlet}s.
+ * {@link jakarta.servlet.Servlet}s.
  */
 public class JettyTests extends MultiAppWebsocketTests {
 

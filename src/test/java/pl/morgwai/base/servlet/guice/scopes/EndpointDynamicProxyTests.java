@@ -3,8 +3,8 @@ package pl.morgwai.base.servlet.guice.scopes;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import javax.servlet.http.HttpSession;
-import javax.websocket.Session;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.Session;
 
 import pl.morgwai.base.guice.scopes.ContextTracker;
 

@@ -1,7 +1,7 @@
 // Copyright 2021 Piotr Morgwai Kotarbinski, Licensed under the Apache License, Version 2.0
 package pl.morgwai.base.servlet.guice.scopes;
 
-import javax.servlet.http.*;
+import jakarta.servlet.http.*;
 
 import com.google.inject.OutOfScopeException;
 import pl.morgwai.base.guice.scopes.ContextTracker;
@@ -13,18 +13,18 @@ import pl.morgwai.base.guice.scopes.TrackableContext;
  * Context of either an {@link ServletRequestContext HttpServletRequest} or a
  * {@link WebsocketEventContext websocket event}.
  * Each single container-invoked call either to one of
- * {@link javax.servlet.Servlet#service(javax.servlet.ServletRequest, javax.servlet.ServletResponse)
+ * {@link jakarta.servlet.Servlet#service(jakarta.servlet.ServletRequest, jakarta.servlet.ServletResponse)
  * Servlet's service(...)}&nbsp;/&nbsp;{@link
- * javax.servlet.http.HttpServlet#doGet(HttpServletRequest, HttpServletResponse) doXXX(...)} methods
+ * jakarta.servlet.http.HttpServlet#doGet(HttpServletRequest, HttpServletResponse) doXXX(...)} methods
  * or to one of websocket {@code Endpoint}'s
- * {@link javax.websocket.Endpoint#onOpen(javax.websocket.Session, javax.websocket.EndpointConfig)
- * event}-{@link javax.websocket.OnMessage handling} methods
+ * {@link jakarta.websocket.Endpoint#onOpen(jakarta.websocket.Session, jakarta.websocket.EndpointConfig)
+ * event}-{@link jakarta.websocket.OnMessage handling} methods
  * {@link TrackableContext#executeWithinSelf(Runnable) runs within} a <b>separate</b> instance of
  * the appropriate {@code ContainerCallContext} subclass.
  * <p>
  * Having a common base class for {@link ServletRequestContext} and {@link WebsocketEventContext}
  * allows to provide {@link WebsocketModule#containerCallScope container-call scoped} objects both
- * in {@link javax.servlet.Servlet}s and {@code Endpoints} without a need for 2 separate bindings.
+ * in {@link jakarta.servlet.Servlet}s and {@code Endpoints} without a need for 2 separate bindings.
  * </p>
  * @see WebsocketModule#containerCallScope corresponding Scope
  */

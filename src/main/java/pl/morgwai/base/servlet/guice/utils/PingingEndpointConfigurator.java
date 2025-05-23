@@ -5,7 +5,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.HashSet;
-import javax.websocket.*;
+import jakarta.websocket.*;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;

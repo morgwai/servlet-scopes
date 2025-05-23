@@ -10,8 +10,8 @@ package pl.morgwai.base.servlet.guice.utils;
 public interface RttObserver {
 
 	/**
-	 * Called by {@link javax.websocket.PongMessage}
-	 * {@link javax.websocket.MessageHandler handler} to report round-trip time in nanoseconds.
+	 * Called by {@link jakarta.websocket.PongMessage}
+	 * {@link jakarta.websocket.MessageHandler handler} to report round-trip time in nanoseconds.
 	 */
 	void onPong(long rttNanos);
 }

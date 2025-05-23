@@ -2,13 +2,13 @@
 package pl.morgwai.base.servlet.guice.tests.jetty;
 
 import java.io.IOException;
-import javax.servlet.DispatcherType;
-import javax.servlet.ServletException;
-import javax.servlet.http.*;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.*;
 
 import pl.morgwai.base.servlet.guice.tests.servercommon.*;
 
-import static javax.servlet.DispatcherType.FORWARD;
+import static jakarta.servlet.DispatcherType.FORWARD;
 
 
 
@@ -23,7 +23,7 @@ public interface CycledCrossDeploymentDispatchingServlets {
 
 	/**
 	 * First receives a normal {@link HttpServletRequest} and
-	 * {@link javax.servlet.RequestDispatcher dispatches} it to {@link SecondDeploymentServlet} in
+	 * {@link jakarta.servlet.RequestDispatcher dispatches} it to {@link SecondDeploymentServlet} in
 	 * {@link MultiAppServer#SECOND_APP_PATH the second deployment}, that dispatches it back to this
 	 * {@code Servlet} (on another {@link Thread}), that then
 	 * {@link #verifyScoping(String, HttpServletRequest) verifies scoping}.
@@ -76,10 +76,10 @@ public interface CycledCrossDeploymentDispatchingServlets {
 
 
 	/**
-	 * Receives a cross-deployment {@link javax.servlet.RequestDispatcher dispatch} from
+	 * Receives a cross-deployment {@link jakarta.servlet.RequestDispatcher dispatch} from
 	 * {@link FirstDeploymentServlet}, performs internal
-	 * {@link javax.servlet.AsyncContext#dispatch(String) async dispatch} to change the handling
-	 * {@link Thread} and {@link javax.servlet.RequestDispatcher dispatches} the request back to
+	 * {@link jakarta.servlet.AsyncContext#dispatch(String) async dispatch} to change the handling
+	 * {@link Thread} and {@link jakarta.servlet.RequestDispatcher dispatches} the request back to
 	 * {@link FirstDeploymentServlet} in {@link Server#TEST_APP_PATH the first deployment}.
 	 */
 	class SecondDeploymentServlet extends HttpServlet {

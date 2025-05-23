@@ -4,8 +4,8 @@ package pl.morgwai.base.servlet.guice.scopes;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;

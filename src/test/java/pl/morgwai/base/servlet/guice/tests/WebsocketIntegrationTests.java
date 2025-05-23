@@ -7,13 +7,13 @@ import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.*;
-import javax.websocket.*;
+import jakarta.websocket.*;
 import org.junit.*;
 import org.junit.rules.TestName;
 
 import com.google.inject.*;
-import org.eclipse.jetty.websocket.javax.client.JavaxWebSocketClientContainerProvider;
-import org.eclipse.jetty.websocket.javax.common.JavaxWebSocketContainer;
+import org.eclipse.jetty.websocket.jakarta.client.JakartaWebSocketClientContainerProvider;
+import org.eclipse.jetty.websocket.jakarta.common.JakartaWebSocketContainer;
 import pl.morgwai.base.servlet.guice.scopes.*;
 import pl.morgwai.base.servlet.guice.tests.servercommon.*;
 import pl.morgwai.base.utils.concurrent.Awaitable;
@@ -21,7 +21,7 @@ import pl.morgwai.base.utils.concurrent.Awaitable;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
-import static javax.websocket.CloseReason.CloseCodes.NORMAL_CLOSURE;
+import static jakarta.websocket.CloseReason.CloseCodes.NORMAL_CLOSURE;
 import static org.junit.Assert.*;
 import static pl.morgwai.base.jul.JulConfigurator.*;
 import static pl.morgwai.base.servlet.guice.tests.servercommon.EchoEndpoint.MESSAGE_PROPERTY;
@@ -59,7 +59,7 @@ public abstract class WebsocketIntegrationTests {
 		appWebsocketUrl = server.getTestAppWebsocketUrl();
 
 		wsHttpClient.setCookieStore(cookieManager.getCookieStore());
-		clientWebsocketContainer = JavaxWebSocketClientContainerProvider.getContainer(wsHttpClient);
+		clientWebsocketContainer = JakartaWebSocketClientContainerProvider.getContainer(wsHttpClient);
 	}
 
 	@Rule public TestName testName = new TestName();
@@ -68,7 +68,7 @@ public abstract class WebsocketIntegrationTests {
 
 	@After
 	public void stopServer() throws Exception {
-		final var jettyWsContainer = ((JavaxWebSocketContainer) clientWebsocketContainer);
+		final var jettyWsContainer = ((JakartaWebSocketContainer) clientWebsocketContainer);
 		jettyWsContainer.stop();
 		jettyWsContainer.destroy();
 		wsHttpClient.stop();

@@ -3,10 +3,10 @@ package pl.morgwai.base.servlet.guice.scopes;
 
 import java.util.HashMap;
 import java.util.Map;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import javax.websocket.Session;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.Session;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
 import org.junit.*;
