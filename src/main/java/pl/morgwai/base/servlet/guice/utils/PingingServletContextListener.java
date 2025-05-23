@@ -40,8 +40,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 * Allows to override {@link #pingerService}'s mode.
 	 * By default {@code false}.
 	 * <p>
-	 * This method is called by {@link #createPingerService()}, it may use {@link #appDeployment}
-	 * and {@link #injector}.</p>
+	 * This method is called once by {@link #createPingerService()}, it may be overridden and use
+	 * {@link #appDeployment}.</p>
 	 */
 	protected boolean isPingerInKeepAliveOnlyMode() {
 		return false;
@@ -53,8 +53,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 * Allows to override {@link #pingerService}'s {@code interval} param.
 	 * By default {@link WebsocketPingerService#DEFAULT_INTERVAL_SECONDS} converted to millis.
 	 * <p>
-	 * This method is called by {@link #createPingerService()}, it may use {@link #appDeployment}
-	 * and {@link #injector}.</p>
+	 * This method is called once by {@link #createPingerService()}, it may be overridden and use
+	 * {@link #appDeployment}.</p>
 	 */
 	protected long getPingIntervalMillis() {
 		return SECONDS.toMillis(DEFAULT_INTERVAL_SECONDS);
@@ -66,8 +66,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 * Allows to override {@link #pingerService}'s {@code failureLimit} param.
 	 * By default {@value #DEFAULT_FAILURE_LIMIT}.
 	 * <p>
-	 * This method is called by {@link #createPingerService()}, it may use {@link #appDeployment}
-	 * and {@link #injector}.</p>
+	 * This method is called once by {@link #createPingerService()}, it may be overridden and use
+	 * {@link #appDeployment}.</p>
 	 */
 	protected int getPingFailureLimit() {
 		return DEFAULT_FAILURE_LIMIT;
@@ -82,8 +82,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 * hashing by {@link #pingerService}.
 	 * By default {@value WebsocketPingerService#DEFAULT_HASH_FUNCTION}.
 	 * <p>
-	 * This method is called by {@link #createPingerService()}, it may use {@link #appDeployment}
-	 * and {@link #injector}.</p>
+	 * This method is called once by {@link #createPingerService()}, it may be overridden and use
+	 * {@link #appDeployment}.</p>
 	 */
 	protected String getHashFunctionName() {
 		return DEFAULT_HASH_FUNCTION;
@@ -96,8 +96,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 * By default {@link Executors#newScheduledThreadPool(int)
 	 * Executors.newScheduledThreadPool}({@link Runtime#availableProcessors() availableProcessors}).
 	 * <p>
-	 * This method is called by {@link #createPingerService()}, it may use {@link #appDeployment}
-	 * and {@link #injector}.</p>
+	 * This method is called once by {@link #createPingerService()}, it may be overridden and use
+	 * {@link #appDeployment}.</p>
 	 */
 	protected ScheduledExecutorService createScheduler() {
 		return Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
@@ -109,8 +109,8 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 	 * Allows to override {@link #pingerService}'s {@code synchronizeSending} flag.
 	 * By default {@code false}.
 	 * <p>
-	 * This method is called by {@link #createPingerService()}, it may use {@link #appDeployment}
-	 * and {@link #injector}.</p>
+	 * This method is called once by {@link #createPingerService()}, it may be overridden and use
+	 * {@link #appDeployment}.</p>
 	 */
 	protected boolean shouldSynchronizePingSending() {
 		return false;
@@ -119,14 +119,14 @@ public abstract class PingingServletContextListener extends GuiceServletContextL
 
 
 	/**
-	 * Called to creates {@link #pingerService the app-wide PingerService}.
-	 * By default it calls {@link #isPingerInKeepAliveOnlyMode()}, {@link #getPingIntervalMillis()}
-	 * and {@link #getPingFailureLimit()}, {@link #getHashFunctionName()},
-	 * {@link #createScheduler()} and {@link #shouldSynchronizePingSending()} to configure the
-	 * {@link WebsocketPingerService}.
+	 * Creates {@link #pingerService the app-wide WebsocketPingerService}.
+	 * By default this method calls {@link #isPingerInKeepAliveOnlyMode()},
+	 * {@link #getPingIntervalMillis()}, {@link #getPingFailureLimit()},
+	 * {@link #getHashFunctionName()}, {@link #createScheduler()} and
+	 * {@link #shouldSynchronizePingSending()} to configure the {@link WebsocketPingerService}.
 	 * <p>
-	 * This method is called once in {@link #createWebsocketModule(boolean, Set)} and may be
-	 * overridden if further customizations are required.</p>
+	 * This method is called once by {@link #createWebsocketModule(boolean, Set)}, it may be
+	 * overridden and use {@link #appDeployment}.</p>
 	 */
 	protected WebsocketPingerService createPingerService() {
 		if (isPingerInKeepAliveOnlyMode()) {
